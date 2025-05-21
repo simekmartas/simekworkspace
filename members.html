@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RETRO WEB - Členové</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>&gt; Seznam členů_</h1>
+            <div class="table-container">
+                <table id="members-table">
+                    <thead>
+                        <tr>
+                            <th>// ID</th>
+                            <th>// Uživatelské jméno</th>
+                            <th>// Role</th>
+                            <th>// Datum registrace</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>001</td>
+                            <td>admin</td>
+                            <td>Administrátor</td>
+                            <td>2024-03-20</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>// &copy; 2024 RETRO WEB</p>
+    </footer>
+
+    <script src="navigation.js"></script>
+    <script>
+    // Ochrana stránky pro členy
+    if (!localStorage.getItem('isLoggedIn')) {
+        document.querySelector('main').innerHTML = `
+            <section class="hero">
+                <h1>&gt; Seznam členů_</h1>
+                <div class="message" style="font-size:1.3rem;color:#d00;margin-top:2rem;">Tato sekce je pouze pro přihlášené členy.</div>
+                <form id="login-form" class="login-form" style="margin-top:2rem;">
+                    <input type="text" id="username" placeholder="// Uživatelské jméno" required>
+                    <input type="password" id="password" placeholder="// Heslo" required>
+                    <button type="submit">[ PŘIHLÁSIT ]</button>
+                </form>
+                <p id="login-message" class="message"></p>
+            </section>`;
+        
+        // Přidání přihlašovací logiky
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageElement = document.getElementById('login-message');
+            
+            if (username === 'admin' && password === 'Admin123') {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', username);
+                localStorage.setItem('role', 'Administrátor');
+                window.location.reload();
+            } else {
+                messageElement.textContent = '// Chybné přihlašovací údaje';
+                messageElement.style.color = '#ff0000';
+            }
+        });
+    } else {
+        // Data podle Excelu (staticky)
+        const stores = ['SENIMO', 'ŠTERNBERK', 'GLOBUS', 'LITOVELSKÁ', 'ČEPKOV', 'PŘEROV', 'FAKTURY'];
+        const categories = [
+            'Nové t.\n(obrat)', 'Nové t.\n(zisk)',
+            'Bazar\n(obrat)', 'Bazar\n(zisk)',
+            'Přísl.\n(obrat)', 'Přísl.\n(zisk)',
+            'Servis\n(obrat)', 'Servis\n(zisk)',
+            'Servis p.\n(obrat)', 'Servis p.\n(zisk)'
+        ];
+        // Data pro tabulku (obrat/zisk střídavě)
+        const obratData = [
+            [17219, 107179, 47678, 0, 44526, 15739, 39573], // Nové telefony (obrat)
+            [2966.98, 10264.18, 9580.17, 0, 5613.53, 2115.46, 992.64], // Nové telefony (zisk)
+            [9670, 49230, 164370, 8800, 66080, 38730, 333750], // Bazar (obrat)
+            [5070, 11930, 45353.13, 0, 21690, 15076.97, 100450], // Bazar (zisk)
+            [98919, 149673, 274895, 7165, 183544, 96783, 141984], // Příslušenství (obrat)
+            [60492.38, 85541.03, 174830.91, 4271.48, 110701.01, 67282.43, 82746.35], // Příslušenství (zisk)
+            [6300, 7400, 159370, 0, 49979, 5300, 42300], // Servis (obrat)
+            [3561.49, 4173.78, 78985.59, 0, 26204.46, 1913.16, 15972.29], // Servis (zisk)
+            [5015, 2260, 8990, 0, 1800, 1341, 370], // Servis prodejna (obrat)
+            [4144.56, 1867.78, 7429.52, 0, 1487.6, 1108.33, 305.78] // Servis prodejna (zisk)
+        ];
+        function showMajakData() {
+            // Tabulka
+            let html = '<table class="result-table"><tr><th>Prodejna</th>';
+            for (let cat of categories) html += `<th>${cat}</th>`;
+            html += '<th>Celkem obrat</th><th>Celkem zisk</th></tr>';
+            for (let i = 0; i < stores.length; i++) {
+                let sumObrat = 0, sumZisk = 0;
+                html += `<tr><td>${stores[i]}</td>`;
+                for (let j = 0; j < obratData.length; j += 2) {
+                    html += `<td class="right">${obratData[j][i].toLocaleString('cs-CZ')}</td>`;
+                    html += `<td class="right">${obratData[j+1][i].toLocaleString('cs-CZ')}</td>`;
+                    sumObrat += obratData[j][i];
+                    sumZisk += obratData[j+1][i];
+                }
+                html += `<td class="right"><b>${sumObrat.toLocaleString('cs-CZ')}</b></td><td class="right"><b>${sumZisk.toLocaleString('cs-CZ')}</b></td></tr>`;
+            }
+            html += '</table>';
+            document.getElementById('majak-table').innerHTML = html;
+            // Graf - stacked bar podle kategorií (obrat)
+            if (!window.Chart) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                script.onload = showMajakData;
+                document.body.appendChild(script);
+                return;
+            }
+            const ctx = document.getElementById('majak-chart').getContext('2d');
+            const datasets = [0,2,4,6,8].map((j, idx) => ({
+                label: categories[j].replace(' (obrat)',''),
+                data: obratData[j],
+                backgroundColor: `hsl(${idx*60}, 30%, 40%)`
+            }));
+            new window.Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: stores,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#111', font: { family: 'JetBrains Mono' } } }
+                    },
+                    scales: {
+                        x: { stacked: true, ticks: { color: '#111', font: { family: 'JetBrains Mono' } } },
+                        y: { stacked: true, ticks: { color: '#111', font: { family: 'JetBrains Mono' } } }
+                    }
+                }
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', showMajakData);
+        } else {
+            showMajakData();
+        }
+    }
+    </script>
+    <script>
+    console.log('INLINE TEST');
+    document.body.style.backgroundColor = '#ff0';
+    </script>
+</body>
+</html> 
