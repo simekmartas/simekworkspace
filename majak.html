@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobil Maják</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+            <h1>&gt; Mobil Maják_</h1>
+            <div id="majak-filter" style="margin:2rem 0;"></div>
+            <div class="table-scroll"><div id="majak-table"></div></div>
+            <canvas id="majak-chart" style="max-width:900px;margin:2rem auto 0 auto;"></canvas>
+        </section>
+        
+        <section class="hero">
+            <h2>&gt; Aktuální statistiky prodejů_</h2>
+            <div class="table-container" style="max-width:1200px; margin:2rem auto; overflow-x:auto;">
+                <!-- Použijeme přímé vložení Google Sheets pomocí iframe - spolehlivější přístup -->
+                <div id="custom-table-container" class="retro-table-container" style="padding:1.5rem; border:2px solid #fff; border-radius:8px; background-color:#111;">
+                    <!-- Vložení publikovaného Google Sheets dokumentu - obchází problémy s CORS -->
+                    <iframe 
+                        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pubhtml?widget=true&amp;headers=false"
+                        style="width:100%; height:600px; border:none; background:transparent;"
+                        seamless
+                    ></iframe>
+                </div>
+            </div>
+            <div style="text-align:center; margin-top:1rem; font-size:0.9rem; color:#999;">
+                <p>Data jsou automaticky aktualizována každý den pomocí Apify aktoru</p>
+                <p>Poslední aktualizace je uvedena v prvním řádku tabulky</p>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>// &copy; 2024 RETRO WEB</p>
+    </footer>
+    <script src="navigation.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    // Ochrana stránky pro členy
+    if (!localStorage.getItem('isLoggedIn')) {
+        document.querySelector('main').innerHTML = `
+            <section class="hero">
+                <h1>&gt; Mobil Maják_</h1>
+                <div class="message" style="font-size:1.3rem;color:#d00;margin-top:2rem;">Tato sekce je pouze pro přihlášené členy.</div>
+                <form id="login-form" class="login-form" style="margin-top:2rem;">
+                    <input type="text" id="username" placeholder="// Uživatelské jméno" required>
+                    <input type="password" id="password" placeholder="// Heslo" required>
+                    <button type="submit">[ PŘIHLÁSIT ]</button>
+                </form>
+                <p id="login-message" class="message"></p>
+            </section>`;
+        
+        // Přidání přihlašovací logiky
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageElement = document.getElementById('login-message');
+            
+            if (username === 'admin' && password === 'Admin123') {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', username);
+                localStorage.setItem('role', 'Administrátor');
+                window.location.reload();
+            } else {
+                messageElement.textContent = '// Chybné přihlašovací údaje';
+                messageElement.style.color = '#ff0000';
+            }
+        });
+    } else {
+        // Funkce pro načtení dat z Google Sheets
+        function loadStatsData() {
+            // Pro přístup k publikovanému dokumentu používáme publikované CSV
+            const STATS_URL = 'https://docs.google.com/spreadsheets/d/1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE/export?format=csv';
+            
+            fetch(STATS_URL)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response failed');
+                    }
+                    return response.text();
+                })
+                .then(csv => {
+                    // Parsování CSV dat
+                    const rows = parseCSV(csv);
+                    
+                    // Extrakce časového razítka
+                    const timestamp = rows[0][0].replace('Aktualizováno:', '').trim();
+                    document.getElementById('last-update').textContent = timestamp;
+                    
+                    // Vytvoření HTML pro tabulku
+                    let tableHTML = `
+                        <div class="timestamp-header">Aktualizováno: ${timestamp}</div>
+                        <table class="retro-table">
+                            <thead>
+                                <tr>
+                    `;
+                    
+                    // Přidáme záhlaví (řádek 1)
+                    rows[1].forEach(header => {
+                        tableHTML += `<th>${header}</th>`;
+                    });
+                    
+                    tableHTML += `</tr></thead><tbody>`;
+                    
+                    // Přidáme řádky s daty (od řádku 2 dál)
+                    for (let i = 2; i < rows.length; i++) {
+                        if (rows[i].length > 0 && rows[i][0].trim() !== '') {
+                            tableHTML += '<tr>';
+                            
+                            rows[i].forEach((cell, index) => {
+                                // První sloupec (prodejna) bez speciálního formátování
+                                if (index === 0) {
+                                    tableHTML += `<td>${cell}</td>`;
+                                } 
+                                // Druhý sloupec (jméno prodejce)
+                                else if (index === 1) {
+                                    tableHTML += `<td>${cell}</td>`;
+                                }
+                                // Číselné sloupce (3 a výše)
+                                else {
+                                    const value = parseInt(cell) || 0;
+                                    const isHighlighted = value > 0 && index > 3; // Zvýrazníme nenulové hodnoty služeb
+                                    
+                                    tableHTML += `<td class="numeric${isHighlighted ? ' highlight' : ''}">${cell}</td>`;
+                                }
+                            });
+                            
+                            tableHTML += '</tr>';
+                        }
+                    }
+                    
+                    tableHTML += `</tbody></table>`;
+                    
+                    document.getElementById('custom-table-container').innerHTML = tableHTML;
+                })
+                .catch(error => {
+                    console.error('Chyba při načítání dat:', error);
+                    document.getElementById('custom-table-container').innerHTML = `
+                        <div style="color:#ff6b6b; text-align:center; padding:2rem;">
+                            <p>Nepodařilo se načíst statistiky prodejů.</p>
+                            <p style="margin-top:1rem;">Chyba: ${error.message}</p>
+                        </div>
+                    `;
+                });
+        }
+        
+        // Robustní parsování CSV (řeší i uvozovky)
+        function parseCSV(text) {
+            const lines = text.split('\n');
+            return lines.map(line => {
+                const row = [];
+                let inQuote = false;
+                let currentValue = '';
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    
+                    if (char === '"') {
+                        inQuote = !inQuote;
+                    } else if (char === ',' && !inQuote) {
+                        row.push(currentValue);
+                        currentValue = '';
+                    } else {
+                        currentValue += char;
+                    }
+                }
+                
+                // Přidání poslední buňky
+                row.push(currentValue);
+                return row;
+            });
+        }
+        
+        // Načteme data
+        loadStatsData();
+
+        // Defaultně vybrané kategorie
+        const defaultCats = [
+            'Výnosy CZK',
+            'Hrubý zisk CZK',
+            'Náklady CZK',
+            'Zisk'
+        ];
+
+        // Pomocná funkce pro parsování CSV
+        function parseCSV(text) {
+            const rows = text.split(/\r?\n/).filter(r => r.trim() !== '');
+            return rows.map(row => row.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '')));
+        }
+
+        // Načti a zpracuj data
+        fetch(CSV_URL)
+            .then(res => res.text())
+            .then(csv => {
+                const data = parseCSV(csv);
+                renderMajak(data);
+            });
+
+        function renderMajak(data) {
+            // Získání období (druhý řádek, index 1)
+            const periods = data[1].slice(1).filter(x => x && !x.match(/suma|Suma|2023|2024|2025/i));
+            // Získání kategorií (první sloupec, od řádku 3 dál)
+            const categories = data.slice(3).map(row => row[0]?.trim()).filter((x, i, arr) => x && x !== '% YOY' && arr.indexOf(x) === i);
+
+            // Filtrovací panel
+            let filterHTML = `<form id="majak-filter-form" style="display:flex;flex-wrap:wrap;gap:2.5rem 2.5rem;align-items:center;justify-content:center;">`;
+            // Kategorie dropdown
+            filterHTML += `<div style="position:relative;min-width:220px;">
+                <button type="button" id="cat-dropdown-btn" style="width:100%;padding:0.5em 1em;font-size:1rem;background:#111;color:#fff;border:2px solid #fff;border-radius:6px;cursor:pointer;text-align:left;">Vyber kategorie ▼</button>
+                <div id="cat-dropdown" style="display:none;position:absolute;top:110%;left:0;width:100%;background:#111;color:#fff;border:2px solid #fff;z-index:10;max-height:300px;overflow-y:auto;border-radius:6px;box-shadow:0 4px 16px rgba(0,0,0,0.15);">`;
+            categories.forEach((cat, i) => {
+                const checked = ['Výnosy CZK','Hrubý zisk CZK','Náklady CZK','Zisk'].includes(cat) ? 'checked' : '';
+                filterHTML += `<label style='display:block;padding:0.3em 1em;cursor:pointer;color:#fff;'><input type='checkbox' name='cat' value='${cat}' ${checked} style='accent-color:#fff;background:#111;border:2px solid #fff;'> ${cat}</label>`;
+            });
+            filterHTML += `</div></div>`;
+            // Výběr období OD-DO
+            filterHTML += `<div style='display:flex;gap:0.5em;align-items:center;'><span style='color:#fff;'>Od</span><select name='periodFrom' style="font-size:1.1rem;padding:0.4em 1.2em;background:#fff;color:#111;border:2px solid #111;border-radius:6px;">`;
+            periods.forEach((p, i) => {
+                filterHTML += `<option value='${i+1}'>${p}</option>`;
+            });
+            filterHTML += `</select><span style='color:#fff;'>Do</span><select name='periodTo' style="font-size:1.1rem;padding:0.4em 1.2em;background:#fff;color:#111;border:2px solid #111;border-radius:6px;">`;
+            periods.forEach((p, i) => {
+                filterHTML += `<option value='${i+1}' ${i===periods.length-1?'selected':''}>${p}</option>`;
+            });
+            filterHTML += '</select></div>';
+            filterHTML += '<button type="submit" style="margin-top:0.2em;padding:0.6em 2em;background:#111;color:#fff;border:2px solid #fff;border-radius:6px;font-size:1rem;">Zobrazit</button>';
+            filterHTML += '</form>';
+            document.getElementById('majak-filter').innerHTML = filterHTML;
+
+            // Dropdown interakce
+            const dropdownBtn = document.getElementById('cat-dropdown-btn');
+            const dropdown = document.getElementById('cat-dropdown');
+            dropdownBtn.onclick = function(e) {
+                dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+            };
+            document.addEventListener('click', function(e) {
+                if (!dropdown.contains(e.target) && e.target !== dropdownBtn) dropdown.style.display = 'none';
+            });
+
+            // Výchozí zobrazení
+            showTableAndChart(categories, periods, data, ['Výnosy CZK','Hrubý zisk CZK','Náklady CZK','Zisk'], 1, periods.length);
+
+            // Filtrování
+            document.getElementById('majak-filter-form').onsubmit = function(e) {
+                e.preventDefault();
+                const checkedCats = Array.from(document.querySelectorAll('input[name=cat]:checked')).map(x => x.value);
+                const periodFrom = parseInt(document.querySelector('select[name=periodFrom]').value);
+                const periodTo = parseInt(document.querySelector('select[name=periodTo]').value);
+                showTableAndChart(categories, periods, data, checkedCats, periodFrom, periodTo);
+            };
+        }
+
+        function showTableAndChart(allCats, periods, data, selectedCats, periodFrom, periodTo) {
+            // Najdi indexy vybraných kategorií
+            const catRows = data.slice(3).map(row => row[0]?.trim());
+            const selectedRows = selectedCats.map(cat => catRows.indexOf(cat));
+            // Tabulka
+            let html = '<div style="display:flex;justify-content:center;"><table class="result-table" style="margin:2rem auto;min-width:320px;max-width:900px;width:100%;"><tr><th>Kategorie</th>';
+            for(let i=periodFrom;i<=periodTo;i++) html += `<th>${periods[i-1]}</th>`;
+            html += '</tr>';
+            selectedRows.forEach(idx => {
+                if (idx >= 0) {
+                    const row = data[3+idx];
+                    html += `<tr><td>${row[0]}</td>`;
+                    for(let i=periodFrom;i<=periodTo;i++) {
+                        html += `<td class="right">${row[i] ? row[i].replace(/\s*Kč/, '').replace(/\s/g, '').replace(/\./g, '').replace(/,/g, ' ').trim() : '-'}</td>`;
+                    }
+                    html += '</tr>';
+                }
+            });
+            html += '</table></div>';
+            document.getElementById('majak-table').innerHTML = html;
+            // Graf
+            const ctx = document.getElementById('majak-chart').getContext('2d');
+            if (window.majakChart) window.majakChart.destroy();
+            // Barvy pro kategorie
+            const colors = [
+                '#fff',         // bílá
+                '#00ffe7',      // tyrkysová
+                '#ffe600',      // žlutá
+                '#00ff00',      // zelená
+                '#ff7b00',      // oranžová
+                '#ff00c8',      // fialová
+                '#ff0000',      // červená
+                '#00aaff',      // modrá
+                '#aaff00',      // světle zelená
+                '#ffb300',      // světle oranžová
+                '#b3b3b3',      // světle šedá
+                '#e0e0e0',      // šedobílá
+                '#00ffd0',      // světle tyrkysová
+                '#fff176',      // světle žlutá
+                '#b388ff'       // světle fialová
+            ];
+            window.majakChart = new window.Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: periods.slice(periodFrom-1, periodTo),
+                    datasets: selectedRows.map((idx, i) => ({
+                        label: allCats[selectedRows[i]],
+                        data: idx >= 0 ? data[3+idx].slice(periodFrom, periodTo+1).map(v => Number((v||'0').replace(/\s|Kč|\./g, '').replace(/,/g, '.'))) : [],
+                        borderColor: colors[i % colors.length],
+                        backgroundColor: colors[i % colors.length],
+                        tension: 0.2,
+                        pointRadius: 5,
+                        pointBackgroundColor: colors[i % colors.length],
+                        pointBorderColor: '#fff',
+                        borderWidth: 4,
+                        fill: false
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#fff', font: { family: 'JetBrains Mono', size: 16 } } }
+                    },
+                    layout: { padding: 20 },
+                    scales: {
+                        x: { ticks: { color: '#fff', font: { family: 'JetBrains Mono', size: 14 } }, grid: { color: '#444' } },
+                        y: { ticks: { color: '#fff', font: { family: 'JetBrains Mono', size: 14 } }, grid: { color: '#444' } }
+                    }
+                }
+            });
+        }
+    }
+    </script>
+    
+    <!-- Přidáme CSS styl pro tabulku -->
+    <style>
+        .retro-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'JetBrains Mono', monospace;
+            margin-top: 1rem;
+        }
+        
+        .retro-table th {
+            background-color: #222;
+            color: #00ffe7;
+            padding: 12px 15px;
+            text-align: left;
+            font-weight: bold;
+            border-bottom: 2px solid #00ffe7;
+            white-space: nowrap;
+        }
+        
+        .retro-table td {
+            padding: 10px 15px;
+            border-bottom: 1px solid #444;
+        }
+        
+        .retro-table tbody tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        .retro-table tbody tr:hover {
+            background-color: rgba(0, 255, 231, 0.1);
+        }
+        
+        .retro-table .numeric {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .retro-table .highlight {
+            color: #ffe600; /* žlutá */
+            font-weight: bold;
+        }
+        
+        .timestamp-header {
+            color: #ff00c8; /* fialová */
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 0.5rem;
+        }
+    </style>
+</body>
+</html> 

@@ -1,0 +1,33 @@
+# macOS specifické soubory
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows specifické soubory
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Složky Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Soubory editoru
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Cache a IDE
+.netlify/
+.cache/
+dist/
+
+# Dočasné soubory
+*~
+*.bak
+*.tmp 
