@@ -231,6 +231,9 @@ class BazarDataLoader {
         console.log(`Po seřazení: ${sortedRows.length} řádků`);
 
         this.displayBazarTable(headers, sortedRows);
+        
+        // Nastavit výchozí datový filtr na poslední týden
+        this.setDefaultDateFilter();
     }
 
     parseCSVLine(line) {
@@ -351,17 +354,20 @@ class BazarDataLoader {
                                 <span class="filter-label">// FILTR PODLE OBDOBÍ</span>
                             </div>
                             <div class="date-filter-inputs">
-                                <div class="date-input-group">
-                                    <label for="dateFrom">OD:</label>
-                                    <input type="date" id="dateFrom" onchange="bazarLoader.filterTable()">
-                                </div>
-                                <div class="date-input-group">
-                                    <label for="dateTo">DO:</label>
-                                    <input type="date" id="dateTo" onchange="bazarLoader.filterTable()">
-                                </div>
-                                <button type="button" class="clear-dates-btn" onclick="bazarLoader.clearDateFilter()">
-                                    VYMAZAT
-                                </button>
+                                                                 <div class="date-input-group">
+                                     <label for="dateFrom">OD:</label>
+                                     <input type="date" id="dateFrom" onchange="bazarLoader.filterTable()">
+                                 </div>
+                                 <div class="date-input-group">
+                                     <label for="dateTo">DO:</label>
+                                     <input type="date" id="dateTo" onchange="bazarLoader.filterTable()">
+                                 </div>
+                                                                 <button type="button" class="clear-dates-btn" onclick="bazarLoader.clearDateFilter()">
+                                     VYMAZAT
+                                 </button>
+                                 <button type="button" class="show-all-btn" onclick="bazarLoader.showAllRecords()">
+                                     ZOBRAZIT VŠE
+                                 </button>
                             </div>
                         </div>
                     </div>
@@ -485,34 +491,92 @@ class BazarDataLoader {
     showMockBazarData() {
         console.log('=== ZOBRAZUJEM MOCK BAZAROVÁ DATA ===');
         
-        const mockData = [
-            ['Prodáno', 'V25010001', '2.1.2025', 'Samsung Galaxy A14', '359051899089270', '1590', 'ne', 'ne', 'ne', 'Kováčik', 'Lukáš'],
-            ['Prodáno', 'V25010002', '3.1.2025', 'Xiaomi Redmi Note 9 Pro', '861722050416491', '2590', 'ne', 'ne', 'ne', 'Babušík', 'Sandra'],
-            ['Naskladněno', 'V25010005', '3.1.2025', 'Apple iPhone 15, 128GB', '353173584221053', '13000', 'ne', 'ne', 'ne', 'Šebák', 'Milan'],
-            ['Prodáno', 'V25010006', '4.1.2025', 'Xiaomi Redmi 13C 5G', '868278066655583', '2190', 'ano', 'ano', 'ne', 'Gabriel', 'Jiří'],
-            ['Prodáno', 'V25010007', '5.1.2025', 'Apple iPhone 12', '352991091004279', '8500', 'ne', 'ano', 'ne', 'Kosev', 'Roman'],
-            ['Naskladněno', 'V25010008', '6.1.2025', 'Samsung Galaxy S21', '868278066655584', '12000', 'ano', 'ano', 'ano', 'Novák', 'Petr'],
-            ['Prodáno', 'V25010009', '7.1.2025', 'Xiaomi Mi 11', '861722050416492', '7500', 'ne', 'ne', 'ne', 'Svoboda', 'Jan'],
-            ['Prodáno', 'V25010010', '8.1.2025', 'iPhone 13 Pro', '353173584221054', '18000', 'ano', 'ano', 'ano', 'Dvořák', 'Marie'],
-            ['Naskladněno', 'V25010011', '9.1.2025', 'OnePlus 9', '868278066655585', '9500', 'ne', 'ano', 'ne', 'Černý', 'Tomáš'],
-            ['Prodáno', 'V25010012', '10.1.2025', 'Google Pixel 6', '861722050416493', '11000', 'ano', 'ne', 'ne', 'Veselý', 'Pavel'],
-            ['Prodáno', 'V25010013', '11.1.2025', 'Samsung Galaxy Note 20', '353173584221055', '14500', 'ne', 'ano', 'ano', 'Horák', 'Jiří'],
-            ['Naskladněno', 'V25010014', '12.1.2025', 'Xiaomi Redmi Note 12', '868278066655586', '4500', 'ano', 'ne', 'ne', 'Kratochvíl', 'Michal'],
-            ['Prodáno', 'V25010015', '13.1.2025', 'iPhone 14', '861722050416494', '22000', 'ano', 'ano', 'ano', 'Procházka', 'Anna'],
-            ['Prodáno', 'V25010016', '14.1.2025', 'Huawei P40', '353173584221056', '6800', 'ne', 'ne', 'ne', 'Krejčí', 'Václav'],
-            ['Naskladněno', 'V25010017', '15.1.2025', 'Motorola Edge 30', '868278066655587', '8200', 'ano', 'ano', 'ne', 'Fiala', 'Zdeněk'],
-            ['Prodáno', 'V25010018', '16.1.2025', 'Sony Xperia 5', '861722050416495', '9800', 'ne', 'ano', 'ano', 'Pokorný', 'Lukáš'],
-            ['Prodáno', 'V25010019', '17.1.2025', 'Nokia 8.3', '353173584221057', '5500', 'ano', 'ne', 'ne', 'Malý', 'David'],
-            ['Naskladněno', 'V25010020', '18.1.2025', 'Realme GT', '868278066655588', '7200', 'ne', 'ano', 'ano', 'Růžička', 'Martin'],
-            ['Prodáno', 'V25010021', '19.1.2025', 'Oppo Find X3', '861722050416496', '13500', 'ano', 'ano', 'ne', 'Beneš', 'Petr'],
-            ['Prodáno', 'V25010022', '20.1.2025', 'Vivo V21', '353173584221058', '6200', 'ne', 'ne', 'ano', 'Čech', 'Tomáš']
-        ];
+        // Generovat mock data s aktuálními daty
+        const mockData = this.generateMockData();
 
         const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Nabíj.', 'Krab.', 'Zár.list', 'Vykoupil', 'Jméno'];
 
         console.log(`Mock data obsahují ${mockData.length} záznamů`);
         this.displayBazarTable(headers, mockData);
         this.startAutoRefresh();
+    }
+
+    generateMockData() {
+        const today = new Date();
+        const mockData = [];
+        
+        const phones = [
+            'Samsung Galaxy A14', 'Xiaomi Redmi Note 9 Pro', 'Apple iPhone 15, 128GB', 'Xiaomi Redmi 13C 5G',
+            'Apple iPhone 12', 'Samsung Galaxy S21', 'Xiaomi Mi 11', 'iPhone 13 Pro', 'OnePlus 9',
+            'Google Pixel 6', 'Samsung Galaxy Note 20', 'Xiaomi Redmi Note 12', 'iPhone 14',
+            'Huawei P40', 'Motorola Edge 30', 'Sony Xperia 5', 'Nokia 8.3', 'Realme GT',
+            'Oppo Find X3', 'Vivo V21', 'Samsung Galaxy S22', 'iPhone 11', 'Xiaomi Poco X4',
+            'Honor 50', 'Nothing Phone 1', 'Samsung Galaxy A53', 'iPhone SE 2022', 'Xiaomi 12',
+            'OnePlus Nord 2', 'Google Pixel 7', 'Samsung Galaxy Z Flip 4', 'iPhone 13 Mini',
+            'Xiaomi Redmi 10', 'Huawei Nova 9', 'Motorola Moto G52', 'Sony Xperia 10 IV',
+            'Nokia G50', 'Realme 9 Pro', 'Oppo Reno 8', 'Vivo Y33s', 'Samsung Galaxy M33'
+        ];
+        
+        const names = [
+            ['Kováčik', 'Lukáš'], ['Babušík', 'Sandra'], ['Šebák', 'Milan'], ['Gabriel', 'Jiří'],
+            ['Kosev', 'Roman'], ['Novák', 'Petr'], ['Svoboda', 'Jan'], ['Dvořák', 'Marie'],
+            ['Černý', 'Tomáš'], ['Veselý', 'Pavel'], ['Horák', 'Jiří'], ['Kratochvíl', 'Michal'],
+            ['Procházka', 'Anna'], ['Krejčí', 'Václav'], ['Fiala', 'Zdeněk'], ['Pokorný', 'Lukáš'],
+            ['Malý', 'David'], ['Růžička', 'Martin'], ['Beneš', 'Petr'], ['Čech', 'Tomáš'],
+            ['Novotný', 'Jan'], ['Svobodová', 'Eva'], ['Dvořáková', 'Hana'], ['Černá', 'Petra'],
+            ['Veselá', 'Klára'], ['Horáková', 'Lenka'], ['Kratochvílová', 'Zuzana'], ['Procházková', 'Tereza'],
+            ['Krejčová', 'Barbora'], ['Fialová', 'Simona'], ['Pokorná', 'Michaela'], ['Malá', 'Veronika'],
+            ['Růžičková', 'Nikola'], ['Benešová', 'Adéla'], ['Čechová', 'Kristýna'], ['Nováková', 'Denisa'],
+            ['Svoboda', 'Ondřej'], ['Dvořák', 'Jakub'], ['Černý', 'Filip'], ['Veselý', 'Marek']
+        ];
+        
+        const statuses = ['Prodáno', 'Naskladněno'];
+        const yesNo = ['ano', 'ne'];
+        
+        // Generovat 50 záznamů za posledních 30 dní
+        for (let i = 0; i < 50; i++) {
+            const daysAgo = Math.floor(Math.random() * 30);
+            const date = new Date(today);
+            date.setDate(today.getDate() - daysAgo);
+            
+            const day = date.getDate();
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear();
+            const dateStr = `${day}.${month}.${year}`;
+            
+            const phone = phones[Math.floor(Math.random() * phones.length)];
+            const [surname, firstName] = names[Math.floor(Math.random() * names.length)];
+            const status = statuses[Math.floor(Math.random() * statuses.length)];
+            const price = Math.floor(Math.random() * 20000) + 1000;
+            
+            // Generovat IMEI
+            const imei = '35' + Math.floor(Math.random() * 1000000000000000).toString().padStart(13, '0');
+            
+            const record = [
+                status,
+                `V2501${String(i + 1).padStart(4, '0')}`,
+                dateStr,
+                phone,
+                imei,
+                price.toString(),
+                yesNo[Math.floor(Math.random() * 2)],
+                yesNo[Math.floor(Math.random() * 2)],
+                yesNo[Math.floor(Math.random() * 2)],
+                surname,
+                firstName
+            ];
+            
+            mockData.push(record);
+        }
+        
+        // Seřadit podle data (nejnovější první)
+        mockData.sort((a, b) => {
+            const dateA = this.parseDate(a[2]);
+            const dateB = this.parseDate(b[2]);
+            return dateB - dateA;
+        });
+        
+        return mockData;
     }
 
     filterTable() {
@@ -574,10 +638,47 @@ class BazarDataLoader {
         this.updateFilterStats(visibleCount, rows.length);
     }
 
+    setDefaultDateFilter() {
+        // Nastavit výchozí datum na poslední týden
+        const today = new Date();
+        const weekAgo = new Date();
+        weekAgo.setDate(today.getDate() - 7);
+        
+        // Formátovat data pro input type="date" (YYYY-MM-DD)
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+        
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
+        
+        if (dateFromInput && dateToInput) {
+            dateFromInput.value = formatDate(weekAgo);
+            dateToInput.value = formatDate(today);
+            
+            console.log(`Nastaveny výchozí datumy: ${formatDate(weekAgo)} - ${formatDate(today)}`);
+            
+            // Aplikovat filtr
+            this.filterTable();
+        }
+    }
+
     clearDateFilter() {
         document.getElementById('dateFrom').value = '';
         document.getElementById('dateTo').value = '';
         this.filterTable();
+    }
+
+    showAllRecords() {
+        // Vymazat všechny filtry
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        document.getElementById('bazarFilter').value = '';
+        this.filterTable();
+        console.log('Zobrazeny všechny záznamy');
     }
 
     updateFilterStats(visibleCount, totalCount) {
