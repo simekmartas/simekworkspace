@@ -2009,7 +2009,7 @@ tr:hover td {
     white-space: nowrap;
 }
 
-.date-input-group input[type="date"] {
+.date-input {
     padding: 0.8rem;
     background: linear-gradient(135deg, var(--retro-dark-blue) 0%, var(--retro-black) 100%);
     border: 2px solid var(--retro-pink);
@@ -2022,16 +2022,13 @@ tr:hover td {
         inset 0 0 10px rgba(0, 255, 231, 0.1);
     transition: all 0.3s ease;
     min-width: 150px;
-    cursor: pointer;
+    cursor: text;
     position: relative;
     z-index: 10;
     pointer-events: auto !important;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
 }
 
-.date-input-group input[type="date"]:focus {
+.date-input:focus {
     outline: none;
     border-color: var(--retro-cyan);
     box-shadow: 
@@ -2039,21 +2036,17 @@ tr:hover td {
         inset 0 0 15px rgba(228, 11, 77, 0.1);
 }
 
-.date-input-group input[type="date"]::-webkit-calendar-picker-indicator {
-    filter: invert(1);
-    cursor: pointer;
-    background: transparent;
-    border: none;
-    padding: 4px;
-    margin-left: 8px;
-    opacity: 0.8;
-    transition: all 0.3s ease;
+.date-input::placeholder {
+    color: var(--retro-gray-medium);
+    opacity: 0.7;
+    font-style: italic;
 }
 
-.date-input-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
-    opacity: 1;
-    transform: scale(1.1);
-    filter: invert(1) brightness(1.2);
+.date-input:hover {
+    border-color: var(--retro-cyan);
+    box-shadow: 
+        0 0 12px rgba(0, 255, 231, 0.3),
+        inset 0 0 12px rgba(228, 11, 77, 0.1);
 }
 
 .clear-dates-btn {

@@ -273,15 +273,40 @@ class BazarDataLoader {
         if (!dateString) return new Date(0);
         
         // Formát: d.m.yyyy (např. 2.1.2025)
-        const parts = dateString.split('.');
+        const parts = dateString.trim().split('.');
         if (parts.length === 3) {
             const day = parseInt(parts[0]);
             const month = parseInt(parts[1]) - 1; // Měsíce jsou 0-indexované
             const year = parseInt(parts[2]);
-            return new Date(year, month, day);
+            
+            // Validace hodnot
+            if (isNaN(day) || isNaN(month) || isNaN(year)) {
+                console.warn('Neplatné číselné hodnoty v datu:', dateString);
+                return new Date(NaN);
+            }
+            
+            if (day < 1 || day > 31 || month < 0 || month > 11 || year < 1900 || year > 2100) {
+                console.warn('Datum mimo platný rozsah:', dateString);
+                return new Date(NaN);
+            }
+            
+            const date = new Date(year, month, day);
+            
+            // Kontrola, zda se datum nezměnilo (např. 31.2. -> 3.3.)
+            if (date.getDate() !== day || date.getMonth() !== month || date.getFullYear() !== year) {
+                console.warn('Neplatné datum (automaticky opraveno):', dateString);
+                return new Date(NaN);
+            }
+            
+            return date;
         }
         
-        return new Date(dateString);
+        // Pokus o parsování jiného formátu
+        const fallbackDate = new Date(dateString);
+        if (isNaN(fallbackDate.getTime())) {
+            console.warn('Nepodařilo se parsovat datum:', dateString);
+        }
+        return fallbackDate;
     }
 
     displayBazarTable(headers, rows) {
@@ -378,78 +403,16 @@ class BazarDataLoader {
                         <div class="date-filter-section">
                             <div class="date-filter-header">
                                 <span class="filter-label">// FILTR PODLE OBDOBÍ</span>
-                                <span class="filter-info">(Výchozí: 1.1.2025 - dnes)</span>
+                                <span class="filter-info">(Formát: d.m.yyyy, např. 1.1.2025)</span>
                             </div>
                             <div class="date-filter-inputs">
-                                <div class="date-select-group">
+                                <div class="date-input-group">
                                     <label>OD:</label>
-                                    <div class="date-selects">
-                                        <select id="dayFrom" class="date-select">
-                                            <option value="">Den</option>
-                                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                                            <option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
-                                            <option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
-                                            <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option>
-                                            <option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option>
-                                            <option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option>
-                                        </select>
-                                        <select id="monthFrom" class="date-select">
-                                            <option value="">Měsíc</option>
-                                            <option value="1">Leden</option>
-                                            <option value="2">Únor</option>
-                                            <option value="3">Březen</option>
-                                            <option value="4">Duben</option>
-                                            <option value="5">Květen</option>
-                                            <option value="6">Červen</option>
-                                            <option value="7">Červenec</option>
-                                            <option value="8">Srpen</option>
-                                            <option value="9">Září</option>
-                                            <option value="10">Říjen</option>
-                                            <option value="11">Listopad</option>
-                                            <option value="12">Prosinec</option>
-                                        </select>
-                                        <select id="yearFrom" class="date-select">
-                                            <option value="">Rok</option>
-                                            <option value="2024">2024</option>
-                                            <option value="2025">2025</option>
-                                            <option value="2026">2026</option>
-                                        </select>
-                                    </div>
+                                    <input type="text" id="dateFrom" class="date-input" placeholder="1.1.2025">
                                 </div>
-                                <div class="date-select-group">
+                                <div class="date-input-group">
                                     <label>DO:</label>
-                                    <div class="date-selects">
-                                        <select id="dayTo" class="date-select">
-                                            <option value="">Den</option>
-                                            <option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>
-                                            <option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
-                                            <option value="11">11</option><option value="12">12</option><option value="13">13</option><option value="14">14</option><option value="15">15</option>
-                                            <option value="16">16</option><option value="17">17</option><option value="18">18</option><option value="19">19</option><option value="20">20</option>
-                                            <option value="21">21</option><option value="22">22</option><option value="23">23</option><option value="24">24</option><option value="25">25</option>
-                                            <option value="26">26</option><option value="27">27</option><option value="28">28</option><option value="29">29</option><option value="30">30</option><option value="31">31</option>
-                                        </select>
-                                        <select id="monthTo" class="date-select">
-                                            <option value="">Měsíc</option>
-                                            <option value="1">Leden</option>
-                                            <option value="2">Únor</option>
-                                            <option value="3">Březen</option>
-                                            <option value="4">Duben</option>
-                                            <option value="5">Květen</option>
-                                            <option value="6">Červen</option>
-                                            <option value="7">Červenec</option>
-                                            <option value="8">Srpen</option>
-                                            <option value="9">Září</option>
-                                            <option value="10">Říjen</option>
-                                            <option value="11">Listopad</option>
-                                            <option value="12">Prosinec</option>
-                                        </select>
-                                        <select id="yearTo" class="date-select">
-                                            <option value="">Rok</option>
-                                            <option value="2024">2024</option>
-                                            <option value="2025">2025</option>
-                                            <option value="2026">2026</option>
-                                        </select>
-                                    </div>
+                                    <input type="text" id="dateTo" class="date-input" placeholder="31.12.2025">
                                 </div>
                                 <div class="date-filter-buttons">
                                     <button type="button" class="clear-dates-btn" id="clearDatesBtn">
@@ -544,15 +507,10 @@ class BazarDataLoader {
         const setupListeners = () => {
             // Nejprve odstraníme všechny existující event listenery
             this.removeExistingEventListeners();
-            // Rolovací selekty pro datum OD
-            const dayFromSelect = document.getElementById('dayFrom');
-            const monthFromSelect = document.getElementById('monthFrom');
-            const yearFromSelect = document.getElementById('yearFrom');
             
-            // Rolovací selekty pro datum DO
-            const dayToSelect = document.getElementById('dayTo');
-            const monthToSelect = document.getElementById('monthTo');
-            const yearToSelect = document.getElementById('yearTo');
+            // Textové inputy pro datum
+            const dateFromInput = document.getElementById('dateFrom');
+            const dateToInput = document.getElementById('dateTo');
             
             const textFilter = document.getElementById('bazarFilter');
             const clearBtn = document.getElementById('clearDatesBtn');
@@ -560,12 +518,8 @@ class BazarDataLoader {
             const setDefaultBtn = document.getElementById('setDefaultBtn');
             
             console.log('Hledám elementy:', {
-                dayFrom: !!dayFromSelect,
-                monthFrom: !!monthFromSelect,
-                yearFrom: !!yearFromSelect,
-                dayTo: !!dayToSelect,
-                monthTo: !!monthToSelect,
-                yearTo: !!yearToSelect,
+                dateFrom: !!dateFromInput,
+                dateTo: !!dateToInput,
                 textFilter: !!textFilter,
                 clearBtn: !!clearBtn,
                 showAllBtn: !!showAllBtn,
@@ -573,7 +527,7 @@ class BazarDataLoader {
             });
             
             // Pokud elementy ještě nejsou k dispozici, zkusit znovu (max 10x)
-            if (!dayFromSelect || !monthFromSelect || !yearFromSelect || !dayToSelect || !monthToSelect || !yearToSelect) {
+            if (!dateFromInput || !dateToInput) {
                 if (!setupListeners.attempts) setupListeners.attempts = 0;
                 setupListeners.attempts++;
                 
@@ -589,10 +543,8 @@ class BazarDataLoader {
             
             // Event listenery pro datum OD
             const handleDateFromChange = () => {
-                const day = dayFromSelect?.value || '';
-                const month = monthFromSelect?.value || '';
-                const year = yearFromSelect?.value || '';
-                console.log('🔥 Date FROM changed:', { day, month, year });
+                const dateValue = dateFromInput?.value || '';
+                console.log('🔥 Date FROM changed:', dateValue);
                 console.log('🔥 this.allRows length:', this.allRows ? this.allRows.length : 'null');
                 try {
                     this.filterTable();
@@ -602,28 +554,10 @@ class BazarDataLoader {
                 }
             };
             
-            if (dayFromSelect) {
-                dayFromSelect.addEventListener('change', handleDateFromChange);
-                dayFromSelect.addEventListener('click', () => console.log('Day FROM clicked'));
-                console.log('Day FROM select nastaven');
-            }
-            if (monthFromSelect) {
-                monthFromSelect.addEventListener('change', handleDateFromChange);
-                monthFromSelect.addEventListener('click', () => console.log('Month FROM clicked'));
-                console.log('Month FROM select nastaven');
-            }
-            if (yearFromSelect) {
-                yearFromSelect.addEventListener('change', handleDateFromChange);
-                yearFromSelect.addEventListener('click', () => console.log('Year FROM clicked'));
-                console.log('Year FROM select nastaven');
-            }
-            
             // Event listenery pro datum DO
             const handleDateToChange = () => {
-                const day = dayToSelect?.value || '';
-                const month = monthToSelect?.value || '';
-                const year = yearToSelect?.value || '';
-                console.log('🔥 Date TO changed:', { day, month, year });
+                const dateValue = dateToInput?.value || '';
+                console.log('🔥 Date TO changed:', dateValue);
                 console.log('🔥 this.allRows length:', this.allRows ? this.allRows.length : 'null');
                 try {
                     this.filterTable();
@@ -633,20 +567,18 @@ class BazarDataLoader {
                 }
             };
             
-            if (dayToSelect) {
-                dayToSelect.addEventListener('change', handleDateToChange);
-                dayToSelect.addEventListener('click', () => console.log('Day TO clicked'));
-                console.log('Day TO select nastaven');
+            if (dateFromInput) {
+                dateFromInput.addEventListener('input', handleDateFromChange);
+                dateFromInput.addEventListener('change', handleDateFromChange);
+                dateFromInput.addEventListener('blur', handleDateFromChange);
+                console.log('Date FROM input nastaven');
             }
-            if (monthToSelect) {
-                monthToSelect.addEventListener('change', handleDateToChange);
-                monthToSelect.addEventListener('click', () => console.log('Month TO clicked'));
-                console.log('Month TO select nastaven');
-            }
-            if (yearToSelect) {
-                yearToSelect.addEventListener('change', handleDateToChange);
-                yearToSelect.addEventListener('click', () => console.log('Year TO clicked'));
-                console.log('Year TO select nastaven');
+            
+            if (dateToInput) {
+                dateToInput.addEventListener('input', handleDateToChange);
+                dateToInput.addEventListener('change', handleDateToChange);
+                dateToInput.addEventListener('blur', handleDateToChange);
+                console.log('Date TO input nastaven');
             }
             
             if (textFilter) {
@@ -726,12 +658,8 @@ class BazarDataLoader {
             });
             
             console.log('Event listeners nastaveny pro:', {
-                dayFrom: !!dayFromSelect,
-                monthFrom: !!monthFromSelect,
-                yearFrom: !!yearFromSelect,
-                dayTo: !!dayToSelect,
-                monthTo: !!monthToSelect,
-                yearTo: !!yearToSelect,
+                dateFrom: !!dateFromInput,
+                dateTo: !!dateToInput,
                 textFilter: !!textFilter,
                 clearBtn: !!clearBtn,
                 showAllBtn: !!showAllBtn,
@@ -750,8 +678,7 @@ class BazarDataLoader {
     removeExistingEventListeners() {
         // Uložíme reference na event listenery pro pozdější odstranění
         const elements = [
-            'dayFrom', 'monthFrom', 'yearFrom',
-            'dayTo', 'monthTo', 'yearTo',
+            'dateFrom', 'dateTo',
             'bazarFilter', 'clearDatesBtn', 'showAllBtn', 'setDefaultBtn'
         ];
         
@@ -967,33 +894,36 @@ class BazarDataLoader {
             // Získat hodnoty filtrů
             const textFilter = document.getElementById('bazarFilter')?.value.toLowerCase() || '';
             
-            // Sestavit datum OD z rolovacích selectů
-            const dayFrom = document.getElementById('dayFrom')?.value || '';
-            const monthFrom = document.getElementById('monthFrom')?.value || '';
-            const yearFrom = document.getElementById('yearFrom')?.value || '';
+            // Získat hodnoty datových filtrů
+            const dateFromStr = document.getElementById('dateFrom')?.value || '';
+            const dateToStr = document.getElementById('dateTo')?.value || '';
             
-            // Sestavit datum DO z rolovacích selectů
-            const dayTo = document.getElementById('dayTo')?.value || '';
-            const monthTo = document.getElementById('monthTo')?.value || '';
-            const yearTo = document.getElementById('yearTo')?.value || '';
-            
-            // Vytvořit Date objekty pokud jsou všechny části vyplněny
+            // Vytvořit Date objekty z textových inputů
             let dateFromObj = null;
             let dateToObj = null;
             
-            if (dayFrom && monthFrom && yearFrom) {
-                dateFromObj = new Date(parseInt(yearFrom), parseInt(monthFrom) - 1, parseInt(dayFrom));
+            if (dateFromStr) {
+                dateFromObj = this.parseDate(dateFromStr);
+                if (isNaN(dateFromObj.getTime())) {
+                    console.warn('Neplatné datum OD:', dateFromStr);
+                    dateFromObj = null;
+                }
             }
             
-            if (dayTo && monthTo && yearTo) {
-                dateToObj = new Date(parseInt(yearTo), parseInt(monthTo) - 1, parseInt(dayTo));
-                dateToObj.setHours(23, 59, 59, 999); // Konec dne
+            if (dateToStr) {
+                dateToObj = this.parseDate(dateToStr);
+                if (isNaN(dateToObj.getTime())) {
+                    console.warn('Neplatné datum DO:', dateToStr);
+                    dateToObj = null;
+                } else {
+                    dateToObj.setHours(23, 59, 59, 999); // Konec dne
+                }
             }
 
             console.log('Filtry:', { 
                 textFilter, 
-                dateFrom: { day: dayFrom, month: monthFrom, year: yearFrom, obj: dateFromObj },
-                dateTo: { day: dayTo, month: monthTo, year: yearTo, obj: dateToObj }
+                dateFrom: { str: dateFromStr, obj: dateFromObj },
+                dateTo: { str: dateToStr, obj: dateToObj }
             });
 
             // Filtrovat všechny řádky
@@ -1068,40 +998,28 @@ class BazarDataLoader {
         
         // Nastavit výchozí období od 1.1.2025 do dneška
         const today = new Date();
-        const startDate = new Date(2025, 0, 1); // 1. ledna 2025
         
-        // Nastavit rolovací selekty pro datum OD (1.1.2025)
-        const dayFromSelect = document.getElementById('dayFrom');
-        const monthFromSelect = document.getElementById('monthFrom');
-        const yearFromSelect = document.getElementById('yearFrom');
+        // Nastavit textové inputy pro datum
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
         
-        // Nastavit rolovací selekty pro datum DO (dnes)
-        const dayToSelect = document.getElementById('dayTo');
-        const monthToSelect = document.getElementById('monthTo');
-        const yearToSelect = document.getElementById('yearTo');
-        
-        if (dayFromSelect && monthFromSelect && yearFromSelect && 
-            dayToSelect && monthToSelect && yearToSelect) {
-            
+        if (dateFromInput && dateToInput) {
             // Nastavit datum OD na 1.1.2025
-            dayFromSelect.value = '1';
-            monthFromSelect.value = '1';
-            yearFromSelect.value = '2025';
+            dateFromInput.value = '1.1.2025';
             
             // Nastavit datum DO na dnešek
-            dayToSelect.value = today.getDate().toString();
-            monthToSelect.value = (today.getMonth() + 1).toString();
-            yearToSelect.value = today.getFullYear().toString();
+            const todayStr = `${today.getDate()}.${today.getMonth() + 1}.${today.getFullYear()}`;
+            dateToInput.value = todayStr;
             
             console.log('✅ Výchozí datový rozsah nastaven:', {
                 od: '1.1.2025',
-                do: today.toLocaleDateString('cs-CZ')
+                do: todayStr
             });
             
             // Aplikovat filtr
             this.filterTable();
         } else {
-            console.log('❌ Nepodařilo se najít všechny rolovací selekty pro datum');
+            console.log('❌ Nepodařilo se najít datové inputy');
         }
     }
 
@@ -1112,12 +1030,12 @@ class BazarDataLoader {
     }
 
     clearDateFilter() {
-        // Vymazat všechny rolovací selekty pro datum
-        const selects = ['dayFrom', 'monthFrom', 'yearFrom', 'dayTo', 'monthTo', 'yearTo'];
-        selects.forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (select) {
-                select.value = '';
+        // Vymazat textové inputy pro datum
+        const inputs = ['dateFrom', 'dateTo'];
+        inputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = '';
             }
         });
         this.filterTable();
@@ -1126,11 +1044,11 @@ class BazarDataLoader {
 
     showAllRecords() {
         // Vymazat všechny filtry
-        const selects = ['dayFrom', 'monthFrom', 'yearFrom', 'dayTo', 'monthTo', 'yearTo'];
-        selects.forEach(selectId => {
-            const select = document.getElementById(selectId);
-            if (select) {
-                select.value = '';
+        const inputs = ['dateFrom', 'dateTo'];
+        inputs.forEach(inputId => {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = '';
             }
         });
         
