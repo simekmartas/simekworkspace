@@ -101,7 +101,6 @@
                     
                     // Extrakce časového razítka
                     const timestamp = rows[0][0].replace('Aktualizováno:', '').trim();
-                    document.getElementById('last-update').textContent = timestamp;
                     
                     // Vytvoření HTML pro tabulku
                     let tableHTML = `
@@ -198,14 +197,11 @@
             'Zisk'
         ];
 
-        // Pomocná funkce pro parsování CSV
-        function parseCSV(text) {
-            const rows = text.split(/\r?\n/).filter(r => r.trim() !== '');
-            return rows.map(row => row.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(cell => cell.replace(/^"|"$/g, '')));
-        }
+        // URL pro CSV export Google Sheets (Mobil Maják data)
+        const MAJAK_CSV_URL = 'https://docs.google.com/spreadsheets/d/1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE/export?format=csv';
 
-        // Načti a zpracuj data
-        fetch(CSV_URL)
+        // Načti a zpracuj data pro Mobil Maják
+        fetch(MAJAK_CSV_URL)
             .then(res => res.text())
             .then(csv => {
                 const data = parseCSV(csv);
