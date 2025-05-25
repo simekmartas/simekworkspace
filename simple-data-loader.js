@@ -46,6 +46,7 @@ class SimpleRetroDataLoader {
             
         } catch (error) {
             console.error('Chyba při načítání dat:', error);
+            console.log('Zobrazujem mock data jako fallback');
             this.showMockData(isMonthly);
         }
     }
@@ -53,6 +54,7 @@ class SimpleRetroDataLoader {
     parseAndDisplayCSV(csvData, isMonthly) {
         const lines = csvData.split('\n').filter(line => line.trim());
         if (lines.length === 0) {
+            console.log('Žádná data v CSV, zobrazujem mock data');
             this.showMockData(isMonthly);
             return;
         }
@@ -62,6 +64,14 @@ class SimpleRetroDataLoader {
         const rows = lines.slice(1)
             .map(line => this.parseCSVLine(line))
             .filter(row => row.some(cell => cell.trim())); // Odfiltrovat prázdné řádky
+
+        console.log(`Načteno ${rows.length} řádků dat`);
+        
+        if (rows.length === 0) {
+            console.log('Žádné řádky dat, zobrazujem mock data');
+            this.showMockData(isMonthly);
+            return;
+        }
 
         this.displayTable(headers, rows, isMonthly);
     }
@@ -173,19 +183,30 @@ class SimpleRetroDataLoader {
         const mockHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'];
         
         const mockRows = isMonthly ? [
-            ['Aktualizováno:', '01. 05. 2025 - 25. 05. 2025', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-            ['Prerov', 'Jakub Málek', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3'],
-            ['Šternberk', 'Adam Kolarčík', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1'],
-            ['Čepkov', 'Lukáš Kovačík', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3'],
+            ['Aktualizováno:', '23. 05. 2025 22:01:36', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['Vsetín', 'Lukáš Krumpolc', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3'],
+            ['Čepkov', 'Lukáš Kováčik', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3'],
+            ['Globus', 'Jiří Pohořelský', '282', '35', '0', '13', '0', '1', '0', '7', '0', '2', '3', '0', '9'],
+            ['Přerov', 'Benny Babušík', '206', '15', '0', '5', '0', '0', '0', '4', '0', '1', '2', '0', '3'],
+            ['Šternberk', 'Jakub Králik', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1'],
+            ['Hlavní sklad - Senimo', 'Tomáš Valenta', '239', '19', '0', '3', '0', '0', '0', '9', '0', '0', '0', '1', '6'],
+            ['Hlavní sklad - Senimo', 'Adéla Koldová', '58', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+            ['Čepkov', 'Tomáš Doležel', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2'],
             ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1'],
-            ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1']
-        ] : [
-            ['Aktualizováno:', '25. 05. 2025 12:43:37', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-            ['Prerov', 'Jakub Málek', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7'],
             ['Šternberk', 'Adam Kolarčík', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4'],
-            ['Čepkov', 'Lukáš Kovačík', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2'],
-            ['Globus', 'Šimon Gabriel', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
-            ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1']
+            ['Přerov', 'Jakub Málek', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7'],
+            ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1'],
+            ['Globus', 'František Vychodil', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
+            ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+            ['Přerov', 'Nový Prodejce', '91', '2', '0', '0', '0', '1', '0', '0', '0', '0', '0', '1', '0'],
+            ['Přerov', 'Radek Bulandra', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0']
+        ] : [
+            ['Aktualizováno:', '25. 05. 2025 13:12:13', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['Globus', 'Šimon Gabriel', '14', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+            ['Přerov', 'Jakub Málek', '3', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0'],
+            ['Šternberk', 'Adam Kolarčík', '8', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+            ['Čepkov', 'Lukáš Kováčik', '11', '2', '1', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0'],
+            ['Vsetín', 'Štěpán Kundera', '3', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
         ];
 
         this.displayTable(mockHeaders, mockRows, isMonthly);
