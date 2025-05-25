@@ -12,7 +12,13 @@ function updateNavigation() {
     
     // Položky pouze pro přihlášené uživatele
     const memberItems = `
-        <li><a href="majak.html">[ MOBIL MAJÁK ]</a></li>
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle">[ MOBIL MAJÁK ]</a>
+            <ul class="dropdown-menu">
+                <li><a href="majak.html">[ AKTUÁLNÍ ]</a></li>
+                <li><a href="majak-mesicni.html">[ MĚSÍČNÍ ]</a></li>
+            </ul>
+        </li>
         <li><a href="#" id="logout">[ ODHLÁSIT ]</a></li>
     `;
     
@@ -33,6 +39,34 @@ function updateNavigation() {
             localStorage.removeItem('username');
             localStorage.removeItem('role');
             window.location.href = 'index.html';
+        });
+    }
+    
+    // Přidání event listeneru pro dropdown menu
+    const dropdownToggle = document.querySelector('.dropdown-toggle');
+    const dropdown = document.querySelector('.dropdown');
+    
+    if (dropdownToggle && dropdown) {
+        dropdownToggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            dropdown.classList.toggle('active');
+        });
+        
+        // Zavření dropdown při kliknutí mimo
+        document.addEventListener('click', function(e) {
+            if (!dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+        
+        // Zavření dropdown při hover out
+        dropdown.addEventListener('mouseleave', function() {
+            dropdown.classList.remove('active');
+        });
+        
+        // Otevření dropdown při hover
+        dropdown.addEventListener('mouseenter', function() {
+            dropdown.classList.add('active');
         });
     }
 }

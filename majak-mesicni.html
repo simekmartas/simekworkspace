@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobil Maják</title>
+    <title>Mobil Maják - Měsíční</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
@@ -17,19 +17,19 @@
     </header>
     <main>
         <section class="hero">
-            <h1>&gt; Mobil Maják_</h1>
+            <h1>&gt; Mobil Maják - Měsíční_</h1>
             <div style="text-align:center; margin:2rem 0; color:#888888;">
-                <p>Data se zobrazují v sekci "Aktuální statistiky prodejů" níže</p>
+                <p>Data od začátku měsíce se zobrazují v sekci "Měsíční statistiky prodejů" níže</p>
             </div>
         </section>
         
         <section class="hero">
-            <h2>&gt; Aktuální statistiky prodejů_</h2>
+            <h2>&gt; Měsíční statistiky prodejů_</h2>
             <div class="table-container" style="max-width:1200px; margin:2rem auto; overflow-x:auto;">
                 <!-- Retro styled Google Sheets iframe -->
                 <div class="retro-iframe-container">
                     <div class="retro-iframe-header">
-                        <span class="retro-terminal-prompt">&gt; statistiky_prodejů.csv_</span>
+                        <span class="retro-terminal-prompt">&gt; statistiky_mesicni.csv_</span>
                         <div class="retro-window-controls">
                             <span class="control-dot red"></span>
                             <span class="control-dot yellow"></span>
@@ -38,14 +38,14 @@
                     </div>
                     <div class="retro-iframe-content">
                         <iframe 
-                            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pubhtml?widget=true&amp;headers=false"
+                            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pubhtml?widget=true&amp;headers=false&amp;gid=1234567890"
                             class="retro-iframe"
                             seamless
                         ></iframe>
                     </div>
                     <div class="retro-iframe-footer">
                         <div class="retro-status-left">
-                            <span class="retro-status-text">// LIVE DATA STREAM ACTIVE</span>
+                            <span class="retro-status-text">// MONTHLY DATA STREAM ACTIVE</span>
                             <span class="retro-blink">●</span>
                         </div>
                         <div class="retro-status-right">
@@ -62,7 +62,7 @@
                 </div>
                 <div class="retro-info-line">
                     <span class="retro-prompt">&gt;</span>
-                    <span class="retro-text">Poslední aktualizace je uvedena v prvním řádku tabulky</span>
+                    <span class="retro-text">Zobrazuje data od začátku aktuálního měsíce</span>
                 </div>
                 <div class="retro-info-line">
                     <span class="retro-prompt">&gt;</span>
@@ -84,7 +84,7 @@
     if (!localStorage.getItem('isLoggedIn')) {
         document.querySelector('main').innerHTML = `
             <section class="hero">
-                <h1>&gt; Mobil Maják_</h1>
+                <h1>&gt; Mobil Maják - Měsíční_</h1>
                 <div class="message" style="font-size:1.3rem;color:#E40B4D;margin-top:2rem;text-shadow: 0 0 10px rgba(228, 11, 77, 0.6);">Tato sekce je pouze pro přihlášené členy.</div>
                 <form id="login-form" class="login-form" style="margin-top:2rem;">
                     <input type="text" id="username" placeholder="// Uživatelské jméno" required>
@@ -113,9 +113,8 @@
             }
         });
     } else {
-        // Statistiky prodejů se zobrazují pomocí iframe - spolehlivější řešení
-        // CSV fetch byl odstraněn kvůli CORS omezením na Netlify
-        console.log('Mobil Maják data se zobrazují pomocí iframe v sekci "Aktuální statistiky prodejů"');
+        // Měsíční statistiky prodejů se zobrazují pomocí iframe
+        console.log('Mobil Maják měsíční data se zobrazují pomocí iframe v sekci "Měsíční statistiky prodejů"');
     }
     </script>
     
@@ -291,8 +290,8 @@
         
         /* Retro footer s status */
         .retro-iframe-footer {
-            background: linear-gradient(135deg, #1B2848 0%, #000000 100%);
-            border-top: 1px solid #E40B4D;
+            background: linear-gradient(135deg, #222 0%, #333 100%);
+            border-top: 1px solid #00ffe7;
             padding: 0.5rem 1.5rem;
             display: flex;
             justify-content: space-between;
@@ -313,7 +312,7 @@
         }
         
         .retro-data-flow {
-            color: #00FFE7;
+            color: #00ffe7;
             font-size: 1rem;
             animation: retro-data-stream 1s ease-in-out infinite;
             text-shadow: 0 0 8px rgba(0, 255, 231, 0.6);
@@ -386,56 +385,56 @@
             animation: retro-glow 3s ease-in-out infinite alternate;
         }
         
-                 @keyframes retro-glow {
-             0% { opacity: 0.1; }
-             100% { opacity: 0.2; }
-         }
-         
-         /* Retro info panel */
-         .retro-info-panel {
-             background: rgba(17, 17, 17, 0.8);
-             border: 1px solid #444;
-             border-radius: 6px;
-             padding: 1rem 1.5rem;
-             margin: 2rem auto;
-             max-width: 800px;
-             font-family: 'JetBrains Mono', monospace;
-             box-shadow: 0 0 15px rgba(0, 255, 231, 0.1);
-         }
-         
-         .retro-info-line {
-             display: flex;
-             align-items: center;
-             margin: 0.5rem 0;
-             gap: 0.8rem;
-         }
-         
-                 .retro-prompt {
+        @keyframes retro-glow {
+            0% { opacity: 0.1; }
+            100% { opacity: 0.2; }
+        }
+        
+        /* Retro info panel */
+        .retro-info-panel {
+            background: rgba(17, 17, 17, 0.8);
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 1rem 1.5rem;
+            margin: 2rem auto;
+            max-width: 800px;
+            font-family: 'JetBrains Mono', monospace;
+            box-shadow: 0 0 15px rgba(0, 255, 231, 0.1);
+        }
+        
+        .retro-info-line {
+            display: flex;
+            align-items: center;
+            margin: 0.5rem 0;
+            gap: 0.8rem;
+        }
+        
+        .retro-prompt {
             color: #00FFE7;
             font-weight: bold;
             text-shadow: 0 0 8px rgba(0, 255, 231, 0.5);
         }
-         
-                 .retro-text {
+        
+        .retro-text {
             color: #FFFFFF;
             font-size: 0.9rem;
             flex: 1;
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
         }
-         
-         .retro-success {
-             color: #00ff00 !important;
-             font-weight: bold;
-             text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
-         }
-         
-         .retro-blink-small {
-             color: #00ff00;
-             font-size: 0.8rem;
-             animation: retro-blink 1s infinite;
-             text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
-             margin-left: 0.5rem;
-         }
+        
+        .retro-success {
+            color: #00ff00 !important;
+            font-weight: bold;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+        }
+        
+        .retro-blink-small {
+            color: #00ff00;
+            font-size: 0.8rem;
+            animation: retro-blink 1s infinite;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+            margin-left: 0.5rem;
+        }
         
         /* Responsive design */
         @media (max-width: 768px) {
@@ -463,55 +462,6 @@
                 padding: 0.4rem 1rem;
                 font-size: 0.8rem;
             }
-        }
-        
-        /* Starý CSS pro tabulky (zachováváme pro kompatibilitu) */
-        .retro-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: 'JetBrains Mono', monospace;
-            margin-top: 1rem;
-        }
-        
-        .retro-table th {
-            background-color: #222;
-            color: #00ffe7;
-            padding: 12px 15px;
-            text-align: left;
-            font-weight: bold;
-            border-bottom: 2px solid #00ffe7;
-            white-space: nowrap;
-        }
-        
-        .retro-table td {
-            padding: 10px 15px;
-            border-bottom: 1px solid #444;
-        }
-        
-        .retro-table tbody tr:nth-child(even) {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-        
-        .retro-table tbody tr:hover {
-            background-color: rgba(0, 255, 231, 0.1);
-        }
-        
-        .retro-table .numeric {
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-        }
-        
-        .retro-table .highlight {
-            color: #ffe600;
-            font-weight: bold;
-        }
-        
-        .timestamp-header {
-            color: #ff00c8;
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            border-bottom: 1px solid #444;
-            padding-bottom: 0.5rem;
         }
     </style>
 </body>

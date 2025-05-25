@@ -26,6 +26,7 @@ document.getElementById('login-form').addEventListener('submit', function(e) {
         window.location.href = 'index.html';
     } else {
         messageElement.textContent = '// Chybné přihlašovací údaje';
-        messageElement.style.color = '#ff0000';
+        messageElement.style.color = '#E40B4D';
+        messageElement.style.textShadow = '0 0 10px rgba(228, 11, 77, 0.6)';
     }
 }); 
