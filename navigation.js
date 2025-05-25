@@ -3,17 +3,13 @@ function updateNavigation() {
     const nav = document.querySelector('nav ul');
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     
-    // Přidání hamburger menu a overlay pro mobily
+    // Přidání hamburger menu pro mobily
     const header = document.querySelector('header');
     if (!header.querySelector('.hamburger')) {
         const hamburger = document.createElement('button');
         hamburger.className = 'hamburger';
         hamburger.innerHTML = '<span></span><span></span><span></span>';
         header.appendChild(hamburger);
-        
-        const overlay = document.createElement('div');
-        overlay.className = 'mobile-overlay';
-        document.body.appendChild(overlay);
     }
     
     // Základní položky menu pro všechny uživatele
@@ -91,28 +87,30 @@ function updateNavigation() {
     
     // Hamburger menu funkcionalita
     const hamburger = document.querySelector('.hamburger');
-    const overlay = document.querySelector('.mobile-overlay');
     
-    if (hamburger && overlay) {
+    if (hamburger) {
         hamburger.addEventListener('click', function() {
             hamburger.classList.toggle('active');
             nav.classList.toggle('active');
-            overlay.classList.toggle('active');
         });
         
-        // Zavření menu při kliknutí na overlay
-        overlay.addEventListener('click', function() {
-            hamburger.classList.remove('active');
-            nav.classList.remove('active');
-            overlay.classList.remove('active');
+        // Zavření menu při kliknutí mimo menu
+        document.addEventListener('click', function(e) {
+            if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
+                hamburger.classList.remove('active');
+                nav.classList.remove('active');
+                // Zavřít i dropdown
+                if (dropdown) {
+                    dropdown.classList.remove('active');
+                }
+            }
         });
         
-        // Zavření menu při kliknutí na odkaz
+        // Zavření menu při kliknutí na odkaz (ale ne dropdown toggle)
         nav.addEventListener('click', function(e) {
             if (e.target.tagName === 'A' && !e.target.classList.contains('dropdown-toggle')) {
                 hamburger.classList.remove('active');
                 nav.classList.remove('active');
-                overlay.classList.remove('active');
             }
         });
     }

@@ -10,23 +10,50 @@ class RetroDataLoader {
         try {
             this.showLoading();
             
-            // Použijeme CORS proxy pro přístup k CSV
-            const proxyUrl = 'https://api.allorigins.win/get?url=';
-            const targetUrl = isMonthly ? this.monthlyUrl : this.csvUrl;
-            const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+            // Zkusíme několik CORS proxy služeb
+            const proxies = [
+                'https://api.allorigins.win/get?url=',
+                'https://corsproxy.io/?',
+                'https://cors-anywhere.herokuapp.com/'
+            ];
             
-            if (!response.ok) {
-                throw new Error('Chyba při načítání dat');
+            const targetUrl = isMonthly ? this.monthlyUrl : this.csvUrl;
+            let csvData = null;
+            
+            for (const proxyUrl of proxies) {
+                try {
+                    console.log(`Zkouším proxy: ${proxyUrl}`);
+                    const response = await fetch(proxyUrl + encodeURIComponent(targetUrl));
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    
+                    if (proxyUrl.includes('allorigins')) {
+                        const data = await response.json();
+                        csvData = data.contents;
+                    } else {
+                        csvData = await response.text();
+                    }
+                    
+                    if (csvData && csvData.trim()) {
+                        break;
+                    }
+                } catch (proxyError) {
+                    console.warn(`Proxy ${proxyUrl} selhala:`, proxyError);
+                    continue;
+                }
             }
             
-            const data = await response.json();
-            const csvData = data.contents;
+            if (!csvData) {
+                throw new Error('Všechny proxy služby selhaly');
+            }
             
             this.parseAndDisplayCSV(csvData, isMonthly);
             
         } catch (error) {
             console.error('Chyba při načítání dat:', error);
-            this.showError();
+            this.showError(error.message);
         }
     }
 
@@ -144,31 +171,37 @@ class RetroDataLoader {
     }
 
     showError(message = 'Chyba při načítání dat') {
+        // Fallback na iframe pokud CSV selhává
+        const isMonthly = this.container.id.includes('monthly');
+        const iframeUrl = isMonthly 
+            ? 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pubhtml?widget=true&headers=false&gid=1234567890'
+            : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pubhtml?widget=true&headers=false';
+        
         this.container.innerHTML = `
-            <div class="retro-data-container error">
+            <div class="retro-data-container">
                 <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; error.log_</span>
+                    <span class="retro-terminal-prompt">&gt; fallback_iframe.html_</span>
                     <div class="retro-window-controls">
                         <span class="control-dot red"></span>
                         <span class="control-dot yellow"></span>
                         <span class="control-dot green"></span>
                     </div>
                 </div>
-                <div class="retro-data-content">
-                    <div class="error-message">
-                        <span class="error-icon">⚠</span>
-                        <span class="error-text">${message}</span>
-                        <button class="retry-button" onclick="location.reload()">[ ZKUSIT ZNOVU ]</button>
-                    </div>
+                <div class="retro-data-content" style="height: 600px;">
+                    <iframe 
+                        src="${iframeUrl}"
+                        style="width: 100%; height: 100%; border: none; background: white;"
+                        seamless
+                    ></iframe>
                 </div>
                 <div class="retro-data-footer">
                     <div class="retro-status-left">
-                        <span class="retro-status-text error-status">// CONNECTION FAILED</span>
+                        <span class="retro-status-text">// FALLBACK MODE ACTIVE</span>
                         <span class="retro-blink">●</span>
                     </div>
                     <div class="retro-status-right">
-                        <span class="retro-data-flow">░░░</span>
-                        <span class="retro-small-text">SYNC: ERROR</span>
+                        <span class="retro-data-flow">▓▒░</span>
+                        <span class="retro-small-text">IFRAME: OK</span>
                     </div>
                 </div>
             </div>
