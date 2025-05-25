@@ -11,6 +11,12 @@ class BazarDataLoader {
         this.basePublishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv`;
         
         this.refreshInterval = null;
+        
+        // Stránkování
+        this.currentPage = 1;
+        this.itemsPerPage = 20;
+        this.allRows = [];
+        this.filteredRows = [];
     }
 
     async loadBazarData() {
@@ -282,23 +288,37 @@ class BazarDataLoader {
     }
 
     displayBazarTable(headers, rows) {
-        // Statistiky
-        const prodaneCount = rows.filter(row => row[0] === 'Prodáno').length;
-        const naskladneneCount = rows.filter(row => row[0] === 'Naskladněno').length;
-        const celkemCount = rows.length;
+        // Uložit všechny řádky pro filtrování a stránkování
+        this.allRows = rows;
+        this.filteredRows = rows;
+        this.currentPage = 1;
         
-        // Nejčastější typy telefonů
-        const typyTelefonu = {};
-        rows.forEach(row => {
-            const typ = row[3]; // sloupec D - Typ
-            if (typ && typ.trim()) {
-                typyTelefonu[typ] = (typyTelefonu[typ] || 0) + 1;
-            }
-        });
+        this.renderTable(headers);
+    }
+
+    renderTable(headers) {
+        // Statistiky pro aktuálně filtrované řádky
+        const prodaneRows = this.filteredRows.filter(row => row[0] === 'Prodáno');
+        const naskladneneCount = this.filteredRows.filter(row => row[0] === 'Naskladněno').length;
+        const celkemCount = this.filteredRows.length;
         
-        const nejcastejsiTypy = Object.entries(typyTelefonu)
-            .sort(([,a], [,b]) => b - a)
-            .slice(0, 5);
+        // Součet prodejních cen (sloupec W - index 22, ale v našich datech je to sloupec F - index 5)
+        const prodejniCenySum = prodaneRows.reduce((sum, row) => {
+            const cena = parseFloat(row[5]?.replace(/[^\d]/g, '') || 0);
+            return sum + cena;
+        }, 0);
+        
+        // Součet hodnot ze sloupce G (index 6) - v našich datech je to sloupec G
+        const sloupecGSum = this.filteredRows.reduce((sum, row) => {
+            const hodnota = parseFloat(row[6]?.replace(/[^\d]/g, '') || 0);
+            return sum + hodnota;
+        }, 0);
+        
+        // Stránkování
+        const totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const currentPageRows = this.filteredRows.slice(startIndex, endIndex);
 
         this.container.innerHTML = `
             <div class="retro-data-container">
@@ -315,7 +335,11 @@ class BazarDataLoader {
                     <div class="bazar-stats">
                         <div class="stat-box">
                             <div class="stat-label">// PRODÁNO</div>
-                            <div class="stat-value">${prodaneCount}</div>
+                            <div class="stat-value">${prodaneRows.length}</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-label">// PRODEJNÍ CENY</div>
+                            <div class="stat-value">${prodejniCenySum.toLocaleString('cs-CZ')} Kč</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">// NASKLADNĚNO</div>
@@ -325,18 +349,9 @@ class BazarDataLoader {
                             <div class="stat-label">// CELKEM</div>
                             <div class="stat-value">${celkemCount}</div>
                         </div>
-                    </div>
-
-                    <!-- Nejčastější typy -->
-                    <div class="top-types">
-                        <h3>// NEJČASTĚJŠÍ TYPY TELEFONŮ</h3>
-                        <div class="types-list">
-                            ${nejcastejsiTypy.map(([typ, pocet]) => `
-                                <div class="type-item">
-                                    <span class="type-name">${this.escapeHtml(typ)}</span>
-                                    <span class="type-count">${pocet}x</span>
-                                </div>
-                            `).join('')}
+                        <div class="stat-box">
+                            <div class="stat-label">// SLOUPEC G SUMA</div>
+                            <div class="stat-value">${sloupecGSum.toLocaleString('cs-CZ')}</div>
                         </div>
                     </div>
 
@@ -372,6 +387,11 @@ class BazarDataLoader {
                         </div>
                     </div>
 
+                    <!-- Stránkování info -->
+                    <div class="pagination-info">
+                        <span class="pagination-text">// Stránka ${this.currentPage} z ${totalPages} | Zobrazeno ${currentPageRows.length} z ${this.filteredRows.length} záznamů</span>
+                    </div>
+
                     <!-- Tabulka dat -->
                     <div class="table-scroll">
                         <table class="retro-data-table" id="bazarTable">
@@ -381,7 +401,7 @@ class BazarDataLoader {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${rows.map(row => `
+                                ${currentPageRows.map(row => `
                                     <tr class="${row[0] === 'Prodáno' ? 'sold-item' : 'stocked-item'}">
                                         ${row.map((cell, index) => {
                                             // Zvýraznit cenu (sloupec F)
@@ -398,6 +418,23 @@ class BazarDataLoader {
                                 `).join('')}
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Stránkování ovládání -->
+                    <div class="pagination-controls">
+                        <button class="pagination-btn" onclick="bazarLoader.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>
+                            ⏮ První
+                        </button>
+                        <button class="pagination-btn" onclick="bazarLoader.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>
+                            ◀ Předchozí
+                        </button>
+                        <span class="pagination-current">Stránka ${this.currentPage}</span>
+                        <button class="pagination-btn" onclick="bazarLoader.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                            Další ▶
+                        </button>
+                        <button class="pagination-btn" onclick="bazarLoader.goToPage(${totalPages})" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                            Poslední ⏭
+                        </button>
                     </div>
                 </div>
                 <div class="retro-data-footer">
@@ -580,28 +617,20 @@ class BazarDataLoader {
     }
 
     filterTable() {
-        const table = document.getElementById('bazarTable');
-        if (!table) return;
-
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        
         // Získat hodnoty filtrů
-        const textFilter = document.getElementById('bazarFilter').value.toLowerCase();
-        const dateFrom = document.getElementById('dateFrom').value;
-        const dateTo = document.getElementById('dateTo').value;
+        const textFilter = document.getElementById('bazarFilter')?.value.toLowerCase() || '';
+        const dateFrom = document.getElementById('dateFrom')?.value || '';
+        const dateTo = document.getElementById('dateTo')?.value || '';
 
-        let visibleCount = 0;
-
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const cells = row.getElementsByTagName('td');
+        // Filtrovat všechny řádky
+        this.filteredRows = this.allRows.filter(row => {
             let shouldShow = true;
 
             // Textový filtr
             if (textFilter) {
                 let textMatch = false;
-                for (let j = 0; j < cells.length; j++) {
-                    const cellText = cells[j].textContent.toLowerCase();
+                for (let j = 0; j < row.length; j++) {
+                    const cellText = (row[j] || '').toString().toLowerCase();
                     if (cellText.includes(textFilter)) {
                         textMatch = true;
                         break;
@@ -612,30 +641,39 @@ class BazarDataLoader {
 
             // Datový filtr
             if (shouldShow && (dateFrom || dateTo)) {
-                const dateCell = cells[2]; // sloupec C - Datum (index 2)
-                if (dateCell) {
-                    const rowDateStr = dateCell.textContent.trim();
-                    const rowDate = this.parseDate(rowDateStr);
-                    
-                    if (dateFrom) {
-                        const fromDate = new Date(dateFrom);
-                        if (rowDate < fromDate) shouldShow = false;
-                    }
-                    
-                    if (dateTo && shouldShow) {
-                        const toDate = new Date(dateTo);
-                        toDate.setHours(23, 59, 59, 999); // Konec dne
-                        if (rowDate > toDate) shouldShow = false;
-                    }
+                const rowDateStr = row[2] || ''; // sloupec C - Datum (index 2)
+                const rowDate = this.parseDate(rowDateStr);
+                
+                if (dateFrom) {
+                    const fromDate = new Date(dateFrom);
+                    if (rowDate < fromDate) shouldShow = false;
+                }
+                
+                if (dateTo && shouldShow) {
+                    const toDate = new Date(dateTo);
+                    toDate.setHours(23, 59, 59, 999); // Konec dne
+                    if (rowDate > toDate) shouldShow = false;
                 }
             }
 
-            row.style.display = shouldShow ? '' : 'none';
-            if (shouldShow) visibleCount++;
-        }
+            return shouldShow;
+        });
 
-        // Aktualizovat počítadlo filtrovaných záznamů
-        this.updateFilterStats(visibleCount, rows.length);
+        // Reset na první stránku po filtrování
+        this.currentPage = 1;
+        
+        // Znovu vykreslit tabulku
+        const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Nabíj.', 'Krab.', 'Zár.list', 'Vykoupil', 'Jméno'];
+        this.renderTable(headers);
+    }
+
+    goToPage(page) {
+        const totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
+        if (page >= 1 && page <= totalPages) {
+            this.currentPage = page;
+            const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Nabíj.', 'Krab.', 'Zár.list', 'Vykoupil', 'Jméno'];
+            this.renderTable(headers);
+        }
     }
 
     setDefaultDateFilter() {
