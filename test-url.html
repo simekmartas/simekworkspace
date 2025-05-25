@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google Sheets URL</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #00ff00; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .success { border-color: #00ff00; }
+        .error { border-color: #ff0000; color: #ff0000; }
+        button { background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; cursor: pointer; }
+        button:hover { background: #00ff00; color: #000; }
+        pre { background: #111; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Test Google Sheets URL</h1>
+    
+    <button onclick="testDirectAccess()">Test Přímý Přístup</button>
+    <button onclick="testProxyAccess()">Test Proxy Přístup</button>
+    <button onclick="testAlternativeUrl()">Test Alternativní URL</button>
+    <button onclick="clearResults()">Vymazat Výsledky</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, isSuccess = true) {
+            const div = document.createElement('div');
+            div.className = `result ${isSuccess ? 'success' : 'error'}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testDirectAccess() {
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&cachebust=${timestamp}`;
+            
+            try {
+                addResult('Test Přímý Přístup - Začátek', `URL: ${url}\nZačínám test...`);
+                
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Accept': 'text/csv, text/plain, */*',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`;
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    addResult('Test Přímý Přístup - ÚSPĚCH', `${responseInfo}
+                    
+Délka dat: ${data.length}
+První 300 znaků:
+${data.substring(0, 300)}`, true);
+                } else {
+                    addResult('Test Přímý Přístup - CHYBA', `${responseInfo}`, false);
+                }
+                
+            } catch (error) {
+                addResult('Test Přímý Přístup - VÝJIMKA', `Chyba: ${error.message}
+Stack: ${error.stack}`, false);
+            }
+        }
+        
+        async function testProxyAccess() {
+            const timestamp = new Date().getTime();
+            const originalUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&cachebust=${timestamp}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(originalUrl)}`;
+            
+            try {
+                addResult('Test Proxy Přístup - Začátek', `Original URL: ${originalUrl}
+Proxy URL: ${proxyUrl}
+Začínám test...`);
+                
+                const response = await fetch(proxyUrl, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const dataInfo = `Proxy Status: ${data.status}
+Contents Length: ${data.contents ? data.contents.length : 'null'}
+Contents Type: ${typeof data.contents}`;
+                    
+                    if (data.contents && data.contents.length > 0) {
+                        addResult('Test Proxy Přístup - ÚSPĚCH', `${responseInfo}
+${dataInfo}
+
+První 300 znaků:
+${data.contents.substring(0, 300)}`, true);
+                    } else {
+                        addResult('Test Proxy Přístup - PRÁZDNÁ DATA', `${responseInfo}
+${dataInfo}`, false);
+                    }
+                } else {
+                    addResult('Test Proxy Přístup - CHYBA', `${responseInfo}`, false);
+                }
+                
+            } catch (error) {
+                addResult('Test Proxy Přístup - VÝJIMKA', `Chyba: ${error.message}
+Stack: ${error.stack}`, false);
+            }
+        }
+        
+        async function testAlternativeUrl() {
+            const timestamp = new Date().getTime();
+            const originalUrl = `https://docs.google.com/spreadsheets/d/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/export?format=csv&cachebust=${timestamp}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(originalUrl)}`;
+            
+            try {
+                addResult('Test Alternativní URL - Začátek', `Alternative URL: ${originalUrl}
+Proxy URL: ${proxyUrl}
+Začínám test...`);
+                
+                const response = await fetch(proxyUrl, {
+                    cache: 'no-cache'
+                });
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const dataInfo = `Proxy Status: ${data.status}
+Contents Length: ${data.contents ? data.contents.length : 'null'}
+Contents Type: ${typeof data.contents}`;
+                    
+                    if (data.contents && data.contents.length > 0) {
+                        addResult('Test Alternativní URL - ÚSPĚCH', `${responseInfo}
+${dataInfo}
+
+První 300 znaků:
+${data.contents.substring(0, 300)}`, true);
+                    } else {
+                        addResult('Test Alternativní URL - PRÁZDNÁ DATA', `${responseInfo}
+${dataInfo}`, false);
+                    }
+                } else {
+                    addResult('Test Alternativní URL - CHYBA', `${responseInfo}`, false);
+                }
+                
+            } catch (error) {
+                addResult('Test Alternativní URL - VÝJIMKA', `Chyba: ${error.message}
+Stack: ${error.stack}`, false);
+            }
+        }
+        
+        // Automaticky spustíme všechny testy
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('Automatické testování', 'Spouštím všechny testy automaticky...');
+                testDirectAccess();
+                setTimeout(() => testProxyAccess(), 2000);
+                setTimeout(() => testAlternativeUrl(), 4000);
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

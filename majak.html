@@ -112,6 +112,76 @@
         console.log('Pro debug načtení dat použij: debugLoadData()');
         console.log('Pro manuální obnovení použij: manualRefresh()');
         console.log('Aktuální dataLoader:', dataLoader);
+        
+        // Rozšířené debug funkce
+        window.testUrl = function() {
+            const timestamp = new Date().getTime();
+            const testUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&cachebust=${timestamp}`;
+            console.log('=== TEST URL ===');
+            console.log('Test URL:', testUrl);
+            console.log('Zkopíruj tuto URL do nového tabu a podívej se, jestli vrací CSV data');
+            
+            // Otestujeme i proxy URL
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(testUrl)}`;
+            console.log('Proxy URL:', proxyUrl);
+            console.log('Zkopíruj i tuto proxy URL do nového tabu');
+            
+            return { testUrl, proxyUrl };
+        };
+        
+        // Funkce pro test načtení dat
+        window.testFetch = async function() {
+            const timestamp = new Date().getTime();
+            const testUrl = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&cachebust=${timestamp}`;
+            
+            console.log('=== TEST FETCH ===');
+            console.log('Testuji načtení dat...');
+            
+            try {
+                // Test přímého přístupu
+                console.log('Test 1: Přímý přístup');
+                const directResponse = await fetch(testUrl, { mode: 'cors', cache: 'no-cache' });
+                console.log('Přímý přístup - status:', directResponse.status, 'ok:', directResponse.ok);
+                
+                if (directResponse.ok) {
+                    const directData = await directResponse.text();
+                    console.log('Přímý přístup - délka dat:', directData.length);
+                    console.log('Přímý přístup - první 200 znaků:', directData.substring(0, 200));
+                }
+            } catch (error) {
+                console.log('Přímý přístup selhal:', error.message);
+            }
+            
+            try {
+                // Test proxy přístupu
+                console.log('Test 2: Proxy přístup');
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(testUrl)}`;
+                const proxyResponse = await fetch(proxyUrl, { cache: 'no-cache' });
+                console.log('Proxy přístup - status:', proxyResponse.status, 'ok:', proxyResponse.ok);
+                
+                if (proxyResponse.ok) {
+                    const proxyData = await proxyResponse.json();
+                    console.log('Proxy přístup - status:', proxyData.status);
+                    console.log('Proxy přístup - délka dat:', proxyData.contents ? proxyData.contents.length : 'null');
+                    if (proxyData.contents) {
+                        console.log('Proxy přístup - první 200 znaků:', proxyData.contents.substring(0, 200));
+                    }
+                }
+            } catch (error) {
+                console.log('Proxy přístup selhal:', error.message);
+            }
+        };
+        
+        console.log('=== DEBUG FUNKCE ===');
+        console.log('Pro debug načtení dat použij: debugLoadData()');
+        console.log('Pro manuální obnovení použij: manualRefresh()');
+        console.log('Pro test URL použij: testUrl()');
+        console.log('Pro test fetch použij: testFetch()');
+        console.log('Aktuální dataLoader:', dataLoader);
+        
+        // Automaticky otestujeme URL
+        const autoTestResult = window.testUrl();
+        console.log('Automatický test URL výsledek:', autoTestResult);
     }
     </script>
 

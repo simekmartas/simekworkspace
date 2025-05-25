@@ -10,6 +10,9 @@ class SimpleRetroDataLoader {
     }
 
     async loadData(isMonthly = false) {
+        console.log('=== ZAČÁTEK NAČÍTÁNÍ DAT ===');
+        console.log('isMonthly:', isMonthly);
+        
         this.isMonthly = isMonthly; // Uložíme typ dat pro automatické obnovování
         
         try {
@@ -18,31 +21,57 @@ class SimpleRetroDataLoader {
             // Zkusíme načíst data pomocí jednoduchého fetch na CSV export
             // Přidáme timestamp pro vynucení aktuálních dat (zabránění cache)
             const timestamp = new Date().getTime();
-            const csvUrl = isMonthly 
-                ? `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv&t=${timestamp}`
-                : `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&t=${timestamp}`;
             
-            // Zkusíme přímý přístup bez CORS proxy
+            // Opravený formát URL pro Google Sheets CSV export
+            // Používáme správný spreadsheet ID a formát pro publikované tabulky
+            const csvUrl = isMonthly 
+                ? `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv&cachebust=${timestamp}`
+                : `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&cachebust=${timestamp}`;
+            
+            console.log('=== DIAGNOSTIKA URL ===');
+            console.log('CSV URL:', csvUrl);
+            console.log('Timestamp:', timestamp);
+            console.log('isMonthly:', isMonthly);
+            
+            // Zkusíme několik různých přístupů pro načtení dat
             let response;
+            let csvData = null;
+            
+            // Přístup 1: Přímý fetch s CORS
+            console.log('=== PŘÍSTUP 1: Přímý fetch ===');
             try {
                 response = await fetch(csvUrl, {
                     mode: 'cors',
-                    cache: 'no-cache', // Vynucení aktuálních dat
+                    cache: 'no-cache',
                     headers: {
-                        'Accept': 'text/csv',
+                        'Accept': 'text/csv, text/plain, */*',
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
                         'Expires': '0'
                     }
                 });
-            } catch (corsError) {
-                console.log('Přímý přístup selhal, zkouším proxy...', corsError);
-                // Fallback na CORS proxy s cache-busting
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
-                console.log('Proxy URL:', proxyUrl);
                 
+                console.log('Přímý přístup - status:', response.status);
+                console.log('Přímý přístup - ok:', response.ok);
+                console.log('Přímý přístup - headers:', Object.fromEntries(response.headers.entries()));
+                
+                if (response.ok) {
+                    csvData = await response.text();
+                    console.log('Přímý přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                    console.log('První 100 znaků:', csvData.substring(0, 100));
+                }
+            } catch (corsError) {
+                console.log('Přímý přístup selhal:', corsError.message);
+            }
+            
+            // Přístup 2: CORS proxy pokud přímý selhal
+            if (!csvData) {
+                console.log('=== PŘÍSTUP 2: CORS Proxy ===');
                 try {
-                    response = await fetch(proxyUrl, {
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
+                    console.log('Proxy URL:', proxyUrl);
+                    
+                    const proxyResponse = await fetch(proxyUrl, {
                         cache: 'no-cache',
                         headers: {
                             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -51,58 +80,72 @@ class SimpleRetroDataLoader {
                         }
                     });
                     
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('Data z proxy:', data);
-                        this.parseAndDisplayCSV(data.contents, isMonthly);
-                        this.startAutoRefresh(); // Spustíme automatické obnovování
-                        return;
-                    } else {
-                        console.error('Proxy response not ok:', response.status, response.statusText);
+                    console.log('Proxy response status:', proxyResponse.status);
+                    console.log('Proxy response ok:', proxyResponse.ok);
+                    
+                    if (proxyResponse.ok) {
+                        const proxyData = await proxyResponse.json();
+                        console.log('Proxy data status:', proxyData.status);
+                        console.log('Proxy data contents length:', proxyData.contents ? proxyData.contents.length : 'null');
+                        
+                        if (proxyData.contents) {
+                            csvData = proxyData.contents;
+                            console.log('Proxy přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                            console.log('První 100 znaků:', csvData.substring(0, 100));
+                        }
                     }
                 } catch (proxyError) {
-                    console.error('Proxy fetch failed:', proxyError);
+                    console.log('Proxy přístup selhal:', proxyError.message);
                 }
-                
-                throw corsError;
             }
             
-            if (response.ok) {
-                const csvData = await response.text();
+            // Přístup 3: Alternativní URL formát
+            if (!csvData) {
+                console.log('=== PŘÍSTUP 3: Alternativní URL ===');
+                try {
+                    const alternativeUrl = isMonthly 
+                        ? `https://docs.google.com/spreadsheets/d/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/export?format=csv&gid=1829845095&cachebust=${timestamp}`
+                        : `https://docs.google.com/spreadsheets/d/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/export?format=csv&cachebust=${timestamp}`;
+                    
+                    console.log('Alternative URL:', alternativeUrl);
+                    
+                    const altProxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(alternativeUrl)}`;
+                    const altResponse = await fetch(altProxyUrl, { cache: 'no-cache' });
+                    
+                    console.log('Alternative response status:', altResponse.status);
+                    
+                    if (altResponse.ok) {
+                        const altData = await altResponse.json();
+                        console.log('Alternative data status:', altData.status);
+                        console.log('Alternative data contents length:', altData.contents ? altData.contents.length : 'null');
+                        
+                        if (altData.contents) {
+                            csvData = altData.contents;
+                            console.log('Alternativní přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                            console.log('První 100 znaků:', csvData.substring(0, 100));
+                        }
+                    }
+                } catch (altError) {
+                    console.log('Alternativní přístup selhal:', altError.message);
+                }
+            }
+            
+            // Zpracování dat pokud se podařilo je načíst
+            if (csvData && csvData.length > 0) {
+                console.log('=== ÚSPĚCH: Data načtena, zpracovávám ===');
                 this.parseAndDisplayCSV(csvData, isMonthly);
-                this.startAutoRefresh(); // Spustíme automatické obnovování
+                this.startAutoRefresh();
+                return;
             } else {
-                throw new Error(`HTTP ${response.status}`);
+                console.log('=== SELHÁNÍ: Žádná data se nepodařilo načíst ===');
+                throw new Error('Nepodařilo se načíst data z žádného zdroje');
             }
             
         } catch (error) {
-            console.error('Chyba při načítání dat:', error);
-            console.error('Error details:', error.message, error.stack);
+            console.error('=== KRITICKÁ CHYBA ===');
+            console.error('Chyba při načítání dat:', error.message);
+            console.error('Stack trace:', error.stack);
             console.log('Zobrazujem mock data jako fallback');
-            
-            // Zkusíme ještě jednou s jiným přístupem
-            try {
-                console.log('Zkouším alternativní přístup...');
-                const alternativeUrl = isMonthly 
-                    ? `https://docs.google.com/spreadsheets/d/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/export?format=csv&gid=1829845095&t=${new Date().getTime()}`
-                    : `https://docs.google.com/spreadsheets/d/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/export?format=csv&t=${new Date().getTime()}`;
-                
-                console.log('Alternative URL:', alternativeUrl);
-                
-                const altResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(alternativeUrl)}`, {
-                    cache: 'no-cache'
-                });
-                
-                if (altResponse.ok) {
-                    const altData = await altResponse.json();
-                    console.log('Alternative data loaded:', altData);
-                    this.parseAndDisplayCSV(altData.contents, isMonthly);
-                    this.startAutoRefresh();
-                    return;
-                }
-            } catch (altError) {
-                console.error('Alternative approach failed:', altError);
-            }
             
             this.showMockData(isMonthly);
             this.startAutoRefresh(); // Spustíme automatické obnovování i pro mock data
@@ -196,6 +239,11 @@ class SimpleRetroDataLoader {
     }
 
     displayTable(headers, rows, isMonthly) {
+        console.log('=== ZOBRAZUJI SKUTEČNÁ DATA ===');
+        console.log('Počet řádků:', rows.length);
+        console.log('Headers:', headers);
+        console.log('První řádek dat:', rows[0]);
+        
         const title = isMonthly ? 'Měsíční statistiky prodejů' : 'Aktuální statistiky prodejů';
         const prompt = isMonthly ? 'statistiky_mesicni.csv' : 'statistiky_prodejů.csv';
         const tableId = isMonthly ? 'monthly-table' : 'current-table';
@@ -296,6 +344,9 @@ class SimpleRetroDataLoader {
     }
 
     showMockData(isMonthly) {
+        console.log('=== ZOBRAZUJI MOCK DATA ===');
+        console.log('Důvod: Nepodařilo se načíst skutečná data z Google Sheets');
+        
         // Pokud se nepodaří načíst data, zobrazíme mock data v retro stylu
         const mockHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'];
         
@@ -410,65 +461,51 @@ class SimpleRetroDataLoader {
     // Obnoví data bez zobrazení loading obrazovky
     async refreshData() {
         try {
-            console.log('Obnovuji data...');
+            console.log('=== AUTOMATICKÉ OBNOVOVÁNÍ DAT ===');
             
-            // Přidáme timestamp pro vynucení aktuálních dat (zabránění cache)
             const timestamp = new Date().getTime();
             const csvUrl = this.isMonthly 
-                ? `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv&t=${timestamp}`
-                : `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&t=${timestamp}`;
+                ? `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv&cachebust=${timestamp}`
+                : `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&cachebust=${timestamp}`;
             
-            let response;
+            console.log('Refresh URL:', csvUrl);
+            
+            let csvData = null;
+            
+            // Zkusíme proxy přístup (nejspolehlivější pro refresh)
             try {
-                response = await fetch(csvUrl, {
-                    mode: 'cors',
-                    cache: 'no-cache', // Vynucení aktuálních dat
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
+                const response = await fetch(proxyUrl, {
+                    cache: 'no-cache',
                     headers: {
-                        'Accept': 'text/csv',
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
                         'Expires': '0'
                     }
                 });
-            } catch (corsError) {
-                console.log('Přímý přístup selhal při obnovování, zkouším proxy...', corsError);
                 
-                try {
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
-                    response = await fetch(proxyUrl, {
-                        cache: 'no-cache',
-                        headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        console.log('Refresh data z proxy:', data);
-                        this.parseAndDisplayCSV(data.contents, this.isMonthly);
-                        this.updateRefreshIndicator();
-                        return;
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.contents && data.contents.length > 0) {
+                        csvData = data.contents;
+                        console.log('Refresh ÚSPĚŠNÝ - délka dat:', csvData.length);
                     }
-                } catch (proxyError) {
-                    console.error('Proxy refresh failed:', proxyError);
                 }
-                
-                throw corsError;
+            } catch (error) {
+                console.log('Refresh proxy selhal:', error.message);
             }
             
-            if (response.ok) {
-                const csvData = await response.text();
+            // Pokud se podařilo načíst data, zpracujeme je
+            if (csvData) {
                 this.parseAndDisplayCSV(csvData, this.isMonthly);
                 this.updateRefreshIndicator();
                 console.log('Data úspěšně obnovena');
             } else {
-                throw new Error(`HTTP ${response.status}`);
+                console.log('Refresh se nezdařil, ponechávám stávající data');
             }
             
         } catch (error) {
-            console.error('Chyba při automatickém obnovování dat:', error);
+            console.error('Chyba při automatickém obnovování dat:', error.message);
             // Při chybě nebudeme zobrazovat mock data, jen necháme stávající data
         }
     }
