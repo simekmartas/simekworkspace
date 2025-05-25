@@ -3,6 +3,19 @@ function updateNavigation() {
     const nav = document.querySelector('nav ul');
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     
+    // Přidání hamburger menu a overlay pro mobily
+    const header = document.querySelector('header');
+    if (!header.querySelector('.hamburger')) {
+        const hamburger = document.createElement('button');
+        hamburger.className = 'hamburger';
+        hamburger.innerHTML = '<span></span><span></span><span></span>';
+        header.appendChild(hamburger);
+        
+        const overlay = document.createElement('div');
+        overlay.className = 'mobile-overlay';
+        document.body.appendChild(overlay);
+    }
+    
     // Základní položky menu pro všechny uživatele
     const baseItems = `
         <li><a href="index.html">[ DOMŮ ]</a></li>
@@ -64,9 +77,43 @@ function updateNavigation() {
             dropdown.classList.remove('active');
         });
         
-        // Otevření dropdown při hover
-        dropdown.addEventListener('mouseenter', function() {
-            dropdown.classList.add('active');
+        // Otevření dropdown při hover (pouze na desktopu)
+        if (window.innerWidth > 768) {
+            dropdown.addEventListener('mouseenter', function() {
+                dropdown.classList.add('active');
+            });
+            
+            dropdown.addEventListener('mouseleave', function() {
+                dropdown.classList.remove('active');
+            });
+        }
+    }
+    
+    // Hamburger menu funkcionalita
+    const hamburger = document.querySelector('.hamburger');
+    const overlay = document.querySelector('.mobile-overlay');
+    
+    if (hamburger && overlay) {
+        hamburger.addEventListener('click', function() {
+            hamburger.classList.toggle('active');
+            nav.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+        
+        // Zavření menu při kliknutí na overlay
+        overlay.addEventListener('click', function() {
+            hamburger.classList.remove('active');
+            nav.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+        
+        // Zavření menu při kliknutí na odkaz
+        nav.addEventListener('click', function(e) {
+            if (e.target.tagName === 'A' && !e.target.classList.contains('dropdown-toggle')) {
+                hamburger.classList.remove('active');
+                nav.classList.remove('active');
+                overlay.classList.remove('active');
+            }
         });
     }
 }
