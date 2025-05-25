@@ -57,9 +57,67 @@ class BazarDataLoader {
                 console.log('CORS Anywhere přístup selhal:', error.message);
             }
             
-            // Přístup 2: AllOrigins proxy jako fallback
+            // Přístup 2: Přímý přístup k publikovanému CSV
             if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 2: AllOrigins Proxy ===');
+                console.log('=== PŘÍSTUP 2: Přímý přístup k publikovanému CSV ===');
+                try {
+                    // Zkusíme publikované URL pro CSV
+                    const publishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${this.bazarGid}&single=true&output=csv&cachebust=${timestamp}`;
+                    console.log('Publikované CSV URL:', publishedUrl);
+                    
+                    const directResponse = await fetch(publishedUrl, {
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    
+                    console.log('Přímý přístup response status:', directResponse.status);
+                    
+                    if (directResponse.ok) {
+                        csvData = await directResponse.text();
+                        console.log('Přímý přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                        console.log('První 500 znaků:', csvData.substring(0, 500));
+                    }
+                } catch (error) {
+                    console.log('Přímý přístup selhal:', error.message);
+                }
+            }
+
+            // Přístup 2b: Zkusíme původní export URL přímo
+            if (!csvData || csvData.length < 100) {
+                console.log('=== PŘÍSTUP 2b: Přímý export URL ===');
+                try {
+                    console.log('Export URL:', csvUrl);
+                    
+                    const exportResponse = await fetch(csvUrl, {
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    
+                    console.log('Export přístup response status:', exportResponse.status);
+                    
+                    if (exportResponse.ok) {
+                        csvData = await exportResponse.text();
+                        console.log('Export přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                        console.log('První 500 znaků:', csvData.substring(0, 500));
+                    }
+                } catch (error) {
+                    console.log('Export přístup selhal:', error.message);
+                }
+            }
+
+            // Přístup 3: AllOrigins proxy jako fallback
+            if (!csvData || csvData.length < 100) {
+                console.log('=== PŘÍSTUP 3: AllOrigins Proxy ===');
                 try {
                     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
                     console.log('AllOrigins Proxy URL:', proxyUrl);
@@ -86,52 +144,91 @@ class BazarDataLoader {
                 }
             }
             
+            // Přístup 4: Zkusíme jiný formát URL pro Google Sheets
+            if (!csvData || csvData.length < 100) {
+                console.log('=== PŘÍSTUP 4: Alternativní Google Sheets URL ===');
+                try {
+                    // Zkusíme jiný formát URL
+                    const altUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${this.bazarGid}&cachebust=${timestamp}`;
+                    console.log('Alternativní URL:', altUrl);
+                    
+                    const altResponse = await fetch(altUrl, {
+                        mode: 'cors',
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    
+                    console.log('Alternativní přístup response status:', altResponse.status);
+                    
+                    if (altResponse.ok) {
+                        csvData = await altResponse.text();
+                        console.log('Alternativní přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                        console.log('První 500 znaků:', csvData.substring(0, 500));
+                    }
+                } catch (error) {
+                    console.log('Alternativní přístup selhal:', error.message);
+                }
+            }
+
             // Zpracování dat pokud se podařilo je načíst
             if (csvData && csvData.length > 100) {
                 console.log('=== ÚSPĚCH: Bazarová data načtena ===');
+                console.log('Celková délka CSV dat:', csvData.length);
                 this.parseAndDisplayBazarData(csvData);
                 this.startAutoRefresh();
                 return;
             } else {
                 console.log('=== SELHÁNÍ: Zobrazujem mock bazarová data ===');
+                console.log('Důvod: csvData délka =', csvData ? csvData.length : 'null');
                 throw new Error('Nepodařilo se načíst validní bazarová data');
             }
             
         } catch (error) {
             console.error('Chyba při načítání bazarových dat:', error.message);
-            this.showMockBazarData();
-            this.startAutoRefresh();
+            console.log('=== ZKOUŠÍM IFRAME FALLBACK ===');
+            this.showIframeFallback();
         }
     }
 
     parseAndDisplayBazarData(csvData) {
         console.log('=== PARSOVÁNÍ BAZAROVÝCH DAT ===');
         console.log('Délka CSV dat:', csvData.length);
+        console.log('První 1000 znaků CSV:', csvData.substring(0, 1000));
         
         const lines = csvData.split('\n').filter(line => line.trim());
         console.log('Počet řádků po filtrování:', lines.length);
+        console.log('První 3 řádky:', lines.slice(0, 3));
         
         if (lines.length === 0) {
+            console.log('Žádné řádky v CSV, zobrazujem mock data');
             this.showMockBazarData();
             return;
         }
 
         // Parsování CSV
         const headers = this.parseCSVLine(lines[0]);
+        console.log('Parsované headers:', headers);
+        
         const rows = lines.slice(1)
             .map(line => this.parseCSVLine(line))
             .filter(row => row.some(cell => cell.trim())); // Odfiltrovat prázdné řádky
 
         console.log(`Načteno ${rows.length} řádků bazarových dat`);
-        console.log('Headers:', headers);
+        console.log('První 3 řádky dat:', rows.slice(0, 3));
         
         if (rows.length === 0) {
+            console.log('Žádné datové řádky, zobrazujem mock data');
             this.showMockBazarData();
             return;
         }
 
         // Seřadit podle data (sloupec C - Datum) od nejnovějšího
         const sortedRows = this.sortRowsByDate(rows, 2); // index 2 = sloupec C (Datum)
+        console.log(`Po seřazení: ${sortedRows.length} řádků`);
 
         this.displayBazarTable(headers, sortedRows);
     }
@@ -342,17 +439,80 @@ class BazarDataLoader {
         `;
     }
 
+    showIframeFallback() {
+        console.log('=== ZOBRAZUJEM IFRAME FALLBACK ===');
+        
+        const iframeUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pubhtml?gid=${this.bazarGid}&single=true&widget=true&headers=false`;
+        console.log('Iframe URL:', iframeUrl);
+        
+        this.container.innerHTML = `
+            <div class="retro-data-container">
+                <div class="retro-data-header">
+                    <span class="retro-terminal-prompt">&gt; bazar_iframe.html_</span>
+                    <div class="retro-window-controls">
+                        <span class="control-dot red"></span>
+                        <span class="control-dot yellow"></span>
+                        <span class="control-dot green"></span>
+                    </div>
+                </div>
+                <div class="retro-data-content" style="height: 600px; padding: 0;">
+                    <iframe 
+                        src="${iframeUrl}"
+                        style="width: 100%; height: 100%; border: none; background: white;"
+                        seamless
+                    ></iframe>
+                </div>
+                <div class="retro-data-footer">
+                    <div class="retro-status-left">
+                        <span class="retro-status-text">// IFRAME FALLBACK MODE</span>
+                        <span class="retro-blink">●</span>
+                    </div>
+                    <div class="retro-status-right">
+                        <span class="retro-data-flow">▓▒░</span>
+                        <span class="retro-small-text">LIVE DATA</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Pokud iframe nefunguje, zobrazíme mock data po 5 sekundách
+        setTimeout(() => {
+            console.log('=== IFRAME TIMEOUT - ZOBRAZUJEM MOCK DATA ===');
+            this.showMockBazarData();
+        }, 5000);
+    }
+
     showMockBazarData() {
+        console.log('=== ZOBRAZUJEM MOCK BAZAROVÁ DATA ===');
+        
         const mockData = [
             ['Prodáno', 'V25010001', '2.1.2025', 'Samsung Galaxy A14', '359051899089270', '1590', 'ne', 'ne', 'ne', 'Kováčik', 'Lukáš'],
             ['Prodáno', 'V25010002', '3.1.2025', 'Xiaomi Redmi Note 9 Pro', '861722050416491', '2590', 'ne', 'ne', 'ne', 'Babušík', 'Sandra'],
             ['Naskladněno', 'V25010005', '3.1.2025', 'Apple iPhone 15, 128GB', '353173584221053', '13000', 'ne', 'ne', 'ne', 'Šebák', 'Milan'],
-            ['Prodáno', 'V25010006', '4.1.2025', 'Xiaomi Redmi 13C 5G', '868278066655583', '2190', 'ano', 'ano', 'ne', 'Gabriel', 'Jiří']
+            ['Prodáno', 'V25010006', '4.1.2025', 'Xiaomi Redmi 13C 5G', '868278066655583', '2190', 'ano', 'ano', 'ne', 'Gabriel', 'Jiří'],
+            ['Prodáno', 'V25010007', '5.1.2025', 'Apple iPhone 12', '352991091004279', '8500', 'ne', 'ano', 'ne', 'Kosev', 'Roman'],
+            ['Naskladněno', 'V25010008', '6.1.2025', 'Samsung Galaxy S21', '868278066655584', '12000', 'ano', 'ano', 'ano', 'Novák', 'Petr'],
+            ['Prodáno', 'V25010009', '7.1.2025', 'Xiaomi Mi 11', '861722050416492', '7500', 'ne', 'ne', 'ne', 'Svoboda', 'Jan'],
+            ['Prodáno', 'V25010010', '8.1.2025', 'iPhone 13 Pro', '353173584221054', '18000', 'ano', 'ano', 'ano', 'Dvořák', 'Marie'],
+            ['Naskladněno', 'V25010011', '9.1.2025', 'OnePlus 9', '868278066655585', '9500', 'ne', 'ano', 'ne', 'Černý', 'Tomáš'],
+            ['Prodáno', 'V25010012', '10.1.2025', 'Google Pixel 6', '861722050416493', '11000', 'ano', 'ne', 'ne', 'Veselý', 'Pavel'],
+            ['Prodáno', 'V25010013', '11.1.2025', 'Samsung Galaxy Note 20', '353173584221055', '14500', 'ne', 'ano', 'ano', 'Horák', 'Jiří'],
+            ['Naskladněno', 'V25010014', '12.1.2025', 'Xiaomi Redmi Note 12', '868278066655586', '4500', 'ano', 'ne', 'ne', 'Kratochvíl', 'Michal'],
+            ['Prodáno', 'V25010015', '13.1.2025', 'iPhone 14', '861722050416494', '22000', 'ano', 'ano', 'ano', 'Procházka', 'Anna'],
+            ['Prodáno', 'V25010016', '14.1.2025', 'Huawei P40', '353173584221056', '6800', 'ne', 'ne', 'ne', 'Krejčí', 'Václav'],
+            ['Naskladněno', 'V25010017', '15.1.2025', 'Motorola Edge 30', '868278066655587', '8200', 'ano', 'ano', 'ne', 'Fiala', 'Zdeněk'],
+            ['Prodáno', 'V25010018', '16.1.2025', 'Sony Xperia 5', '861722050416495', '9800', 'ne', 'ano', 'ano', 'Pokorný', 'Lukáš'],
+            ['Prodáno', 'V25010019', '17.1.2025', 'Nokia 8.3', '353173584221057', '5500', 'ano', 'ne', 'ne', 'Malý', 'David'],
+            ['Naskladněno', 'V25010020', '18.1.2025', 'Realme GT', '868278066655588', '7200', 'ne', 'ano', 'ano', 'Růžička', 'Martin'],
+            ['Prodáno', 'V25010021', '19.1.2025', 'Oppo Find X3', '861722050416496', '13500', 'ano', 'ano', 'ne', 'Beneš', 'Petr'],
+            ['Prodáno', 'V25010022', '20.1.2025', 'Vivo V21', '353173584221058', '6200', 'ne', 'ne', 'ano', 'Čech', 'Tomáš']
         ];
 
         const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Nabíj.', 'Krab.', 'Zár.list', 'Vykoupil', 'Jméno'];
 
+        console.log(`Mock data obsahují ${mockData.length} záznamů`);
         this.displayBazarTable(headers, mockData);
+        this.startAutoRefresh();
     }
 
     filterTable() {
