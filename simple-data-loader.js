@@ -16,17 +16,23 @@ class SimpleRetroDataLoader {
             this.showLoading();
             
             // Zkusíme načíst data pomocí jednoduchého fetch na CSV export
+            // Přidáme timestamp pro vynucení aktuálních dat (zabránění cache)
+            const timestamp = new Date().getTime();
             const csvUrl = isMonthly 
-                ? 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv'
-                : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv';
+                ? `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv&t=${timestamp}`
+                : `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&t=${timestamp}`;
             
             // Zkusíme přímý přístup bez CORS proxy
             let response;
             try {
                 response = await fetch(csvUrl, {
                     mode: 'cors',
+                    cache: 'no-cache', // Vynucení aktuálních dat
                     headers: {
-                        'Accept': 'text/csv'
+                        'Accept': 'text/csv',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
                     }
                 });
             } catch (corsError) {
@@ -73,6 +79,11 @@ class SimpleRetroDataLoader {
             .filter(row => row.some(cell => cell.trim())); // Odfiltrovat prázdné řádky
 
         console.log(`Načteno ${rows.length} řádků dat`);
+        
+        // Debug: zobrazíme první řádek (aktualizace)
+        if (rows.length > 0) {
+            console.log('První řádek (aktualizace):', rows[0]);
+        }
         
         if (rows.length === 0) {
             console.log('Žádné řádky dat, zobrazujem mock data');
@@ -322,8 +333,8 @@ class SimpleRetroDataLoader {
         }
 
         // Pro testování můžeme použít kratší interval (odkomentuj pro test):
-        // const refreshIntervalMs = 60000; // 1 minuta pro testování
-        const refreshIntervalMs = 3600000; // 1 hodina pro produkci
+        const refreshIntervalMs = 60000; // 1 minuta pro testování
+        // const refreshIntervalMs = 3600000; // 1 hodina pro produkci
         
         this.refreshInterval = setInterval(() => {
             console.log('Automatické obnovování dat...');
@@ -348,16 +359,22 @@ class SimpleRetroDataLoader {
         try {
             console.log('Obnovuji data...');
             
+            // Přidáme timestamp pro vynucení aktuálních dat (zabránění cache)
+            const timestamp = new Date().getTime();
             const csvUrl = this.isMonthly 
-                ? 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv'
-                : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv';
+                ? `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv&t=${timestamp}`
+                : `https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv&t=${timestamp}`;
             
             let response;
             try {
                 response = await fetch(csvUrl, {
                     mode: 'cors',
+                    cache: 'no-cache', // Vynucení aktuálních dat
                     headers: {
-                        'Accept': 'text/csv'
+                        'Accept': 'text/csv',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
                     }
                 });
             } catch (corsError) {
