@@ -415,14 +415,17 @@ class BazarDataLoader {
                                     <input type="text" id="dateTo" class="date-input" placeholder="31.12.2025">
                                 </div>
                                 <div class="date-filter-buttons">
+                                    <button type="button" class="quick-filter-btn" id="weekBtn">
+                                        TÝDEN
+                                    </button>
+                                    <button type="button" class="quick-filter-btn" id="monthBtn">
+                                        MĚSÍC
+                                    </button>
                                     <button type="button" class="clear-dates-btn" id="clearDatesBtn">
                                         VYMAZAT
                                     </button>
                                     <button type="button" class="show-all-btn" id="showAllBtn">
                                         ZOBRAZIT VŠE
-                                    </button>
-                                    <button type="button" class="clear-dates-btn" id="setDefaultBtn">
-                                        NASTAVIT 1.1.2025 - DNES
                                     </button>
                                 </div>
                             </div>
@@ -515,7 +518,8 @@ class BazarDataLoader {
             const textFilter = document.getElementById('bazarFilter');
             const clearBtn = document.getElementById('clearDatesBtn');
             const showAllBtn = document.getElementById('showAllBtn');
-            const setDefaultBtn = document.getElementById('setDefaultBtn');
+            const weekBtn = document.getElementById('weekBtn');
+            const monthBtn = document.getElementById('monthBtn');
             
             console.log('Hledám elementy:', {
                 dateFrom: !!dateFromInput,
@@ -523,8 +527,23 @@ class BazarDataLoader {
                 textFilter: !!textFilter,
                 clearBtn: !!clearBtn,
                 showAllBtn: !!showAllBtn,
-                setDefaultBtn: !!setDefaultBtn
+                weekBtn: !!weekBtn,
+                monthBtn: !!monthBtn
             });
+            
+            // Debug informace o inputech
+            if (dateFromInput) {
+                console.log('dateFromInput element:', dateFromInput);
+                console.log('dateFromInput style:', window.getComputedStyle(dateFromInput));
+                console.log('dateFromInput disabled:', dateFromInput.disabled);
+                console.log('dateFromInput readonly:', dateFromInput.readOnly);
+            }
+            if (dateToInput) {
+                console.log('dateToInput element:', dateToInput);
+                console.log('dateToInput style:', window.getComputedStyle(dateToInput));
+                console.log('dateToInput disabled:', dateToInput.disabled);
+                console.log('dateToInput readonly:', dateToInput.readOnly);
+            }
             
             // Pokud elementy ještě nejsou k dispozici, zkusit znovu (max 10x)
             if (!dateFromInput || !dateToInput) {
@@ -568,16 +587,44 @@ class BazarDataLoader {
             };
             
             if (dateFromInput) {
+                // Explicitně nastavit vlastnosti inputu
+                dateFromInput.disabled = false;
+                dateFromInput.readOnly = false;
+                dateFromInput.style.pointerEvents = 'auto';
+                dateFromInput.style.userSelect = 'text';
+                dateFromInput.style.cursor = 'text';
+                dateFromInput.style.zIndex = '999';
+                dateFromInput.tabIndex = 0;
+                
                 dateFromInput.addEventListener('input', handleDateFromChange);
                 dateFromInput.addEventListener('change', handleDateFromChange);
                 dateFromInput.addEventListener('blur', handleDateFromChange);
+                dateFromInput.addEventListener('click', () => {
+                    console.log('Date FROM input clicked');
+                    dateFromInput.focus();
+                });
+                dateFromInput.addEventListener('focus', () => console.log('Date FROM input focused'));
                 console.log('Date FROM input nastaven');
             }
             
             if (dateToInput) {
+                // Explicitně nastavit vlastnosti inputu
+                dateToInput.disabled = false;
+                dateToInput.readOnly = false;
+                dateToInput.style.pointerEvents = 'auto';
+                dateToInput.style.userSelect = 'text';
+                dateToInput.style.cursor = 'text';
+                dateToInput.style.zIndex = '999';
+                dateToInput.tabIndex = 0;
+                
                 dateToInput.addEventListener('input', handleDateToChange);
                 dateToInput.addEventListener('change', handleDateToChange);
                 dateToInput.addEventListener('blur', handleDateToChange);
+                dateToInput.addEventListener('click', () => {
+                    console.log('Date TO input clicked');
+                    dateToInput.focus();
+                });
+                dateToInput.addEventListener('focus', () => console.log('Date TO input focused'));
                 console.log('Date TO input nastaven');
             }
             
@@ -624,18 +671,32 @@ class BazarDataLoader {
                 console.log('Show all button nastaven');
             }
             
-            if (setDefaultBtn) {
-                const handleSetDefaultBtn = () => {
-                    console.log('Set default button clicked');
+            if (weekBtn) {
+                const handleWeekBtn = () => {
+                    console.log('Week button clicked');
                     try {
-                        this.setDefaultDateRange();
+                        this.setWeekFilter();
                     } catch (error) {
-                        console.error('Chyba při nastavení výchozího datového filtru:', error);
+                        console.error('Chyba při nastavení týdenního filtru:', error);
                     }
                 };
                 
-                setDefaultBtn.addEventListener('click', handleSetDefaultBtn);
-                console.log('Set default button nastaven');
+                weekBtn.addEventListener('click', handleWeekBtn);
+                console.log('Week button nastaven');
+            }
+            
+            if (monthBtn) {
+                const handleMonthBtn = () => {
+                    console.log('Month button clicked');
+                    try {
+                        this.setMonthFilter();
+                    } catch (error) {
+                        console.error('Chyba při nastavení měsíčního filtru:', error);
+                    }
+                };
+                
+                monthBtn.addEventListener('click', handleMonthBtn);
+                console.log('Month button nastaven');
             }
             
             // Event listenery pro stránkování
@@ -663,7 +724,8 @@ class BazarDataLoader {
                 textFilter: !!textFilter,
                 clearBtn: !!clearBtn,
                 showAllBtn: !!showAllBtn,
-                setDefaultBtn: !!setDefaultBtn,
+                weekBtn: !!weekBtn,
+                monthBtn: !!monthBtn,
                 paginationBtns: paginationBtns.length
             });
             
@@ -679,7 +741,8 @@ class BazarDataLoader {
         // Uložíme reference na event listenery pro pozdější odstranění
         const elements = [
             'dateFrom', 'dateTo',
-            'bazarFilter', 'clearDatesBtn', 'showAllBtn', 'setDefaultBtn'
+            'bazarFilter', 'clearDatesBtn', 'showAllBtn',
+            'weekBtn', 'monthBtn'
         ];
         
         elements.forEach(id => {
@@ -1014,6 +1077,73 @@ class BazarDataLoader {
             console.log('✅ Výchozí datový rozsah nastaven:', {
                 od: '1.1.2025',
                 do: todayStr
+            });
+            
+            // Aplikovat filtr
+            this.filterTable();
+        } else {
+            console.log('❌ Nepodařilo se najít datové inputy');
+        }
+    }
+
+    setWeekFilter() {
+        console.log('📅 === NASTAVUJI TÝDENNÍ FILTR ===');
+        
+        const today = new Date();
+        const weekAgo = new Date(today);
+        weekAgo.setDate(today.getDate() - 7);
+        
+        // Nastavit textové inputy pro datum
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
+        
+        if (dateFromInput && dateToInput) {
+            // Nastavit datum OD na před týdnem
+            const weekAgoStr = `${weekAgo.getDate()}.${weekAgo.getMonth() + 1}.${weekAgo.getFullYear()}`;
+            dateFromInput.value = weekAgoStr;
+            
+            // Nastavit datum DO na dnešek
+            const todayStr = `${today.getDate()}.${today.getMonth() + 1}.${today.getFullYear()}`;
+            dateToInput.value = todayStr;
+            
+            console.log('✅ Týdenní filtr nastaven:', {
+                od: weekAgoStr,
+                do: todayStr
+            });
+            
+            // Aplikovat filtr
+            this.filterTable();
+        } else {
+            console.log('❌ Nepodařilo se najít datové inputy');
+        }
+    }
+
+    setMonthFilter() {
+        console.log('📅 === NASTAVUJI MĚSÍČNÍ FILTR ===');
+        
+        const today = new Date();
+        
+        // Vypočítat minulý měsíc
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0); // Poslední den minulého měsíce
+        
+        // Nastavit textové inputy pro datum
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
+        
+        if (dateFromInput && dateToInput) {
+            // Nastavit datum OD na první den minulého měsíce
+            const monthStartStr = `1.${lastMonth.getMonth() + 1}.${lastMonth.getFullYear()}`;
+            dateFromInput.value = monthStartStr;
+            
+            // Nastavit datum DO na poslední den minulého měsíce
+            const monthEndStr = `${lastMonthEnd.getDate()}.${lastMonthEnd.getMonth() + 1}.${lastMonthEnd.getFullYear()}`;
+            dateToInput.value = monthEndStr;
+            
+            console.log('✅ Měsíční filtr nastaven:', {
+                od: monthStartStr,
+                do: monthEndStr,
+                mesic: lastMonth.toLocaleDateString('cs-CZ', { month: 'long', year: 'numeric' })
             });
             
             // Aplikovat filtr
