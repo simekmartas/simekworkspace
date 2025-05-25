@@ -37,167 +37,84 @@ class BazarDataLoader {
             
             let csvData = null;
             
-            // Přístup 1: Zkusíme CORS Anywhere (Heroku)
-            console.log('=== PŘÍSTUP 1: CORS Anywhere ===');
+            // Rychlý timeout pro všechny pokusy - pokud se nepodaří do 3 sekund, jdeme na mock data
+            const quickTimeout = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout - přechod na mock data')), 3000)
+            );
+            
+            // Zkusíme rychle načíst data s timeoutem
             try {
-                const proxyUrl = `https://cors-anywhere.herokuapp.com/${csvUrl}`;
-                console.log('CORS Anywhere URL:', proxyUrl);
+                csvData = await Promise.race([
+                    this.tryLoadData(csvUrl),
+                    quickTimeout
+                ]);
                 
-                const proxyResponse = await fetch(proxyUrl, {
-                    cache: 'no-cache',
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-                
-                console.log('CORS Anywhere response status:', proxyResponse.status);
-                
-                if (proxyResponse.ok) {
-                    csvData = await proxyResponse.text();
-                    console.log('CORS Anywhere ÚSPĚŠNÝ - délka dat:', csvData.length);
+                if (csvData && csvData.length > 100) {
+                    console.log('=== ÚSPĚCH: Bazarová data načtena rychle ===');
+                    console.log('Celková délka CSV dat:', csvData.length);
+                    this.parseAndDisplayBazarData(csvData);
+                    this.startAutoRefresh();
+                    return;
                 }
             } catch (error) {
-                console.log('CORS Anywhere přístup selhal:', error.message);
+                console.log('=== RYCHLÉ NAČÍTÁNÍ SELHALO, PŘECHOD NA MOCK DATA ===');
+                console.log('Důvod:', error.message);
             }
             
-            // Přístup 2: Přímý přístup k publikovanému CSV
-            if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 2: Přímý přístup k publikovanému CSV ===');
-                try {
-                    // Zkusíme publikované URL pro CSV
-                    const publishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${this.bazarGid}&single=true&output=csv&cachebust=${timestamp}`;
-                    console.log('Publikované CSV URL:', publishedUrl);
-                    
-                    const directResponse = await fetch(publishedUrl, {
-                        mode: 'cors',
-                        cache: 'no-cache',
-                        headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        }
-                    });
-                    
-                    console.log('Přímý přístup response status:', directResponse.status);
-                    
-                    if (directResponse.ok) {
-                        csvData = await directResponse.text();
-                        console.log('Přímý přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
-                        console.log('První 500 znaků:', csvData.substring(0, 500));
-                    }
-                } catch (error) {
-                    console.log('Přímý přístup selhal:', error.message);
-                }
-            }
-
-            // Přístup 2b: Zkusíme původní export URL přímo
-            if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 2b: Přímý export URL ===');
-                try {
-                    console.log('Export URL:', csvUrl);
-                    
-                    const exportResponse = await fetch(csvUrl, {
-                        mode: 'cors',
-                        cache: 'no-cache',
-                        headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        }
-                    });
-                    
-                    console.log('Export přístup response status:', exportResponse.status);
-                    
-                    if (exportResponse.ok) {
-                        csvData = await exportResponse.text();
-                        console.log('Export přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
-                        console.log('První 500 znaků:', csvData.substring(0, 500));
-                    }
-                } catch (error) {
-                    console.log('Export přístup selhal:', error.message);
-                }
-            }
-
-            // Přístup 3: AllOrigins proxy jako fallback
-            if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 3: AllOrigins Proxy ===');
-                try {
-                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
-                    console.log('AllOrigins Proxy URL:', proxyUrl);
-                    
-                    const proxyResponse = await fetch(proxyUrl, {
-                        cache: 'no-cache',
-                        headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        }
-                    });
-                    
-                    if (proxyResponse.ok) {
-                        const proxyData = await proxyResponse.json();
-                        
-                        if (proxyData.contents && proxyData.contents.length > 100) {
-                            csvData = proxyData.contents;
-                            console.log('AllOrigins Proxy ÚSPĚŠNÝ - délka dat:', csvData.length);
-                        }
-                    }
-                } catch (error) {
-                    console.log('AllOrigins Proxy přístup selhal:', error.message);
-                }
-            }
-            
-            // Přístup 4: Zkusíme jiný formát URL pro Google Sheets
-            if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 4: Alternativní Google Sheets URL ===');
-                try {
-                    // Zkusíme jiný formát URL
-                    const altUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${this.bazarGid}&cachebust=${timestamp}`;
-                    console.log('Alternativní URL:', altUrl);
-                    
-                    const altResponse = await fetch(altUrl, {
-                        mode: 'cors',
-                        cache: 'no-cache',
-                        headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        }
-                    });
-                    
-                    console.log('Alternativní přístup response status:', altResponse.status);
-                    
-                    if (altResponse.ok) {
-                        csvData = await altResponse.text();
-                        console.log('Alternativní přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
-                        console.log('První 500 znaků:', csvData.substring(0, 500));
-                    }
-                } catch (error) {
-                    console.log('Alternativní přístup selhal:', error.message);
-                }
-            }
-
-            // Zpracování dat pokud se podařilo je načíst
-            if (csvData && csvData.length > 100) {
-                console.log('=== ÚSPĚCH: Bazarová data načtena ===');
-                console.log('Celková délka CSV dat:', csvData.length);
-                this.parseAndDisplayBazarData(csvData);
-                this.startAutoRefresh();
-                return;
-            } else {
-                console.log('=== SELHÁNÍ: Zobrazujem mock bazarová data ===');
-                console.log('Důvod: csvData délka =', csvData ? csvData.length : 'null');
-                throw new Error('Nepodařilo se načíst validní bazarová data');
-            }
+            // Pokud rychlé načítání selhalo, zobrazíme mock data
+            console.log('=== ZOBRAZUJEM MOCK BAZAROVÁ DATA ===');
+            this.showMockBazarData();
             
         } catch (error) {
             console.error('Chyba při načítání bazarových dat:', error.message);
-            console.log('=== ZKOUŠÍM IFRAME FALLBACK ===');
-            this.showIframeFallback();
+            console.log('=== ZOBRAZUJEM MOCK DATA ===');
+            this.showMockBazarData();
         }
+    }
+
+    async tryLoadData(csvUrl) {
+        // Zkusíme několik rychlých přístupů paralelně
+        const attempts = [
+            // Přímý přístup k CSV
+            fetch(csvUrl, {
+                mode: 'cors',
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(2000) // 2 sekundy timeout
+            }),
+            
+            // Publikované URL
+            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${this.bazarGid}&single=true&output=csv`, {
+                mode: 'cors',
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(2000)
+            }),
+            
+            // Alternativní formát
+            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${this.bazarGid}`, {
+                mode: 'cors',
+                cache: 'no-cache',
+                signal: AbortSignal.timeout(2000)
+            })
+        ];
+
+        // Zkusíme všechny přístupy současně a vezmeme první úspěšný
+        for (const attempt of attempts) {
+            try {
+                const response = await attempt;
+                if (response.ok) {
+                    const data = await response.text();
+                    if (data && data.length > 100) {
+                        console.log('✅ Úspěšně načteno:', data.length, 'znaků');
+                        return data;
+                    }
+                }
+            } catch (error) {
+                console.log('❌ Pokus selhal:', error.message);
+                continue;
+            }
+        }
+        
+        throw new Error('Všechny rychlé pokusy selhaly');
     }
 
     parseAndDisplayBazarData(csvData) {
@@ -835,48 +752,7 @@ class BazarDataLoader {
         `;
     }
 
-    showIframeFallback() {
-        console.log('=== ZOBRAZUJEM IFRAME FALLBACK ===');
-        
-        const iframeUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pubhtml?gid=${this.bazarGid}&single=true&widget=true&headers=false`;
-        console.log('Iframe URL:', iframeUrl);
-        
-        this.container.innerHTML = `
-            <div class="retro-data-container">
-                <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; bazar_iframe.html_</span>
-                    <div class="retro-window-controls">
-                        <span class="control-dot red"></span>
-                        <span class="control-dot yellow"></span>
-                        <span class="control-dot green"></span>
-                    </div>
-                </div>
-                <div class="retro-data-content" style="height: 600px; padding: 0;">
-                    <iframe 
-                        src="${iframeUrl}"
-                        style="width: 100%; height: 100%; border: none; background: white;"
-                        seamless
-                    ></iframe>
-                </div>
-                <div class="retro-data-footer">
-                    <div class="retro-status-left">
-                        <span class="retro-status-text">// IFRAME FALLBACK MODE</span>
-                        <span class="retro-blink">●</span>
-                    </div>
-                    <div class="retro-status-right">
-                        <span class="retro-data-flow">▓▒░</span>
-                        <span class="retro-small-text">LIVE DATA</span>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        // Pokud iframe nefunguje, zobrazíme mock data po 5 sekundách
-        setTimeout(() => {
-            console.log('=== IFRAME TIMEOUT - ZOBRAZUJEM MOCK DATA ===');
-            this.showMockBazarData();
-        }, 5000);
-    }
+
 
     showMockBazarData() {
         console.log('=== ZOBRAZUJEM MOCK BAZAROVÁ DATA ===');
