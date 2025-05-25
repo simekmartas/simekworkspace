@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS Anywhere</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #00ff00; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .success { border-color: #00ff00; }
+        .error { border-color: #ff0000; color: #ff0000; }
+        .warning { border-color: #ffaa00; color: #ffaa00; }
+        button { background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; cursor: pointer; }
+        button:hover { background: #00ff00; color: #000; }
+        pre { background: #111; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <h1>Test CORS Anywhere</h1>
+    <p class="info">Testuje CORS Anywhere proxy server (cors-anywhere.herokuapp.com)</p>
+    
+    <button onclick="testCorsAnywhere()">Test CORS Anywhere</button>
+    <button onclick="clearResults()">Vymazat</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const SPREADSHEET_ID = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testCorsAnywhere() {
+            const timestamp = new Date().getTime();
+            const originalUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            const proxyUrl = `https://cors-anywhere.herokuapp.com/${originalUrl}`;
+            
+            addResult('CORS Anywhere - Start', `Original URL: ${originalUrl}
+Proxy URL: ${proxyUrl}
+Testuje CORS Anywhere...`, 'info');
+            
+            try {
+                console.log('=== CORS ANYWHERE TEST ===');
+                console.log('Original URL:', originalUrl);
+                console.log('Proxy URL:', proxyUrl);
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                
+                console.log('CORS Anywhere response:', response);
+                console.log('CORS Anywhere status:', response.status);
+                console.log('CORS Anywhere OK:', response.ok);
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Type: ${response.type}
+URL: ${response.url}`;
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    console.log('CORS Anywhere data length:', data.length);
+                    console.log('CORS Anywhere first 300 chars:', data.substring(0, 300));
+                    
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult('CORS Anywhere - ÚSPĚCH', `${responseInfo}
+
+Délka dat: ${data.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                } else if (response.status === 403) {
+                    const errorText = await response.text();
+                    addResult('CORS Anywhere - PŘÍSTUP ODMÍTNUT', `${responseInfo}
+
+Chyba 403: ${errorText}
+
+CORS Anywhere vyžaduje aktivaci:
+1. Jděte na: https://cors-anywhere.herokuapp.com/corsdemo
+2. Klikněte na "Request temporary access to the demo server"
+3. Poté zkuste test znovu`, 'warning');
+                } else {
+                    const errorText = await response.text();
+                    addResult('CORS Anywhere - CHYBA HTTP', `${responseInfo}
+
+Chybová zpráva: ${errorText}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('CORS Anywhere fetch error:', error);
+                addResult('CORS Anywhere - VÝJIMKA', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        // Automaticky spustíme test při načtení
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('Automatický Test', 'Spouštím automatický test CORS Anywhere...', 'info');
+                testCorsAnywhere();
+            }, 1000);
+        });
+        
+        // Přidáme informace
+        addResult('Informace', `Spreadsheet ID: ${SPREADSHEET_ID}
+Test URL: https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0
+
+Testuje CORS Anywhere proxy server:
+- URL: https://cors-anywhere.herokuapp.com/
+- Může vyžadovat aktivaci na: https://cors-anywhere.herokuapp.com/corsdemo
+- Pokud dostanete 403 chybu, musíte požádat o dočasný přístup`, 'info');
+    </script>
+</body>
+</html> 

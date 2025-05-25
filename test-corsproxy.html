@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CorsProxy.io</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #00ff00; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .success { border-color: #00ff00; }
+        .error { border-color: #ff0000; color: #ff0000; }
+        button { background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; cursor: pointer; }
+        button:hover { background: #00ff00; color: #000; }
+        pre { background: #111; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <h1>Test CorsProxy.io</h1>
+    <p class="info">Testuje CorsProxy.io proxy server</p>
+    
+    <button onclick="testCorsProxy()">Test CorsProxy.io</button>
+    <button onclick="clearResults()">Vymazat</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const SPREADSHEET_ID = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testCorsProxy() {
+            const timestamp = new Date().getTime();
+            const originalUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(originalUrl)}`;
+            
+            addResult('CorsProxy.io - Start', `Original URL: ${originalUrl}
+Proxy URL: ${proxyUrl}
+Testuje CorsProxy.io...`, 'info');
+            
+            try {
+                console.log('=== CORSPROXY.IO TEST ===');
+                console.log('Original URL:', originalUrl);
+                console.log('Proxy URL:', proxyUrl);
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                console.log('CorsProxy response:', response);
+                console.log('CorsProxy status:', response.status);
+                console.log('CorsProxy OK:', response.ok);
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Type: ${response.type}
+URL: ${response.url}`;
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    console.log('CorsProxy data length:', data.length);
+                    console.log('CorsProxy first 300 chars:', data.substring(0, 300));
+                    
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult('CorsProxy.io - ÚSPĚCH', `${responseInfo}
+
+Délka dat: ${data.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                } else {
+                    addResult('CorsProxy.io - CHYBA HTTP', responseInfo, 'error');
+                }
+                
+            } catch (error) {
+                console.error('CorsProxy fetch error:', error);
+                addResult('CorsProxy.io - VÝJIMKA', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        // Automaticky spustíme test při načtení
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('Automatický Test', 'Spouštím automatický test CorsProxy.io...', 'info');
+                testCorsProxy();
+            }, 1000);
+        });
+        
+        // Přidáme informace
+        addResult('Informace', `Spreadsheet ID: ${SPREADSHEET_ID}
+Test URL: https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0
+
+Testuje CorsProxy.io proxy server:
+- URL formát: https://corsproxy.io/?[encoded_url]
+- Měl by být spolehlivější než ostatní proxy servery`, 'info');
+    </script>
+</body>
+</html> 

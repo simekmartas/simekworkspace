@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Nového Data Loaderu</title>
+    <style>
+        body { 
+            font-family: 'Courier New', monospace; 
+            padding: 20px; 
+            background: #000; 
+            color: #00ff00; 
+            line-height: 1.4;
+        }
+        .result { 
+            margin: 10px 0; 
+            padding: 15px; 
+            border: 1px solid #333; 
+            border-radius: 5px;
+            background: #111;
+        }
+        .success { border-color: #00ff00; background: #001100; }
+        .error { border-color: #ff0000; color: #ff0000; background: #110000; }
+        .warning { border-color: #ffaa00; color: #ffaa00; background: #111100; }
+        .info { border-color: #00aaff; color: #00aaff; background: #001111; }
+        
+        button { 
+            background: #333; 
+            color: #00ff00; 
+            border: 1px solid #00ff00; 
+            padding: 12px 20px; 
+            margin: 5px; 
+            cursor: pointer; 
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        button:hover { background: #00ff00; color: #000; }
+        button:disabled { 
+            background: #222; 
+            color: #666; 
+            border-color: #666; 
+            cursor: not-allowed; 
+        }
+        
+        pre { 
+            background: #000; 
+            padding: 10px; 
+            overflow-x: auto; 
+            white-space: pre-wrap; 
+            border: 1px solid #333;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+        }
+        
+        .status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            background: #000;
+            border: 1px solid #00ff00;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+            background: #111;
+        }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="status">
+        <div>Status: <span id="status">Připraven</span></div>
+        <div>Testy: <span id="test-count">0</span></div>
+    </div>
+
+    <div class="header">
+        <h1>&gt; Test Nového Data Loaderu_</h1>
+        <p>Testuje načítání dat z Google Sheets ID: 1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE</p>
+        <p class="info">Tento test ověří funkčnost všech proxy serverů a přímého přístupu</p>
+    </div>
+    
+    <div class="controls">
+        <button onclick="testDirectAccess()">Test Přímý Přístup</button>
+        <button onclick="testAllProxies()">Test Všech Proxy</button>
+        <button onclick="testMainSheet()">Test Hlavní List</button>
+        <button onclick="testMonthlySheet()">Test Měsíční List</button>
+        <button onclick="testFullLoader()">Test Kompletní Loader</button>
+        <button onclick="clearResults()">Vymazat Výsledky</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const SPREADSHEET_ID = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
+        const resultsDiv = document.getElementById('results');
+        let testCount = 0;
+        
+        // Proxy servery pro testování
+        const proxyServers = [
+            {
+                name: 'AllOrigins',
+                url: (targetUrl) => `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`,
+                parseResponse: (response) => response.contents
+            },
+            {
+                name: 'CORS.SH',
+                url: (targetUrl) => `https://cors.sh/${targetUrl}`
+            },
+            {
+                name: 'Proxy CORS',
+                url: (targetUrl) => `https://proxy.cors.sh/${targetUrl}`
+            },
+            {
+                name: 'ThingProxy',
+                url: (targetUrl) => `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+            },
+            {
+                name: 'CORS Anywhere (Heroku)',
+                url: (targetUrl) => `https://cors-anywhere.herokuapp.com/${targetUrl}`
+            }
+        ];
+        
+        function updateStatus(text) {
+            document.getElementById('status').textContent = text;
+        }
+        
+        function updateTestCount() {
+            testCount++;
+            document.getElementById('test-count').textContent = testCount;
+        }
+        
+        function addResult(title, content, type = 'info') {
+            updateTestCount();
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            
+            const timestamp = new Date().toLocaleTimeString('cs-CZ');
+            div.innerHTML = `
+                <h3>[${timestamp}] ${title}</h3>
+                <pre>${content}</pre>
+            `;
+            
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+            testCount = 0;
+            updateTestCount();
+            updateStatus('Připraven');
+        }
+        
+        async function testDirectAccess() {
+            updateStatus('Testuje přímý přístup...');
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            addResult('Test Přímý Přístup - Začátek', `URL: ${url}
+Testuje přímý přístup bez proxy serveru`, 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Accept': 'text/csv, text/plain, */*',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                const duration = Date.now() - startTime;
+                
+                const info = `Status: ${response.status}
+OK: ${response.ok}
+Content-Type: ${response.headers.get('content-type')}
+Content-Length: ${response.headers.get('content-length')}
+Doba odezvy: ${duration}ms`;
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult('Přímý Přístup - ÚSPĚCH ✅', `${info}
+
+Délka dat: ${data.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                    
+                    updateStatus('Přímý přístup ÚSPĚŠNÝ');
+                } else {
+                    addResult('Přímý Přístup - CHYBA ❌', info, 'error');
+                    updateStatus('Přímý přístup SELHAL');
+                }
+                
+            } catch (error) {
+                addResult('Přímý Přístup - VÝJIMKA ❌', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}`, 'error');
+                updateStatus('Přímý přístup SELHAL');
+            }
+        }
+        
+        async function testProxy(proxy, targetUrl) {
+            const proxyUrl = proxy.url(targetUrl);
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(proxyUrl, {
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                const duration = Date.now() - startTime;
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                let data;
+                if (proxy.parseResponse) {
+                    const jsonData = await response.json();
+                    data = proxy.parseResponse(jsonData);
+                } else {
+                    data = await response.text();
+                }
+                
+                if (data && data.length > 100) {
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult(`${proxy.name} - ÚSPĚCH ✅`, `Proxy URL: ${proxyUrl}
+Doba odezvy: ${duration}ms
+Délka dat: ${data.length} znaků
+Počet řádků: ${lines.length}
+
+První řádek: ${lines[0] || 'Prázdný'}
+Druhý řádek: ${lines[1] || 'Neexistuje'}`, 'success');
+                    
+                    return true;
+                } else {
+                    throw new Error('Data jsou příliš krátká nebo prázdná');
+                }
+                
+            } catch (error) {
+                addResult(`${proxy.name} - CHYBA ❌`, `Proxy URL: ${proxyUrl}
+Chyba: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        async function testAllProxies() {
+            updateStatus('Testuje všechny proxy servery...');
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            addResult('Test Všech Proxy - Začátek', `Testuje ${proxyServers.length} proxy serverů
+Target URL: ${url}`, 'info');
+            
+            let successCount = 0;
+            
+            for (let i = 0; i < proxyServers.length; i++) {
+                const proxy = proxyServers[i];
+                updateStatus(`Testuje ${proxy.name}... (${i + 1}/${proxyServers.length})`);
+                
+                const success = await testProxy(proxy, url);
+                if (success) successCount++;
+                
+                // Krátká pauza mezi testy
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            const resultType = successCount > 0 ? 'success' : 'error';
+            addResult('Test Všech Proxy - Výsledek', `Úspěšné proxy servery: ${successCount}/${proxyServers.length}
+${successCount > 0 ? '✅ Alespoň jeden proxy server funguje!' : '❌ Žádný proxy server nefunguje!'}`, resultType);
+            
+            updateStatus(`Proxy test dokončen (${successCount}/${proxyServers.length})`);
+        }
+        
+        async function testMainSheet() {
+            updateStatus('Testuje hlavní list...');
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            addResult('Test Hlavní List (gid=0)', `URL: ${url}
+Testuje aktuální denní data`, 'info');
+            
+            await testBestMethod(url, 'Hlavní List');
+        }
+        
+        async function testMonthlySheet() {
+            updateStatus('Testuje měsíční list...');
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=1829845095&cachebust=${timestamp}`;
+            
+            addResult('Test Měsíční List (gid=1829845095)', `URL: ${url}
+Testuje měsíční data od 1. dne`, 'info');
+            
+            await testBestMethod(url, 'Měsíční List');
+        }
+        
+        async function testBestMethod(url, description) {
+            // Nejprve zkusíme přímý přístup
+            try {
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    headers: {
+                        'Accept': 'text/csv, text/plain, */*'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    if (data.length > 100) {
+                        const lines = data.split('\n').filter(line => line.trim());
+                        addResult(`${description} - Přímý ÚSPĚCH ✅`, `Délka: ${data.length} znaků
+Řádky: ${lines.length}
+První řádek: ${lines[0]}`, 'success');
+                        return;
+                    }
+                }
+            } catch (error) {
+                // Pokračujeme k proxy testům
+            }
+            
+            // Zkusíme proxy servery
+            for (const proxy of proxyServers) {
+                const success = await testProxy(proxy, url);
+                if (success) {
+                    return; // Úspěch, končíme
+                }
+            }
+            
+            addResult(`${description} - SELHÁNÍ ❌`, 'Ani přímý přístup ani proxy servery nefungují', 'error');
+        }
+        
+        async function testFullLoader() {
+            updateStatus('Testuje kompletní data loader...');
+            
+            addResult('Test Kompletní Loader - Začátek', 'Spouští simulaci kompletního načítání dat pomocí NewDataLoader', 'info');
+            
+            // Simulujeme NewDataLoader logiku
+            const timestamp = new Date().getTime();
+            const csvUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            let csvData = null;
+            let method = '';
+            
+            // 1. Přímý přístup
+            try {
+                const response = await fetch(csvUrl, {
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    credentials: 'omit',
+                    headers: {
+                        'Accept': 'text/csv, text/plain, */*',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    if (data.length > 100) {
+                        csvData = data;
+                        method = 'Přímý přístup';
+                    }
+                }
+            } catch (error) {
+                // Pokračujeme k proxy
+            }
+            
+            // 2. Proxy servery
+            if (!csvData) {
+                for (const proxy of proxyServers) {
+                    try {
+                        const proxyUrl = proxy.url(csvUrl);
+                        const response = await fetch(proxyUrl, { cache: 'no-cache' });
+                        
+                        if (response.ok) {
+                            let data;
+                            if (proxy.parseResponse) {
+                                const jsonData = await response.json();
+                                data = proxy.parseResponse(jsonData);
+                            } else {
+                                data = await response.text();
+                            }
+                            
+                            if (data && data.length > 100) {
+                                csvData = data;
+                                method = proxy.name;
+                                break;
+                            }
+                        }
+                    } catch (error) {
+                        // Pokračujeme k dalšímu proxy
+                    }
+                }
+            }
+            
+            // Výsledek
+            if (csvData) {
+                const lines = csvData.split('\n').filter(line => line.trim());
+                addResult('Kompletní Loader - ÚSPĚCH ✅', `Metoda: ${method}
+Délka dat: ${csvData.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+✅ Data by byla úspěšně zobrazena na stránce!`, 'success');
+                
+                updateStatus('Kompletní loader ÚSPĚŠNÝ');
+            } else {
+                addResult('Kompletní Loader - SELHÁNÍ ❌', `Žádná metoda nenačetla validní data.
+Zobrazila by se mock data.
+
+Možné příčiny:
+- Google Sheets není publikovaný
+- Všechny proxy servery jsou nedostupné
+- Síťová omezení`, 'error');
+                
+                updateStatus('Kompletní loader SELHAL');
+            }
+        }
+        
+        // Automatický test při načtení
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('Automatický Test', 'Spouštím automatický test přímého přístupu...', 'info');
+                testDirectAccess();
+            }, 1000);
+        });
+        
+        // Přidáme informace
+        addResult('Informace o Testování', `Spreadsheet ID: ${SPREADSHEET_ID}
+Hlavní list (aktuální data): gid=0
+Měsíční list (od 1. dne): gid=1829845095
+
+Přímý odkaz na tabulku:
+https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit
+
+Tento test ověří:
+✓ Přímý přístup k Google Sheets
+✓ Funkčnost všech proxy serverů
+✓ Načítání obou listů (hlavní + měsíční)
+✓ Kompletní simulaci data loaderu`, 'info');
+    </script>
+</body>
+</html> 

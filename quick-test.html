@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rychlý Test Google Sheets</title>
+    <style>
+        body { 
+            font-family: monospace; 
+            padding: 20px; 
+            background: #000; 
+            color: #00ff00; 
+        }
+        .result { 
+            margin: 10px 0; 
+            padding: 10px; 
+            border: 1px solid #333; 
+            background: #111;
+        }
+        .success { border-color: #00ff00; }
+        .error { border-color: #ff0000; color: #ff0000; }
+        .info { border-color: #00aaff; color: #00aaff; }
+        pre { background: #000; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🚀 Rychlý Test Google Sheets</h1>
+    <div id="results"></div>
+
+    <script>
+        const SPREADSHEET_ID = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+        }
+        
+        async function quickTest() {
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            addResult('Test URL', url, 'info');
+            
+            // Test 1: Přímý přístup
+            try {
+                addResult('Test 1: Přímý přístup', 'Zkouším...', 'info');
+                
+                const response = await fetch(url, {
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult('Přímý přístup - ÚSPĚCH ✅', `Délka: ${data.length} znaků
+Řádky: ${lines.length}
+První řádek: ${lines[0] || 'Prázdný'}
+Druhý řádek: ${lines[1] || 'Neexistuje'}`, 'success');
+                    return; // Úspěch, končíme
+                } else {
+                    addResult('Přímý přístup - CHYBA', `Status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                addResult('Přímý přístup - CHYBA', error.message, 'error');
+            }
+            
+            // Test 2: AllOrigins proxy
+            try {
+                addResult('Test 2: AllOrigins Proxy', 'Zkouším...', 'info');
+                
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+                const response = await fetch(proxyUrl, { cache: 'no-cache' });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.contents && data.contents.length > 100) {
+                        const lines = data.contents.split('\n').filter(line => line.trim());
+                        
+                        addResult('AllOrigins Proxy - ÚSPĚCH ✅', `Délka: ${data.contents.length} znaků
+Řádky: ${lines.length}
+První řádek: ${lines[0] || 'Prázdný'}
+Druhý řádek: ${lines[1] || 'Neexistuje'}`, 'success');
+                        return; // Úspěch, končíme
+                    }
+                }
+                
+                addResult('AllOrigins Proxy - CHYBA', `Status: ${response.status}`, 'error');
+            } catch (error) {
+                addResult('AllOrigins Proxy - CHYBA', error.message, 'error');
+            }
+            
+            // Test 3: CORS.SH proxy
+            try {
+                addResult('Test 3: CORS.SH Proxy', 'Zkouším...', 'info');
+                
+                const proxyUrl = `https://cors.sh/${url}`;
+                const response = await fetch(proxyUrl, { cache: 'no-cache' });
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    if (data.length > 100) {
+                        const lines = data.split('\n').filter(line => line.trim());
+                        
+                        addResult('CORS.SH Proxy - ÚSPĚCH ✅', `Délka: ${data.length} znaků
+Řádky: ${lines.length}
+První řádek: ${lines[0] || 'Prázdný'}
+Druhý řádek: ${lines[1] || 'Neexistuje'}`, 'success');
+                        return; // Úspěch, končíme
+                    }
+                }
+                
+                addResult('CORS.SH Proxy - CHYBA', `Status: ${response.status}`, 'error');
+            } catch (error) {
+                addResult('CORS.SH Proxy - CHYBA', error.message, 'error');
+            }
+            
+            // Pokud všechny selhaly
+            addResult('VÝSLEDEK', '❌ Všechny metody selhaly. Možné příčiny:\n- Google Sheets není publikovaný\n- Síťová omezení\n- Proxy servery jsou nedostupné', 'error');
+        }
+        
+        // Spustíme test automaticky
+        window.addEventListener('load', () => {
+            setTimeout(quickTest, 500);
+        });
+    </script>
+</body>
+</html> 

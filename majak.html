@@ -57,7 +57,7 @@
     <div class="version-info">&lt; v1.0 &gt;</div>
 
     <script src="navigation.js"></script>
-    <script src="simple-data-loader.js"></script>
+    <script src="new-data-loader.js"></script>
     <script>
     // Ochrana stránky pro členy
     if (!localStorage.getItem('isLoggedIn')) {
@@ -92,14 +92,15 @@
             }
         });
     } else {
-        // Načtení dat pomocí nového jednoduchého data loaderu
-        const dataLoader = new SimpleRetroDataLoader('data-container');
+        // Načtení dat pomocí nového data loaderu
+        const dataLoader = new NewDataLoader('data-container');
+        window.newDataLoader = dataLoader; // Pro globální přístup
         dataLoader.loadData(false); // false = aktuální data (ne měsíční)
         
         // Globální funkce pro manuální obnovení
         window.manualRefresh = function() {
             console.log('Manuální obnovení dat...');
-            dataLoader.refreshData();
+            dataLoader.loadData(false); // Znovu načte aktuální data
         };
         
         // Debug funkce pro testování

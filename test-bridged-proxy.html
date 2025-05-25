@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS Bridged Proxy</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #00ff00; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .success { border-color: #00ff00; }
+        .error { border-color: #ff0000; color: #ff0000; }
+        .warning { border-color: #ffaa00; color: #ffaa00; }
+        button { background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; cursor: pointer; }
+        button:hover { background: #00ff00; color: #000; }
+        pre { background: #111; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <h1>Test CORS Bridged Proxy</h1>
+    <p class="info">Testuje nový CORS Bridged proxy server: cors.bridged.cc</p>
+    
+    <button onclick="testBridgedProxy()">Test Bridged Proxy</button>
+    <button onclick="testAllOriginsProxy()">Test AllOrigins Proxy</button>
+    <button onclick="testDirectAccess()">Test Přímý Přístup</button>
+    <button onclick="testAllMethods()">Test Všech Metod</button>
+    <button onclick="clearResults()">Vymazat</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const SPREADSHEET_ID = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testBridgedProxy() {
+            const timestamp = new Date().getTime();
+            const originalUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            const proxyUrl = `https://cors.bridged.cc/${originalUrl}`;
+            
+            addResult('Bridged Proxy - Start', `Original URL: ${originalUrl}
+Proxy URL: ${proxyUrl}
+Testuje CORS Bridged proxy...`, 'info');
+            
+            try {
+                console.log('=== BRIDGED PROXY TEST ===');
+                console.log('Original URL:', originalUrl);
+                console.log('Proxy URL:', proxyUrl);
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                console.log('Bridged response:', response);
+                console.log('Bridged status:', response.status);
+                console.log('Bridged OK:', response.ok);
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Type: ${response.type}
+URL: ${response.url}`;
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    console.log('Bridged data length:', data.length);
+                    console.log('Bridged first 300 chars:', data.substring(0, 300));
+                    
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult('Bridged Proxy - ÚSPĚCH', `${responseInfo}
+
+Délka dat: ${data.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                } else {
+                    addResult('Bridged Proxy - CHYBA HTTP', responseInfo, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Bridged fetch error:', error);
+                addResult('Bridged Proxy - VÝJIMKA', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        async function testAllOriginsProxy() {
+            const timestamp = new Date().getTime();
+            const originalUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(originalUrl)}`;
+            
+            addResult('AllOrigins Proxy - Start', `Original URL: ${originalUrl}
+Proxy URL: ${proxyUrl}
+Testuje AllOrigins proxy...`, 'info');
+            
+            try {
+                console.log('=== ALLORIGINS PROXY TEST ===');
+                console.log('Original URL:', originalUrl);
+                console.log('Proxy URL:', proxyUrl);
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                console.log('AllOrigins response:', response);
+                console.log('AllOrigins status:', response.status);
+                console.log('AllOrigins OK:', response.ok);
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Type: ${response.type}
+URL: ${response.url}`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('AllOrigins data:', data);
+                    console.log('AllOrigins status code:', data.status);
+                    console.log('AllOrigins contents length:', data.contents ? data.contents.length : 'null');
+                    
+                    const dataInfo = `Proxy Status Code: ${data.status}
+Contents Length: ${data.contents ? data.contents.length : 'null'}
+Contents Type: ${typeof data.contents}`;
+                    
+                    if (data.contents && data.contents.length > 100) {
+                        const lines = data.contents.split('\n').filter(line => line.trim());
+                        
+                        addResult('AllOrigins Proxy - ÚSPĚCH', `${responseInfo}
+${dataInfo}
+
+Délka dat: ${data.contents.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                    } else {
+                        addResult('AllOrigins Proxy - PRÁZDNÁ DATA', `${responseInfo}
+${dataInfo}
+
+Proxy vrátila prázdná nebo neplatná data.`, 'warning');
+                    }
+                } else {
+                    addResult('AllOrigins Proxy - CHYBA HTTP', responseInfo, 'error');
+                }
+                
+            } catch (error) {
+                console.error('AllOrigins fetch error:', error);
+                addResult('AllOrigins Proxy - VÝJIMKA', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        async function testDirectAccess() {
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            addResult('Přímý Přístup - Start', `URL: ${url}
+Testuje přímý přístup bez proxy...`, 'info');
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    credentials: 'omit',
+                    headers: {
+                        'Accept': 'text/csv, text/plain, */*',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Type: ${response.type}
+URL: ${response.url}
+Redirected: ${response.redirected}`;
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult('Přímý Přístup - ÚSPĚCH', `${responseInfo}
+
+Délka dat: ${data.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                } else {
+                    addResult('Přímý Přístup - CHYBA HTTP', responseInfo, 'error');
+                }
+                
+            } catch (error) {
+                addResult('Přímý Přístup - VÝJIMKA', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}
+
+Možné příčiny:
+- CORS blokování
+- Síťová chyba
+- Neplatná URL`, 'error');
+            }
+        }
+        
+        async function testAllMethods() {
+            addResult('Kompletní Test', 'Spouštím všechny testy...', 'info');
+            
+            await testBridgedProxy();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await testAllOriginsProxy();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await testDirectAccess();
+            
+            addResult('Kompletní Test', 'Všechny testy dokončeny!', 'success');
+        }
+        
+        // Automaticky spustíme test při načtení
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('Automatický Test', 'Spouštím automatický test Bridged proxy...', 'info');
+                testBridgedProxy();
+            }, 1000);
+        });
+        
+        // Přidáme informace
+        addResult('Informace', `Spreadsheet ID: ${SPREADSHEET_ID}
+Test URL: https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0
+
+Testované proxy servery:
+1. CORS Bridged (cors.bridged.cc) - nový, spolehlivý
+2. AllOrigins (api.allorigins.win) - starý, možné problémy
+3. Přímý přístup - obvykle blokován CORS
+
+Očekávané výsledky:
+- Bridged proxy by měl fungovat nejlépe
+- AllOrigins může selhat
+- Přímý přístup pravděpodobně selže`, 'info');
+    </script>
+</body>
+</html> 

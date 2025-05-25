@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug CORS - Google Sheets</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #000; color: #00ff00; }
+        .result { margin: 10px 0; padding: 10px; border: 1px solid #333; }
+        .success { border-color: #00ff00; }
+        .error { border-color: #ff0000; color: #ff0000; }
+        .warning { border-color: #ffaa00; color: #ffaa00; }
+        button { background: #333; color: #00ff00; border: 1px solid #00ff00; padding: 10px; margin: 5px; cursor: pointer; }
+        button:hover { background: #00ff00; color: #000; }
+        pre { background: #111; padding: 10px; overflow-x: auto; white-space: pre-wrap; }
+        .info { color: #00aaff; }
+    </style>
+</head>
+<body>
+    <h1>Debug CORS - Google Sheets</h1>
+    <p class="info">Testuje CORS přístup k Google Sheets z prohlížeče</p>
+    
+    <button onclick="testDirectFetch()">Test Přímý Fetch</button>
+    <button onclick="testProxyFetch()">Test Proxy Fetch</button>
+    <button onclick="testAllMethods()">Test Všech Metod</button>
+    <button onclick="clearResults()">Vymazat</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const SPREADSHEET_ID = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = `<h3>${title}</h3><pre>${content}</pre>`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+        
+        function clearResults() {
+            resultsDiv.innerHTML = '';
+        }
+        
+        async function testDirectFetch() {
+            const timestamp = new Date().getTime();
+            const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            addResult('Přímý Fetch - Start', `URL: ${url}
+Timestamp: ${timestamp}
+Testuje přímý přístup z prohlížeče...`, 'info');
+            
+            try {
+                console.log('=== PŘÍMÝ FETCH TEST ===');
+                console.log('URL:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    credentials: 'omit',
+                    headers: {
+                        'Accept': 'text/csv, text/plain, */*',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                console.log('Response:', response);
+                console.log('Status:', response.status);
+                console.log('OK:', response.ok);
+                console.log('Headers:', Object.fromEntries(response.headers.entries()));
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Type: ${response.type}
+URL: ${response.url}
+Redirected: ${response.redirected}
+Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`;
+                
+                if (response.ok) {
+                    const data = await response.text();
+                    console.log('Data length:', data.length);
+                    console.log('First 300 chars:', data.substring(0, 300));
+                    
+                    const lines = data.split('\n').filter(line => line.trim());
+                    
+                    addResult('Přímý Fetch - ÚSPĚCH', `${responseInfo}
+
+Délka dat: ${data.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                } else {
+                    addResult('Přímý Fetch - CHYBA HTTP', responseInfo, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Fetch error:', error);
+                addResult('Přímý Fetch - VÝJIMKA', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}
+
+Možné příčiny:
+- CORS blokování
+- Síťová chyba
+- Neplatná URL`, 'error');
+            }
+        }
+        
+        async function testProxyFetch() {
+            const timestamp = new Date().getTime();
+            const originalUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0&cachebust=${timestamp}`;
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(originalUrl)}`;
+            
+            addResult('Proxy Fetch - Start', `Original URL: ${originalUrl}
+Proxy URL: ${proxyUrl}
+Testuje přístup přes CORS proxy...`, 'info');
+            
+            try {
+                console.log('=== PROXY FETCH TEST ===');
+                console.log('Original URL:', originalUrl);
+                console.log('Proxy URL:', proxyUrl);
+                
+                const response = await fetch(proxyUrl, {
+                    method: 'GET',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0'
+                    }
+                });
+                
+                console.log('Proxy response:', response);
+                console.log('Proxy status:', response.status);
+                console.log('Proxy OK:', response.ok);
+                
+                const responseInfo = `Status: ${response.status}
+OK: ${response.ok}
+Type: ${response.type}
+URL: ${response.url}`;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Proxy data:', data);
+                    console.log('Proxy status code:', data.status);
+                    console.log('Contents length:', data.contents ? data.contents.length : 'null');
+                    
+                    const dataInfo = `Proxy Status Code: ${data.status}
+Contents Length: ${data.contents ? data.contents.length : 'null'}
+Contents Type: ${typeof data.contents}`;
+                    
+                    if (data.contents && data.contents.length > 100) {
+                        const lines = data.contents.split('\n').filter(line => line.trim());
+                        
+                        addResult('Proxy Fetch - ÚSPĚCH', `${responseInfo}
+${dataInfo}
+
+Délka dat: ${data.contents.length} znaků
+Počet řádků: ${lines.length}
+
+První 3 řádky:
+${lines.slice(0, 3).join('\n')}
+
+Poslední řádek:
+${lines[lines.length - 1] || 'Prázdný'}`, 'success');
+                    } else {
+                        addResult('Proxy Fetch - PRÁZDNÁ DATA', `${responseInfo}
+${dataInfo}
+
+Proxy vrátila prázdná nebo neplatná data.`, 'warning');
+                    }
+                } else {
+                    addResult('Proxy Fetch - CHYBA HTTP', responseInfo, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Proxy fetch error:', error);
+                addResult('Proxy Fetch - VÝJIMKA', `Chyba: ${error.message}
+Typ: ${error.name}
+Stack: ${error.stack}`, 'error');
+            }
+        }
+        
+        async function testAllMethods() {
+            addResult('Kompletní Test', 'Spouštím všechny testy...', 'info');
+            
+            await testDirectFetch();
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await testProxyFetch();
+            
+            addResult('Kompletní Test', 'Všechny testy dokončeny!', 'success');
+        }
+        
+        // Automaticky spustíme test při načtení
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                addResult('Automatický Test', 'Spouštím automatický test...', 'info');
+                testDirectFetch();
+            }, 1000);
+        });
+        
+        // Přidáme informace
+        addResult('Informace', `Spreadsheet ID: ${SPREADSHEET_ID}
+Test URL: https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/export?format=csv&gid=0
+
+Tento test ověří:
+1. Zda funguje přímý přístup z prohlížeče
+2. Zda funguje přístup přes CORS proxy
+3. Jaké chyby se vyskytují`, 'info');
+    </script>
+</body>
+</html> 

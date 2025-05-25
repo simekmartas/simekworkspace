@@ -1694,4 +1694,409 @@ tr:hover td {
         left: 0.2rem;
         height: calc(100% - 0.4rem);
     }
+}
+
+/* Bazarové styly */
+.bazar-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem 0;
+}
+
+.stat-box {
+    background: linear-gradient(135deg, var(--retro-dark-blue) 0%, var(--retro-black) 100%);
+    border: 2px solid var(--retro-cyan);
+    border-radius: 8px;
+    padding: 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 231, 0.3),
+        inset 0 0 20px rgba(0, 255, 231, 0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+    border-color: var(--retro-pink);
+    box-shadow: 
+        0 0 25px rgba(228, 11, 77, 0.4),
+        inset 0 0 25px rgba(228, 11, 77, 0.1);
+    transform: translateY(-2px);
+}
+
+.stat-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 231, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.stat-box:hover::before {
+    left: 100%;
+}
+
+.stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--retro-gray-medium);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--retro-cyan);
+    text-shadow: 0 0 15px rgba(0, 255, 231, 0.8);
+    animation: retro-pulse 2s ease-in-out infinite alternate;
+}
+
+.top-types {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--retro-black) 0%, var(--retro-dark-blue) 100%);
+    border: 2px solid var(--retro-pink);
+    border-radius: 8px;
+    box-shadow: 
+        0 0 20px rgba(228, 11, 77, 0.3),
+        inset 0 0 20px rgba(228, 11, 77, 0.1);
+}
+
+.top-types h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    color: var(--retro-pink);
+    margin-bottom: 1rem;
+    text-shadow: 0 0 10px rgba(228, 11, 77, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.types-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.type-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 1rem;
+    background: rgba(0, 255, 231, 0.05);
+    border: 1px solid rgba(0, 255, 231, 0.2);
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.type-item:hover {
+    background: rgba(0, 255, 231, 0.1);
+    border-color: var(--retro-cyan);
+    box-shadow: 0 0 10px rgba(0, 255, 231, 0.3);
+}
+
+.type-name {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--retro-white);
+    font-size: 0.9rem;
+    flex: 1;
+}
+
+.type-count {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--retro-cyan);
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: 0 0 10px rgba(0, 255, 231, 0.6);
+}
+
+.filter-section {
+    margin-bottom: 1.5rem;
+}
+
+.filter-section input {
+    width: 100%;
+    max-width: 500px;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--retro-black) 0%, var(--retro-dark-blue) 100%);
+    border: 2px solid var(--retro-cyan);
+    border-radius: 8px;
+    color: var(--retro-white);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    box-shadow: 
+        0 0 15px rgba(0, 255, 231, 0.3),
+        inset 0 0 15px rgba(0, 255, 231, 0.1);
+    transition: all 0.3s ease;
+}
+
+.filter-section input:focus {
+    outline: none;
+    border-color: var(--retro-pink);
+    box-shadow: 
+        0 0 20px rgba(228, 11, 77, 0.4),
+        inset 0 0 20px rgba(228, 11, 77, 0.1);
+}
+
+.filter-section input::placeholder {
+    color: var(--retro-gray-medium);
+    opacity: 0.7;
+}
+
+/* Styly pro řádky tabulky podle stavu */
+.sold-item {
+    background: rgba(0, 255, 0, 0.05) !important;
+}
+
+.sold-item:hover {
+    background: rgba(0, 255, 0, 0.1) !important;
+}
+
+.stocked-item {
+    background: rgba(255, 165, 0, 0.05) !important;
+}
+
+.stocked-item:hover {
+    background: rgba(255, 165, 0, 0.1) !important;
+}
+
+.status-cell {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sold-item .status-cell {
+    color: #00ff00 !important;
+    text-shadow: 0 0 10px rgba(0, 255, 0, 0.6);
+}
+
+.stocked-item .status-cell {
+    color: #ffa500 !important;
+    text-shadow: 0 0 10px rgba(255, 165, 0, 0.6);
+}
+
+.price-cell {
+    font-weight: bold;
+    color: var(--retro-cyan) !important;
+    text-shadow: 0 0 10px rgba(0, 255, 231, 0.6);
+}
+
+/* Mobilní optimalizace pro bazar */
+@media (max-width: 768px) {
+    .bazar-stats {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem 0;
+    }
+    
+    .stat-box {
+        padding: 1rem;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+    }
+    
+    .top-types {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .top-types h3 {
+        font-size: 0.9rem;
+        margin-bottom: 0.8rem;
+    }
+    
+    .type-item {
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .type-name {
+        font-size: 0.8rem;
+    }
+    
+    .type-count {
+        font-size: 0.8rem;
+    }
+    
+    .filter-section input {
+        font-size: 16px; /* Prevence zoom na iOS */
+        padding: 0.8rem;
+    }
+}
+
+/* Bazarové filtry */
+.bazar-filters {
+    margin-bottom: 2rem;
+}
+
+.date-filter-section {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, var(--retro-black) 0%, var(--retro-dark-blue) 100%);
+    border: 2px solid var(--retro-cyan);
+    border-radius: 8px;
+    box-shadow: 
+        0 0 20px rgba(0, 255, 231, 0.3),
+        inset 0 0 20px rgba(0, 255, 231, 0.1);
+}
+
+.date-filter-header {
+    margin-bottom: 1rem;
+}
+
+.filter-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--retro-cyan);
+    font-weight: bold;
+    text-shadow: 0 0 10px rgba(0, 255, 231, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.date-filter-inputs {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.date-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.date-input-group label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--retro-white);
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+    white-space: nowrap;
+}
+
+.date-input-group input[type="date"] {
+    padding: 0.8rem;
+    background: linear-gradient(135deg, var(--retro-dark-blue) 0%, var(--retro-black) 100%);
+    border: 2px solid var(--retro-pink);
+    border-radius: 6px;
+    color: var(--retro-white);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    box-shadow: 
+        0 0 10px rgba(228, 11, 77, 0.3),
+        inset 0 0 10px rgba(0, 255, 231, 0.1);
+    transition: all 0.3s ease;
+    min-width: 150px;
+}
+
+.date-input-group input[type="date"]:focus {
+    outline: none;
+    border-color: var(--retro-cyan);
+    box-shadow: 
+        0 0 15px rgba(0, 255, 231, 0.4),
+        inset 0 0 15px rgba(228, 11, 77, 0.1);
+}
+
+.date-input-group input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
+.clear-dates-btn {
+    background: linear-gradient(135deg, var(--retro-pink) 0%, var(--retro-dark-blue) 100%);
+    color: var(--retro-white);
+    border: 2px solid var(--retro-pink);
+    padding: 0.8rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 0 10px rgba(228, 11, 77, 0.3),
+        inset 0 0 10px rgba(0, 255, 231, 0.1);
+    white-space: nowrap;
+}
+
+.clear-dates-btn:hover {
+    background: linear-gradient(135deg, var(--retro-cyan) 0%, var(--retro-pink) 100%);
+    color: var(--retro-black);
+    border-color: var(--retro-cyan);
+    box-shadow: 
+        0 0 15px rgba(0, 255, 231, 0.4),
+        inset 0 0 15px rgba(228, 11, 77, 0.1);
+    transform: translateY(-1px);
+}
+
+.filter-stats {
+    margin-top: 1rem;
+    padding: 0.8rem 1rem;
+    background: rgba(0, 255, 231, 0.05);
+    border: 1px solid rgba(0, 255, 231, 0.2);
+    border-radius: 4px;
+    text-align: center;
+}
+
+.stats-text {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--retro-cyan);
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(0, 255, 231, 0.6);
+}
+
+/* Mobilní optimalizace pro bazarové filtry */
+@media (max-width: 768px) {
+    .date-filter-section {
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .date-filter-inputs {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .date-input-group {
+        justify-content: space-between;
+        width: 100%;
+    }
+    
+    .date-input-group input[type="date"] {
+        min-width: auto;
+        flex: 1;
+        font-size: 16px; /* Prevence zoom na iOS */
+    }
+    
+    .clear-dates-btn {
+        align-self: center;
+        padding: 1rem 1.5rem;
+        width: auto;
+    }
+    
+    .filter-stats {
+        margin-top: 0.8rem;
+        padding: 0.6rem 0.8rem;
+    }
+    
+    .stats-text {
+        font-size: 0.8rem;
+    }
 } 

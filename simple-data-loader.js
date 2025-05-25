@@ -37,37 +37,39 @@ class SimpleRetroDataLoader {
             
             let csvData = null;
             
-            // Přístup 1: Zkusíme přímý přístup
-            console.log('=== PŘÍSTUP 1: Přímý fetch ===');
+            // Přístup 1: Zkusíme CORS Anywhere (Heroku)
+            console.log('=== PŘÍSTUP 1: CORS Anywhere (prioritní) ===');
             try {
-                const response = await fetch(csvUrl, {
-                    mode: 'cors',
+                const proxyUrl = `https://cors-anywhere.herokuapp.com/${csvUrl}`;
+                console.log('CORS Anywhere URL:', proxyUrl);
+                
+                const proxyResponse = await fetch(proxyUrl, {
                     cache: 'no-cache',
                     headers: {
-                        'Accept': 'text/csv, text/plain, */*',
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
-                        'Expires': '0'
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
-                console.log('Přímý přístup - status:', response.status, 'ok:', response.ok);
+                console.log('CORS Anywhere response status:', proxyResponse.status, 'ok:', proxyResponse.ok);
                 
-                if (response.ok) {
-                    csvData = await response.text();
-                    console.log('Přímý přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                if (proxyResponse.ok) {
+                    csvData = await proxyResponse.text();
+                    console.log('CORS Anywhere ÚSPĚŠNÝ - délka dat:', csvData.length);
                     console.log('První 200 znaků:', csvData.substring(0, 200));
                 }
             } catch (error) {
-                console.log('Přímý přístup selhal:', error.message);
+                console.log('CORS Anywhere přístup selhal:', error.message);
             }
             
-            // Přístup 2: CORS proxy pokud přímý selhal
+            // Přístup 2: AllOrigins proxy jako fallback
             if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 2: CORS Proxy ===');
+                console.log('=== PŘÍSTUP 2: AllOrigins Proxy (fallback) ===');
                 try {
                     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
-                    console.log('Proxy URL:', proxyUrl);
+                    console.log('AllOrigins Proxy URL:', proxyUrl);
                     
                     const proxyResponse = await fetch(proxyUrl, {
                         cache: 'no-cache',
@@ -78,49 +80,48 @@ class SimpleRetroDataLoader {
                         }
                     });
                     
-                    console.log('Proxy response status:', proxyResponse.status, 'ok:', proxyResponse.ok);
+                    console.log('AllOrigins Proxy response status:', proxyResponse.status, 'ok:', proxyResponse.ok);
                     
                     if (proxyResponse.ok) {
                         const proxyData = await proxyResponse.json();
-                        console.log('Proxy data status:', proxyData.status);
-                        console.log('Proxy contents length:', proxyData.contents ? proxyData.contents.length : 'null');
+                        console.log('AllOrigins Proxy data status:', proxyData.status);
+                        console.log('AllOrigins Proxy contents length:', proxyData.contents ? proxyData.contents.length : 'null');
                         
                         if (proxyData.contents && proxyData.contents.length > 100) {
                             csvData = proxyData.contents;
-                            console.log('Proxy přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                            console.log('AllOrigins Proxy ÚSPĚŠNÝ - délka dat:', csvData.length);
                             console.log('První 200 znaků:', csvData.substring(0, 200));
                         }
                     }
                 } catch (error) {
-                    console.log('Proxy přístup selhal:', error.message);
+                    console.log('AllOrigins Proxy přístup selhal:', error.message);
                 }
             }
             
-            // Přístup 3: Alternativní proxy server
+            // Přístup 3: Přímý fetch (poslední pokus)
             if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 3: Alternativní proxy ===');
+                console.log('=== PŘÍSTUP 3: Přímý fetch (poslední pokus) ===');
                 try {
-                    const altProxyUrl = `https://cors-anywhere.herokuapp.com/${csvUrl}`;
-                    console.log('Alt proxy URL:', altProxyUrl);
-                    
-                    const altResponse = await fetch(altProxyUrl, {
+                    const response = await fetch(csvUrl, {
+                        mode: 'cors',
                         cache: 'no-cache',
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'Accept': 'text/csv, text/plain, */*',
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
                         }
                     });
                     
-                    console.log('Alt proxy response status:', altResponse.status, 'ok:', altResponse.ok);
+                    console.log('Přímý přístup - status:', response.status, 'ok:', response.ok);
                     
-                    if (altResponse.ok) {
-                        csvData = await altResponse.text();
-                        if (csvData && csvData.length > 100) {
-                            console.log('Alternativní proxy ÚSPĚŠNÝ - délka dat:', csvData.length);
-                            console.log('První 200 znaků:', csvData.substring(0, 200));
-                        }
+                    if (response.ok) {
+                        csvData = await response.text();
+                        console.log('Přímý přístup ÚSPĚŠNÝ - délka dat:', csvData.length);
+                        console.log('První 200 znaků:', csvData.substring(0, 200));
                     }
                 } catch (error) {
-                    console.log('Alternativní proxy selhal:', error.message);
+                    console.log('Přímý přístup selhal:', error.message);
                 }
             }
             
@@ -468,27 +469,30 @@ class SimpleRetroDataLoader {
             
             let csvData = null;
             
-            // Zkusíme proxy přístup (nejspolehlivější pro refresh)
+            // Zkusíme CORS Anywhere (nejspolehlivější pro refresh)
             try {
-                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
+                const proxyUrl = `https://cors-anywhere.herokuapp.com/${csvUrl}`;
+                console.log('Refresh CORS Anywhere URL:', proxyUrl);
+                
                 const response = await fetch(proxyUrl, {
                     cache: 'no-cache',
                     headers: {
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
-                        'Expires': '0'
+                        'Expires': '0',
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 
+                console.log('Refresh CORS Anywhere response:', response.status, response.ok);
+                
                 if (response.ok) {
-                    const data = await response.json();
-                    if (data.contents && data.contents.length > 100) {
-                        csvData = data.contents;
-                        console.log('Refresh ÚSPĚŠNÝ - délka dat:', csvData.length);
-                    }
+                    csvData = await response.text();
+                    console.log('Refresh ÚSPĚŠNÝ - délka dat:', csvData.length);
+                    console.log('Refresh první 200 znaků:', csvData.substring(0, 200));
                 }
             } catch (error) {
-                console.log('Refresh proxy selhal:', error.message);
+                console.log('Refresh CORS Anywhere selhal:', error.message);
             }
             
             // Pokud se podařilo načíst data, zpracujeme je
