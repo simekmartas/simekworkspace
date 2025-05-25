@@ -22,8 +22,8 @@ document.getElementById('login-form').addEventListener('submit', function(e) {
         localStorage.setItem('username', username);
         localStorage.setItem('role', user.role);
         
-        // Přesměrování na stránku členů
-        window.location.href = 'members.html';
+        // Přesměrování na hlavní stránku
+        window.location.href = 'index.html';
     } else {
         messageElement.textContent = '// Chybné přihlašovací údaje';
         messageElement.style.color = '#ff0000';

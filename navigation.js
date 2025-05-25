@@ -3,18 +3,16 @@ function updateNavigation() {
     const nav = document.querySelector('nav ul');
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     
-    // Základní položky menu - přidána Mobil Maják
+    // Základní položky menu pro všechny uživatele
     const baseItems = `
         <li><a href="index.html">[ DOMŮ ]</a></li>
         <li><a href="index.html#o-nas">[ O NÁS ]</a></li>
         <li><a href="index.html#kontakt">[ KONTAKT ]</a></li>
-        <li><a href="members.html">[ ČLENSKÁ SEKCE ]</a></li>
-        <li><a href="calculator.html">[ KALKULAČKA ]</a></li>
-        <li><a href="majak.html">[ MOBIL MAJÁK ]</a></li>
     `;
     
-    // Položky pro přihlášené uživatele
+    // Položky pouze pro přihlášené uživatele
     const memberItems = `
+        <li><a href="majak.html">[ MOBIL MAJÁK ]</a></li>
         <li><a href="#" id="logout">[ ODHLÁSIT ]</a></li>
     `;
     

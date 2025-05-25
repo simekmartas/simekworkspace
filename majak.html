@@ -26,19 +26,43 @@
         <section class="hero">
             <h2>&gt; Aktuální statistiky prodejů_</h2>
             <div class="table-container" style="max-width:1200px; margin:2rem auto; overflow-x:auto;">
-                <!-- Použijeme přímé vložení Google Sheets pomocí iframe - spolehlivější přístup -->
-                <div id="custom-table-container" class="retro-table-container" style="padding:1.5rem; border:2px solid #fff; border-radius:8px; background-color:#111;">
-                    <!-- Vložení publikovaného Google Sheets dokumentu - obchází problémy s CORS -->
-                    <iframe 
-                        src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pubhtml?widget=true&amp;headers=false"
-                        style="width:100%; height:600px; border:none; background:transparent;"
-                        seamless
-                    ></iframe>
+                <!-- Retro styled Google Sheets iframe -->
+                <div class="retro-iframe-container">
+                    <div class="retro-iframe-header">
+                        <span class="retro-terminal-prompt">&gt; statistiky_prodejů.csv_</span>
+                        <div class="retro-window-controls">
+                            <span class="control-dot red"></span>
+                            <span class="control-dot yellow"></span>
+                            <span class="control-dot green"></span>
+                        </div>
+                    </div>
+                    <div class="retro-iframe-content">
+                        <iframe 
+                            src="https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pubhtml?widget=true&amp;headers=false"
+                            class="retro-iframe"
+                            seamless
+                        ></iframe>
+                    </div>
+                    <div class="retro-iframe-footer">
+                        <span class="retro-status-text">// LIVE DATA STREAM ACTIVE</span>
+                        <span class="retro-blink">●</span>
+                    </div>
                 </div>
             </div>
-            <div style="text-align:center; margin-top:1rem; font-size:0.9rem; color:#999;">
-                <p>Data jsou automaticky aktualizována každý den pomocí Apify aktoru</p>
-                <p>Poslední aktualizace je uvedena v prvním řádku tabulky</p>
+            <div class="retro-info-panel">
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Data jsou automaticky aktualizována každý den pomocí Apify aktoru</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Poslední aktualizace je uvedena v prvním řádku tabulky</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text retro-success">System status: ONLINE</span>
+                    <span class="retro-blink-small">●</span>
+                </div>
             </div>
         </section>
     </main>
@@ -88,8 +112,217 @@
     }
     </script>
     
-    <!-- Přidáme CSS styl pro tabulku -->
+    <!-- Retro CSS styly pro iframe a tabulku -->
     <style>
+        /* Retro iframe container */
+        .retro-iframe-container {
+            background: #111;
+            border: 2px solid #00ffe7;
+            border-radius: 8px;
+            box-shadow: 
+                0 0 20px rgba(0, 255, 231, 0.3),
+                inset 0 0 20px rgba(0, 255, 231, 0.1);
+            overflow: hidden;
+            margin: 2rem auto;
+            max-width: 1200px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Retro header s terminál stylem */
+        .retro-iframe-header {
+            background: linear-gradient(135deg, #222 0%, #333 100%);
+            border-bottom: 1px solid #00ffe7;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+        
+        .retro-terminal-prompt {
+            color: #00ffe7;
+            font-weight: bold;
+            font-size: 1rem;
+            text-shadow: 0 0 10px rgba(0, 255, 231, 0.5);
+        }
+        
+        /* Window controls (macOS style) */
+        .retro-window-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        
+        .control-dot.red {
+            background: #ff5f57;
+            box-shadow: 0 0 10px rgba(255, 95, 87, 0.5);
+        }
+        
+        .control-dot.yellow {
+            background: #ffbd2e;
+            box-shadow: 0 0 10px rgba(255, 189, 46, 0.5);
+        }
+        
+        .control-dot.green {
+            background: #28ca42;
+            box-shadow: 0 0 10px rgba(40, 202, 66, 0.5);
+        }
+        
+        /* Iframe content area */
+        .retro-iframe-content {
+            background: #000;
+            position: relative;
+            height: 600px;
+            overflow: hidden;
+        }
+        
+        .retro-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            filter: 
+                contrast(1.1) 
+                brightness(0.95) 
+                hue-rotate(5deg);
+        }
+        
+        /* Retro footer s status */
+        .retro-iframe-footer {
+            background: linear-gradient(135deg, #222 0%, #333 100%);
+            border-top: 1px solid #00ffe7;
+            padding: 0.5rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+        }
+        
+        .retro-status-text {
+            color: #00ff00;
+            text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+            font-weight: bold;
+        }
+        
+        /* Blikající indikátor */
+        .retro-blink {
+            color: #00ff00;
+            font-size: 1.2rem;
+            animation: retro-blink 1.5s infinite;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        }
+        
+        @keyframes retro-blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        /* Retro glow efekt pro celý container */
+        .retro-iframe-container::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, 
+                #00ffe7 0%, 
+                #ff00c8 25%, 
+                #ffe600 50%, 
+                #00ff00 75%, 
+                #00ffe7 100%);
+            border-radius: 10px;
+            z-index: -1;
+            opacity: 0.1;
+            animation: retro-glow 3s ease-in-out infinite alternate;
+        }
+        
+                 @keyframes retro-glow {
+             0% { opacity: 0.1; }
+             100% { opacity: 0.2; }
+         }
+         
+         /* Retro info panel */
+         .retro-info-panel {
+             background: rgba(17, 17, 17, 0.8);
+             border: 1px solid #444;
+             border-radius: 6px;
+             padding: 1rem 1.5rem;
+             margin: 2rem auto;
+             max-width: 800px;
+             font-family: 'JetBrains Mono', monospace;
+             box-shadow: 0 0 15px rgba(0, 255, 231, 0.1);
+         }
+         
+         .retro-info-line {
+             display: flex;
+             align-items: center;
+             margin: 0.5rem 0;
+             gap: 0.8rem;
+         }
+         
+         .retro-prompt {
+             color: #00ffe7;
+             font-weight: bold;
+             text-shadow: 0 0 8px rgba(0, 255, 231, 0.5);
+         }
+         
+         .retro-text {
+             color: #ccc;
+             font-size: 0.9rem;
+             flex: 1;
+         }
+         
+         .retro-success {
+             color: #00ff00 !important;
+             font-weight: bold;
+             text-shadow: 0 0 8px rgba(0, 255, 0, 0.6);
+         }
+         
+         .retro-blink-small {
+             color: #00ff00;
+             font-size: 0.8rem;
+             animation: retro-blink 1s infinite;
+             text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+             margin-left: 0.5rem;
+         }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .retro-iframe-container {
+                margin: 1rem;
+                border-radius: 6px;
+            }
+            
+            .retro-iframe-header {
+                padding: 0.6rem 1rem;
+                flex-direction: column;
+                gap: 0.5rem;
+                text-align: center;
+            }
+            
+            .retro-terminal-prompt {
+                font-size: 0.9rem;
+            }
+            
+            .retro-iframe-content {
+                height: 500px;
+            }
+            
+            .retro-iframe-footer {
+                padding: 0.4rem 1rem;
+                font-size: 0.8rem;
+            }
+        }
+        
+        /* Starý CSS pro tabulky (zachováváme pro kompatibilitu) */
         .retro-table {
             width: 100%;
             border-collapse: collapse;
@@ -126,12 +359,12 @@
         }
         
         .retro-table .highlight {
-            color: #ffe600; /* žlutá */
+            color: #ffe600;
             font-weight: bold;
         }
         
         .timestamp-header {
-            color: #ff00c8; /* fialová */
+            color: #ff00c8;
             font-size: 1.1rem;
             margin-bottom: 1rem;
             border-bottom: 1px solid #444;
