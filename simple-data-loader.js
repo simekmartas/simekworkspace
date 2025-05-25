@@ -13,7 +13,7 @@ class SimpleRetroDataLoader {
             
             // Zkusíme načíst data pomocí jednoduchého fetch na CSV export
             const csvUrl = isMonthly 
-                ? 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1&single=true&output=csv'
+                ? 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv'
                 : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv';
             
             // Zkusíme přímý přístup bez CORS proxy
@@ -170,22 +170,22 @@ class SimpleRetroDataLoader {
 
     showMockData(isMonthly) {
         // Pokud se nepodaří načíst data, zobrazíme mock data v retro stylu
-        const mockHeaders = ['Prodejna', 'Prodejce', 'Prodeje', 'Pozice nad 10', 'Služby celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'];
+        const mockHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'];
         
         const mockRows = isMonthly ? [
             ['Aktualizováno:', '01. 05. 2025 - 25. 05. 2025', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-            ['Prerov', 'Jakub Málek', '45', '12', '3', '2', '1', '0', '1', '5', '2', '1', '3', '1', '1', '2'],
-            ['Šternberk', 'Adam Kolarčík', '38', '8', '2', '3', '0', '1', '0', '2', '1', '0', '1', '2', '0', '1'],
-            ['Čepkov', 'Lukáš Kovačík', '52', '15', '4', '1', '2', '1', '2', '6', '3', '2', '2', '1', '2', '3'],
-            ['Globus', 'Šimon Gabriel', '41', '9', '3', '2', '1', '0', '1', '3', '1', '1', '1', '1', '1', '1'],
-            ['Vsetín', 'Štěpán Kundera', '29', '5', '1', '1', '0', '0', '0', '2', '1', '0', '1', '0', '0', '1']
+            ['Prerov', 'Jakub Málek', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3'],
+            ['Šternberk', 'Adam Kolarčík', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1'],
+            ['Čepkov', 'Lukáš Kovačík', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3'],
+            ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1'],
+            ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1']
         ] : [
             ['Aktualizováno:', '25. 05. 2025 12:43:37', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-            ['Prerov', 'Jakub Málek', '3', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0', '0'],
-            ['Šternberk', 'Adam Kolarčík', '8', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-            ['Čepkov', 'Lukáš Kovačík', '11', '2', '1', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
-            ['Globus', 'Šimon Gabriel', '12', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-            ['Vsetín', 'Štěpán Kundera', '3', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+            ['Prerov', 'Jakub Málek', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7'],
+            ['Šternberk', 'Adam Kolarčík', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4'],
+            ['Čepkov', 'Lukáš Kovačík', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2'],
+            ['Globus', 'Šimon Gabriel', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
+            ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1']
         ];
 
         this.displayTable(mockHeaders, mockRows, isMonthly);
