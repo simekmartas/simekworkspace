@@ -237,9 +237,6 @@ class BazarDataLoader {
         console.log(`Po seřazení: ${sortedRows.length} řádků`);
 
         this.displayBazarTable(headers, sortedRows);
-        
-        // Nastavit výchozí datový filtr na poslední týden
-        this.setDefaultDateFilter();
     }
 
     parseCSVLine(line) {
@@ -302,17 +299,24 @@ class BazarDataLoader {
         const naskladneneCount = this.filteredRows.filter(row => row[0] === 'Naskladněno').length;
         const celkemCount = this.filteredRows.length;
         
-        // Součet prodejních cen (sloupec W - index 22, ale v našich datech je to sloupec F - index 5)
-        const prodejniCenySum = prodaneRows.reduce((sum, row) => {
+        // Součet nákupních cen (sloupec G - index 5)
+        const nakupniCenySum = this.filteredRows.reduce((sum, row) => {
             const cena = parseFloat(row[5]?.replace(/[^\d]/g, '') || 0);
             return sum + cena;
         }, 0);
         
-        // Součet hodnot ze sloupce G (index 6) - v našich datech je to sloupec G
-        const sloupecGSum = this.filteredRows.reduce((sum, row) => {
-            const hodnota = parseFloat(row[6] || 0);
-            return sum + hodnota;
+        // Součet prodejních cen (sloupec W - index 7) - pouze pro prodané telefony
+        const prodejniCenySum = prodaneRows.reduce((sum, row) => {
+            const cena = parseFloat(row[7]?.replace(/[^\d]/g, '') || 0);
+            return sum + cena;
         }, 0);
+        
+        // Marže = prodejní ceny - nákupní ceny (pouze pro prodané telefony)
+        const nakupniCenyProdanych = prodaneRows.reduce((sum, row) => {
+            const cena = parseFloat(row[5]?.replace(/[^\d]/g, '') || 0);
+            return sum + cena;
+        }, 0);
+        const marze = prodejniCenySum - nakupniCenyProdanych;
         
         // Stránkování
         const totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
@@ -350,12 +354,16 @@ class BazarDataLoader {
                     <!-- Doplňkové statistiky -->
                     <div class="bazar-stats-small">
                         <div class="stat-box-small">
+                            <div class="stat-label-small">// NÁKUPNÍ CENY CELKEM</div>
+                            <div class="stat-value-small">${nakupniCenySum.toLocaleString('cs-CZ')} Kč</div>
+                        </div>
+                        <div class="stat-box-small">
                             <div class="stat-label-small">// PRODEJNÍ CENY CELKEM</div>
                             <div class="stat-value-small">${prodejniCenySum.toLocaleString('cs-CZ')} Kč</div>
                         </div>
                         <div class="stat-box-small">
-                            <div class="stat-label-small">// SLOUPEC G SUMA</div>
-                            <div class="stat-value-small">${sloupecGSum.toLocaleString('cs-CZ')}</div>
+                            <div class="stat-label-small">// MARŽE CELKEM</div>
+                            <div class="stat-value-small ${marze >= 0 ? 'positive-margin' : 'negative-margin'}">${marze.toLocaleString('cs-CZ')} Kč</div>
                         </div>
                     </div>
 
@@ -363,8 +371,7 @@ class BazarDataLoader {
                     <div class="bazar-filters">
                         <!-- Textový filtr -->
                         <div class="filter-section">
-                            <input type="text" id="bazarFilter" placeholder="// Filtrovat podle typu, IMEI, jména..." 
-                                   onkeyup="bazarLoader.filterTable()">
+                            <input type="text" id="bazarFilter" placeholder="// Filtrovat podle typu, IMEI, jména...">
                         </div>
                         
                         <!-- Datový filtr -->
@@ -373,20 +380,20 @@ class BazarDataLoader {
                                 <span class="filter-label">// FILTR PODLE OBDOBÍ</span>
                             </div>
                             <div class="date-filter-inputs">
-                                                                 <div class="date-input-group">
-                                     <label for="dateFrom">OD:</label>
-                                     <input type="date" id="dateFrom" onchange="bazarLoader.filterTable()">
-                                 </div>
-                                 <div class="date-input-group">
-                                     <label for="dateTo">DO:</label>
-                                     <input type="date" id="dateTo" onchange="bazarLoader.filterTable()">
-                                 </div>
-                                                                 <button type="button" class="clear-dates-btn" onclick="bazarLoader.clearDateFilter()">
-                                     VYMAZAT
-                                 </button>
-                                 <button type="button" class="show-all-btn" onclick="bazarLoader.showAllRecords()">
-                                     ZOBRAZIT VŠE
-                                 </button>
+                                <div class="date-input-group">
+                                    <label for="dateFrom">OD:</label>
+                                    <input type="date" id="dateFrom">
+                                </div>
+                                <div class="date-input-group">
+                                    <label for="dateTo">DO:</label>
+                                    <input type="date" id="dateTo">
+                                </div>
+                                <button type="button" class="clear-dates-btn" id="clearDatesBtn">
+                                    VYMAZAT
+                                </button>
+                                <button type="button" class="show-all-btn" id="showAllBtn">
+                                    ZOBRAZIT VŠE
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -408,13 +415,17 @@ class BazarDataLoader {
                                 ${currentPageRows.map(row => `
                                     <tr class="${row[0] === 'Prodáno' ? 'sold-item' : 'stocked-item'}">
                                         ${row.map((cell, index) => {
-                                            // Zvýraznit cenu (sloupec F)
-                                            if (index === 5 && cell && !isNaN(cell.replace(/[^\d]/g, ''))) {
-                                                return `<td class="price-cell">${this.escapeHtml(cell)}</td>`;
-                                            }
                                             // Zvýraznit stav (sloupec A)
                                             if (index === 0) {
                                                 return `<td class="status-cell">${this.escapeHtml(cell)}</td>`;
+                                            }
+                                            // Zvýraznit nákupní cenu (sloupec G - index 5)
+                                            if (index === 5 && cell && !isNaN(cell.replace(/[^\d]/g, ''))) {
+                                                return `<td class="buy-price-cell">${this.escapeHtml(cell)} Kč</td>`;
+                                            }
+                                            // Zvýraznit prodejní cenu (sloupec W - index 7)
+                                            if (index === 7 && cell && !isNaN(cell.replace(/[^\d]/g, ''))) {
+                                                return `<td class="sell-price-cell">${this.escapeHtml(cell)} Kč</td>`;
                                             }
                                             return `<td>${this.escapeHtml(cell)}</td>`;
                                         }).join('')}
@@ -426,17 +437,17 @@ class BazarDataLoader {
 
                     <!-- Stránkování ovládání -->
                     <div class="pagination-controls">
-                        <button class="pagination-btn" onclick="bazarLoader.goToPage(1)" ${this.currentPage === 1 ? 'disabled' : ''}>
+                        <button class="pagination-btn" data-page="1" ${this.currentPage === 1 ? 'disabled' : ''}>
                             ⏮ První
                         </button>
-                        <button class="pagination-btn" onclick="bazarLoader.goToPage(${this.currentPage - 1})" ${this.currentPage === 1 ? 'disabled' : ''}>
+                        <button class="pagination-btn" data-page="${this.currentPage - 1}" ${this.currentPage === 1 ? 'disabled' : ''}>
                             ◀ Předchozí
                         </button>
                         <span class="pagination-current">Stránka ${this.currentPage}</span>
-                        <button class="pagination-btn" onclick="bazarLoader.goToPage(${this.currentPage + 1})" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                        <button class="pagination-btn" data-page="${this.currentPage + 1}" ${this.currentPage === totalPages ? 'disabled' : ''}>
                             Další ▶
                         </button>
-                        <button class="pagination-btn" onclick="bazarLoader.goToPage(${totalPages})" ${this.currentPage === totalPages ? 'disabled' : ''}>
+                        <button class="pagination-btn" data-page="${totalPages}" ${this.currentPage === totalPages ? 'disabled' : ''}>
                             Poslední ⏭
                         </button>
                     </div>
@@ -453,6 +464,76 @@ class BazarDataLoader {
                 </div>
             </div>
         `;
+        
+        // Po vygenerování HTML nastavit event listenery a výchozí hodnoty
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        // Nastavit výchozí datový filtr na poslední týden
+        setTimeout(() => {
+            this.setDefaultDateFilter();
+        }, 100);
+        
+        // Přidat event listenery pro všechny filtrovací prvky
+        setTimeout(() => {
+            const dateFromInput = document.getElementById('dateFrom');
+            const dateToInput = document.getElementById('dateTo');
+            const textFilter = document.getElementById('bazarFilter');
+            const clearBtn = document.getElementById('clearDatesBtn');
+            const showAllBtn = document.getElementById('showAllBtn');
+            
+            if (dateFromInput) {
+                dateFromInput.addEventListener('change', () => {
+                    console.log('Date FROM changed:', dateFromInput.value);
+                    this.filterTable();
+                });
+                dateFromInput.addEventListener('input', () => this.filterTable());
+            }
+            
+            if (dateToInput) {
+                dateToInput.addEventListener('change', () => {
+                    console.log('Date TO changed:', dateToInput.value);
+                    this.filterTable();
+                });
+                dateToInput.addEventListener('input', () => this.filterTable());
+            }
+            
+            if (textFilter) {
+                textFilter.addEventListener('keyup', () => this.filterTable());
+                textFilter.addEventListener('input', () => this.filterTable());
+            }
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => this.clearDateFilter());
+            }
+            
+            if (showAllBtn) {
+                showAllBtn.addEventListener('click', () => this.showAllRecords());
+            }
+            
+            // Event listenery pro stránkování
+            const paginationBtns = document.querySelectorAll('.pagination-btn');
+            paginationBtns.forEach(btn => {
+                if (!btn.disabled) {
+                    btn.addEventListener('click', () => {
+                        const page = parseInt(btn.getAttribute('data-page'));
+                        if (page && !isNaN(page)) {
+                            this.goToPage(page);
+                        }
+                    });
+                }
+            });
+            
+            console.log('Event listeners nastaveny pro:', {
+                dateFrom: !!dateFromInput,
+                dateTo: !!dateToInput,
+                textFilter: !!textFilter,
+                clearBtn: !!clearBtn,
+                showAllBtn: !!showAllBtn,
+                paginationBtns: paginationBtns.length
+            });
+        }, 200);
     }
 
     showLoading() {
@@ -535,7 +616,7 @@ class BazarDataLoader {
         // Generovat mock data s aktuálními daty
         const mockData = this.generateMockData();
 
-        const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Sloupec G', 'Nabíj.', 'Krab.', 'Vykoupil', 'Jméno'];
+        const headers = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
 
         console.log(`Mock data obsahují ${mockData.length} záznamů`);
         this.displayBazarTable(headers, mockData);
@@ -597,26 +678,32 @@ class BazarDataLoader {
             const phone = phones[Math.floor(Math.random() * phones.length)];
             const [surname, firstName] = names[Math.floor(Math.random() * names.length)];
             const status = statuses[Math.floor(Math.random() * statuses.length)];
-            const price = Math.floor(Math.random() * 25000) + 500; // 500-25500 Kč
             
             // Generovat IMEI
             const imei = '35' + Math.floor(Math.random() * 1000000000000000).toString().padStart(13, '0');
             
-            // Generovat hodnotu pro sloupec G (náhodná hodnota 0-1000)
-            const sloupecG = Math.floor(Math.random() * 1000);
+            // Generovat nákupní cenu (G) - 500-15000 Kč
+            const nakupniCena = Math.floor(Math.random() * 14500) + 500;
+            
+            // Generovat prodejní cenu (W) - pouze pro prodané telefony, vyšší než nákupní
+            let prodejniCena = '';
+            if (status === 'Prodáno') {
+                // Prodejní cena je 1.2x až 2.5x nákupní ceny
+                const multiplier = 1.2 + Math.random() * 1.3; // 1.2 - 2.5
+                prodejniCena = Math.floor(nakupniCena * multiplier).toString();
+            }
+            
+            const vykoupil = `${surname} ${firstName}`;
             
             const record = [
-                status,
-                `V2025${String(i + 1).padStart(4, '0')}`,
-                dateStr,
-                phone,
-                imei,
-                price.toString(),
-                sloupecG.toString(), // sloupec G
-                yesNo[Math.floor(Math.random() * 2)], // sloupec H
-                yesNo[Math.floor(Math.random() * 2)], // sloupec I
-                surname,
-                firstName
+                status,                    // A - Stav
+                `V2025${String(i + 1).padStart(4, '0')}`, // B - Výkupka
+                dateStr,                   // C - Datum
+                phone,                     // D - Typ
+                imei,                      // E - IMEI
+                nakupniCena.toString(),    // G - Nákupní cena
+                vykoupil,                  // M - Vykoupil
+                prodejniCena               // W - Prodejní cena
             ];
             
             mockData.push(record);
@@ -679,17 +766,17 @@ class BazarDataLoader {
         // Reset na první stránku po filtrování
         this.currentPage = 1;
         
-                 // Znovu vykreslit tabulku
-         const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Sloupec G', 'Nabíj.', 'Krab.', 'Vykoupil', 'Jméno'];
-         this.renderTable(headers);
+                          // Znovu vykreslit tabulku
+          const headers = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
+           this.renderTable(headers);
     }
 
     goToPage(page) {
         const totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
-                 if (page >= 1 && page <= totalPages) {
+                          if (page >= 1 && page <= totalPages) {
              this.currentPage = page;
-             const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Sloupec G', 'Nabíj.', 'Krab.', 'Vykoupil', 'Jméno'];
-             this.renderTable(headers);
+              const headers = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
+               this.renderTable(headers);
          }
     }
 

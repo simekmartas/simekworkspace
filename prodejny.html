@@ -63,7 +63,7 @@
     <div class="version-info">v2.1.0</div>
 
     <script src="navigation.js"></script>
-    <script src="simple-data-loader.js"></script>
+    <script src="prodejny-data-loader.js"></script>
     <script>
         // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
         if (!localStorage.getItem('isLoggedIn')) {
@@ -88,8 +88,9 @@
             }
         });
 
-        // Inicializace data loaderů
+        // Globální proměnné pro data loadery
         let currentLoader, monthlyLoader;
+        let prodejnyLoader; // Globální proměnná pro přístup z inline event handlerů
 
         // Funkce pro přepínání tabů
         function switchTab(tabName) {
@@ -122,10 +123,12 @@
                 const tabName = tab.getAttribute('data-tab');
                 switchTab(tabName);
                 
-                // Načtení dat pro vybraný tab
+                // Načtení dat pro vybraný tab a aktualizace globální proměnné
                 if (tabName === 'current' && currentLoader) {
+                    prodejnyLoader = currentLoader; // Aktualizovat globální proměnnou
                     currentLoader.loadData(false);
                 } else if (tabName === 'monthly' && monthlyLoader) {
+                    prodejnyLoader = monthlyLoader; // Aktualizovat globální proměnnou
                     monthlyLoader.loadData(true);
                 }
             });
@@ -134,8 +137,11 @@
         // Inicializace při načtení stránky
         document.addEventListener('DOMContentLoaded', function() {
             // Inicializace data loaderů
-            currentLoader = new SimpleRetroDataLoader('current-table-container');
-            monthlyLoader = new SimpleRetroDataLoader('monthly-table-container');
+            currentLoader = new ProdejnyDataLoader('current-table-container');
+            monthlyLoader = new ProdejnyDataLoader('monthly-table-container');
+            
+            // Nastavit globální proměnnou pro inline event handlery
+            prodejnyLoader = currentLoader;
             
             // Načtení aktuálních dat (výchozí tab)
             currentLoader.loadData(false);
