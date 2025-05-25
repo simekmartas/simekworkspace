@@ -101,6 +101,17 @@
             console.log('Manuální obnovení dat...');
             dataLoader.refreshData();
         };
+        
+        // Debug funkce pro testování
+        window.debugLoadData = function() {
+            console.log('=== DEBUG: Načítání dat ===');
+            dataLoader.loadData(false);
+        };
+        
+        // Přidáme debug tlačítko do konzole
+        console.log('Pro debug načtení dat použij: debugLoadData()');
+        console.log('Pro manuální obnovení použij: manualRefresh()');
+        console.log('Aktuální dataLoader:', dataLoader);
     }
     </script>
 

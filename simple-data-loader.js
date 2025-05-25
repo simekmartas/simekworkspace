@@ -36,15 +36,34 @@ class SimpleRetroDataLoader {
                     }
                 });
             } catch (corsError) {
-                console.log('Přímý přístup selhal, zkouším proxy...');
-                // Fallback na CORS proxy
-                response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    this.parseAndDisplayCSV(data.contents, isMonthly);
-                    this.startAutoRefresh(); // Spustíme automatické obnovování
-                    return;
+                console.log('Přímý přístup selhal, zkouším proxy...', corsError);
+                // Fallback na CORS proxy s cache-busting
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
+                console.log('Proxy URL:', proxyUrl);
+                
+                try {
+                    response = await fetch(proxyUrl, {
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Data z proxy:', data);
+                        this.parseAndDisplayCSV(data.contents, isMonthly);
+                        this.startAutoRefresh(); // Spustíme automatické obnovování
+                        return;
+                    } else {
+                        console.error('Proxy response not ok:', response.status, response.statusText);
+                    }
+                } catch (proxyError) {
+                    console.error('Proxy fetch failed:', proxyError);
                 }
+                
                 throw corsError;
             }
             
@@ -58,14 +77,45 @@ class SimpleRetroDataLoader {
             
         } catch (error) {
             console.error('Chyba při načítání dat:', error);
+            console.error('Error details:', error.message, error.stack);
             console.log('Zobrazujem mock data jako fallback');
+            
+            // Zkusíme ještě jednou s jiným přístupem
+            try {
+                console.log('Zkouším alternativní přístup...');
+                const alternativeUrl = isMonthly 
+                    ? `https://docs.google.com/spreadsheets/d/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/export?format=csv&gid=1829845095&t=${new Date().getTime()}`
+                    : `https://docs.google.com/spreadsheets/d/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/export?format=csv&t=${new Date().getTime()}`;
+                
+                console.log('Alternative URL:', alternativeUrl);
+                
+                const altResponse = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(alternativeUrl)}`, {
+                    cache: 'no-cache'
+                });
+                
+                if (altResponse.ok) {
+                    const altData = await altResponse.json();
+                    console.log('Alternative data loaded:', altData);
+                    this.parseAndDisplayCSV(altData.contents, isMonthly);
+                    this.startAutoRefresh();
+                    return;
+                }
+            } catch (altError) {
+                console.error('Alternative approach failed:', altError);
+            }
+            
             this.showMockData(isMonthly);
             this.startAutoRefresh(); // Spustíme automatické obnovování i pro mock data
         }
     }
 
     parseAndDisplayCSV(csvData, isMonthly) {
+        console.log('parseAndDisplayCSV called with data length:', csvData ? csvData.length : 'null');
+        console.log('First 200 chars of CSV data:', csvData ? csvData.substring(0, 200) : 'null');
+        
         const lines = csvData.split('\n').filter(line => line.trim());
+        console.log('Number of lines after filtering:', lines.length);
+        
         if (lines.length === 0) {
             console.log('Žádná data v CSV, zobrazujem mock data');
             this.showMockData(isMonthly);
@@ -249,8 +299,11 @@ class SimpleRetroDataLoader {
         // Pokud se nepodaří načíst data, zobrazíme mock data v retro stylu
         const mockHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'];
         
+        const now = new Date();
+        const timeString = now.toLocaleString('cs-CZ');
+        
         const mockRows = isMonthly ? [
-            ['Aktualizováno:', '23. 05. 2025 22:01:36', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['Aktualizováno:', timeString, '', '', '', '', '', '', '', '', '', '', '', '', ''],
             ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1'],
             ['Čepkov', 'Lukáš Kováčik', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3'],
             ['Globus', 'Jiří Pohořelský', '282', '35', '0', '13', '0', '1', '0', '7', '0', '2', '3', '0', '9'],
@@ -268,7 +321,7 @@ class SimpleRetroDataLoader {
             ['Přerov', 'Radek Bulandra', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0'],
             ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
         ] : [
-            ['Aktualizováno:', '25. 05. 2025 13:12:13', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+            ['Aktualizováno:', timeString, '', '', '', '', '', '', '', '', '', '', '', '', ''],
             ['Globus', 'Šimon Gabriel', '14', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
             ['Čepkov', 'Lukáš Kováčik', '11', '2', '1', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0'],
             ['Šternberk', 'Adam Kolarčík', '8', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
@@ -333,8 +386,8 @@ class SimpleRetroDataLoader {
         }
 
         // Pro testování můžeme použít kratší interval (odkomentuj pro test):
-        const refreshIntervalMs = 60000; // 1 minuta pro testování
-        // const refreshIntervalMs = 3600000; // 1 hodina pro produkci
+        // const refreshIntervalMs = 60000; // 1 minuta pro testování
+        const refreshIntervalMs = 3600000; // 1 hodina pro produkci
         
         this.refreshInterval = setInterval(() => {
             console.log('Automatické obnovování dat...');
@@ -378,14 +431,30 @@ class SimpleRetroDataLoader {
                     }
                 });
             } catch (corsError) {
-                console.log('Přímý přístup selhal při obnovování, zkouším proxy...');
-                response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    this.parseAndDisplayCSV(data.contents, this.isMonthly);
-                    this.updateRefreshIndicator();
-                    return;
+                console.log('Přímý přístup selhal při obnovování, zkouším proxy...', corsError);
+                
+                try {
+                    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`;
+                    response = await fetch(proxyUrl, {
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('Refresh data z proxy:', data);
+                        this.parseAndDisplayCSV(data.contents, this.isMonthly);
+                        this.updateRefreshIndicator();
+                        return;
+                    }
+                } catch (proxyError) {
+                    console.error('Proxy refresh failed:', proxyError);
                 }
+                
                 throw corsError;
             }
             
