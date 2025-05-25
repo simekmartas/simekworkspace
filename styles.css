@@ -54,6 +54,7 @@ nav a {
     text-transform: uppercase;
     letter-spacing: 1px;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
 }
 
 nav a:hover {
@@ -637,6 +638,7 @@ tr:hover td {
     margin: 0.2rem 0;
     position: relative;
     overflow: hidden;
+    white-space: nowrap;
 }
 
 .dropdown-menu a::before {
@@ -669,6 +671,7 @@ tr:hover td {
     position: relative;
     cursor: pointer;
     transition: all 0.3s ease;
+    white-space: nowrap;
 }
 
 .dropdown-toggle:hover {
@@ -713,10 +716,13 @@ tr:hover td {
         overflow: hidden;
         transition: max-height 0.3s ease;
         background: rgba(27, 40, 72, 0.3);
+        padding: 0;
+        backdrop-filter: none;
     }
     
     .dropdown.active .dropdown-menu {
         max-height: 200px;
+        padding: 0.5rem 0;
     }
     
     .dropdown-toggle {
@@ -726,28 +732,59 @@ tr:hover td {
         background: transparent;
         border: none;
         border-bottom: 1px solid var(--retro-pink);
+        white-space: nowrap;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
     
     .dropdown-toggle::after {
-        content: ' ▼';
-        float: right;
+        content: '▼';
+        float: none;
+        margin-left: 0;
+        color: var(--retro-cyan);
+        text-shadow: 0 0 10px rgba(0, 255, 231, 0.6);
+        transition: all 0.3s ease;
     }
     
     .dropdown.active .dropdown-toggle::after {
-        content: ' ▲';
+        content: '▲';
         transform: none;
+        color: var(--retro-pink);
+        text-shadow: 0 0 10px rgba(228, 11, 77, 0.8);
+    }
+    
+    .dropdown-menu li {
+        border-bottom: 1px solid rgba(228, 11, 77, 0.3);
+        margin: 0;
     }
     
     .dropdown-menu a {
         padding: 1rem 3rem;
         font-size: 0.9rem;
-        border-bottom: 1px solid rgba(228, 11, 77, 0.3);
+        border-bottom: none;
         background: rgba(27, 40, 72, 0.5);
+        white-space: nowrap;
+        border-radius: 0;
+        margin: 0;
+        position: static;
+        overflow: visible;
+        transition: all 0.3s ease;
+    }
+    
+    .dropdown-menu a::before {
+        display: none;
     }
     
     .dropdown-menu a:hover {
         background: rgba(228, 11, 77, 0.3);
         padding-left: 3.5rem;
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .dropdown-menu li:last-child {
+        border-bottom: none;
     }
     
     .dropdown-menu li:last-child a {
@@ -874,7 +911,8 @@ tr:hover td {
     background: var(--retro-black);
     position: relative;
     min-height: 400px;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: 1rem;
 }
 
@@ -1143,8 +1181,8 @@ tr:hover td {
     margin: 0 auto;
     font-family: 'JetBrains Mono', monospace;
     background: transparent;
-    font-size: 0.85rem;
-    table-layout: auto;
+    font-size: 0.75rem;
+    table-layout: fixed;
 }
 
 .retro-sales-table th {
@@ -1152,29 +1190,46 @@ tr:hover td {
     color: var(--retro-white);
     font-weight: bold;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     border: 1px solid var(--retro-pink);
-    padding: 0.8rem 0.4rem;
+    padding: 0.6rem 0.2rem;
     text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     text-align: center;
     white-space: nowrap;
-    min-width: 60px;
-    max-width: 120px;
+    width: auto;
 }
+
+/* Specifické šířky pro sloupce */
+.retro-sales-table th:nth-child(1) { width: 12%; } /* PRODEJNA */
+.retro-sales-table th:nth-child(2) { width: 12%; } /* PRODEJCE */
+.retro-sales-table th:nth-child(3) { width: 8%; }  /* PRODEJE */
+.retro-sales-table th:nth-child(4) { width: 8%; }  /* POZICE NAD 10 */
+.retro-sales-table th:nth-child(5) { width: 8%; }  /* SLUŽBY CELKEM */
+.retro-sales-table th:nth-child(6) { width: 6%; }  /* CT300 */
+.retro-sales-table th:nth-child(7) { width: 6%; }  /* CT600 */
+.retro-sales-table th:nth-child(8) { width: 6%; }  /* CT1200 */
+.retro-sales-table th:nth-child(9) { width: 5%; }  /* AKT */
+.retro-sales-table th:nth-child(10) { width: 6%; } /* ZAH250 */
+.retro-sales-table th:nth-child(11) { width: 5%; } /* NAP */
+.retro-sales-table th:nth-child(12) { width: 6%; } /* ZAH500 */
+.retro-sales-table th:nth-child(13) { width: 6%; } /* KOP250 */
+.retro-sales-table th:nth-child(14) { width: 6%; } /* KOP500 */
+.retro-sales-table th:nth-child(15) { width: 5%; } /* PZI */
+.retro-sales-table th:nth-child(16) { width: 5%; } /* KNZ */
 
 .retro-sales-table td {
     border: 1px solid var(--retro-pink);
     background: rgba(27, 40, 72, 0.3);
     color: var(--retro-white);
-    padding: 0.6rem 0.4rem;
-    font-size: 0.75rem;
+    padding: 0.5rem 0.2rem;
+    font-size: 0.65rem;
     text-align: center;
     transition: all 0.3s ease;
-    min-width: 60px;
-    max-width: 120px;
     word-wrap: break-word;
     overflow-wrap: break-word;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .retro-sales-table td.numeric {
@@ -1214,9 +1269,8 @@ tr:hover td {
 .retro-sales-table td:first-child,
 .retro-sales-table td:nth-child(2) {
     text-align: left;
-    padding-left: 0.5rem;
+    padding-left: 0.3rem;
     font-weight: bold;
-    min-width: 80px;
 }
 
 .retro-sales-table tbody tr:first-child:hover td {
