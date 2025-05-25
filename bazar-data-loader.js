@@ -533,7 +533,7 @@ class BazarDataLoader {
             </div>
         `;
         
-        // Po vygenerování HTML nastavit event listenery a výchozí hodnoty
+        // Po vygenerování HTML vždy nastavit event listenery (budou se nejprve vyčistit)
         this.setupEventListeners();
     }
 
@@ -542,6 +542,8 @@ class BazarDataLoader {
         
         // Použít requestAnimationFrame místo setTimeout pro lepší timing
         const setupListeners = () => {
+            // Nejprve odstraníme všechny existující event listenery
+            this.removeExistingEventListeners();
             // Rolovací selekty pro datum OD
             const dayFromSelect = document.getElementById('dayFrom');
             const monthFromSelect = document.getElementById('monthFrom');
@@ -602,14 +604,17 @@ class BazarDataLoader {
             
             if (dayFromSelect) {
                 dayFromSelect.addEventListener('change', handleDateFromChange);
+                dayFromSelect.addEventListener('click', () => console.log('Day FROM clicked'));
                 console.log('Day FROM select nastaven');
             }
             if (monthFromSelect) {
                 monthFromSelect.addEventListener('change', handleDateFromChange);
+                monthFromSelect.addEventListener('click', () => console.log('Month FROM clicked'));
                 console.log('Month FROM select nastaven');
             }
             if (yearFromSelect) {
                 yearFromSelect.addEventListener('change', handleDateFromChange);
+                yearFromSelect.addEventListener('click', () => console.log('Year FROM clicked'));
                 console.log('Year FROM select nastaven');
             }
             
@@ -630,14 +635,17 @@ class BazarDataLoader {
             
             if (dayToSelect) {
                 dayToSelect.addEventListener('change', handleDateToChange);
+                dayToSelect.addEventListener('click', () => console.log('Day TO clicked'));
                 console.log('Day TO select nastaven');
             }
             if (monthToSelect) {
                 monthToSelect.addEventListener('change', handleDateToChange);
+                monthToSelect.addEventListener('click', () => console.log('Month TO clicked'));
                 console.log('Month TO select nastaven');
             }
             if (yearToSelect) {
                 yearToSelect.addEventListener('change', handleDateToChange);
+                yearToSelect.addEventListener('click', () => console.log('Year TO clicked'));
                 console.log('Year TO select nastaven');
             }
             
@@ -737,6 +745,24 @@ class BazarDataLoader {
         
         // Spustit setup
         setupListeners();
+    }
+
+    removeExistingEventListeners() {
+        // Uložíme reference na event listenery pro pozdější odstranění
+        const elements = [
+            'dayFrom', 'monthFrom', 'yearFrom',
+            'dayTo', 'monthTo', 'yearTo',
+            'bazarFilter', 'clearDatesBtn', 'showAllBtn', 'setDefaultBtn'
+        ];
+        
+        elements.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                // Klonujeme element pro odstranění všech event listenerů
+                const newElement = element.cloneNode(true);
+                element.parentNode.replaceChild(newElement, element);
+            }
+        });
     }
 
     showLoading() {

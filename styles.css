@@ -2150,6 +2150,8 @@ tr:hover td {
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    position: relative;
+    z-index: 5;
 }
 
 .date-select {
@@ -2167,6 +2169,9 @@ tr:hover td {
     cursor: pointer;
     min-width: 80px;
     text-align: center;
+    pointer-events: auto;
+    position: relative;
+    z-index: 10;
 }
 
 .date-select:focus {
@@ -2185,9 +2190,23 @@ tr:hover td {
 }
 
 .date-select option {
-    background: var(--retro-black);
-    color: var(--retro-white);
+    background: var(--retro-black) !important;
+    color: var(--retro-white) !important;
     padding: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+}
+
+.date-select option:hover {
+    background: var(--retro-cyan) !important;
+    color: var(--retro-black) !important;
+}
+
+.date-select option:checked {
+    background: var(--retro-pink) !important;
+    color: var(--retro-white) !important;
 }
 
 .date-filter-buttons {
