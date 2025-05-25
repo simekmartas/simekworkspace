@@ -73,7 +73,10 @@ class SimpleRetroDataLoader {
             return;
         }
 
-        this.displayTable(headers, rows, isMonthly);
+        // Seřadit podle sloupce polozky_nad_100 (index 2) od největší po nejmenší
+        const sortedRows = this.sortRowsByColumn(rows, headers, 'polozky_nad_100');
+
+        this.displayTable(headers, sortedRows, isMonthly);
     }
 
     parseCSVLine(line) {
@@ -98,9 +101,37 @@ class SimpleRetroDataLoader {
         return result;
     }
 
+    sortRowsByColumn(rows, headers, columnName) {
+        const columnIndex = headers.findIndex(header => header.toLowerCase() === columnName.toLowerCase());
+        if (columnIndex === -1) {
+            console.log(`Sloupec ${columnName} nenalezen, řadím podle 3. sloupce`);
+            return this.sortRowsByIndex(rows, 2); // Fallback na 3. sloupec (index 2)
+        }
+        
+        return this.sortRowsByIndex(rows, columnIndex);
+    }
+
+    sortRowsByIndex(rows, columnIndex) {
+        // Oddělíme první řádek (aktualizace) od ostatních
+        const firstRow = rows[0];
+        const dataRows = rows.slice(1);
+        
+        // Seřadíme datové řádky podle číselné hodnoty ve sloupci
+        const sortedDataRows = dataRows.sort((a, b) => {
+            const valueA = parseFloat(a[columnIndex]) || 0;
+            const valueB = parseFloat(b[columnIndex]) || 0;
+            return valueB - valueA; // Od největší po nejmenší
+        });
+        
+        // Vrátíme první řádek + seřazené datové řádky
+        return [firstRow, ...sortedDataRows];
+    }
+
     displayTable(headers, rows, isMonthly) {
         const title = isMonthly ? 'Měsíční statistiky prodejů' : 'Aktuální statistiky prodejů';
         const prompt = isMonthly ? 'statistiky_mesicni.csv' : 'statistiky_prodejů.csv';
+        const tableId = isMonthly ? 'monthly-table' : 'current-table';
+        const filterId = isMonthly ? 'monthly-filter' : 'current-filter';
         
         this.container.innerHTML = `
             <div class="retro-data-container">
@@ -112,17 +143,24 @@ class SimpleRetroDataLoader {
                         <span class="control-dot green"></span>
                     </div>
                 </div>
+                <div class="retro-filter-panel">
+                    <div class="retro-filter-row">
+                        <span class="retro-filter-label">&gt; FILTER:</span>
+                        <input type="text" id="${filterId}" class="retro-filter-input" placeholder="// Zadejte text pro filtrování..." />
+                        <button class="retro-filter-clear" onclick="this.previousElementSibling.value=''; this.previousElementSibling.dispatchEvent(new Event('input'));">[ CLEAR ]</button>
+                    </div>
+                </div>
                 <div class="retro-data-content">
                     <div class="table-scroll">
-                        <table class="retro-sales-table">
+                        <table class="retro-sales-table" id="${tableId}">
                             <thead>
                                 <tr>
-                                    ${headers.map(header => `<th>${this.escapeHtml(header)}</th>`).join('')}
+                                    ${headers.map((header, index) => `<th onclick="window.sortTable('${tableId}', ${index})" class="sortable-header">${this.escapeHtml(header)} <span class="sort-indicator">⇅</span></th>`).join('')}
                                 </tr>
                             </thead>
                             <tbody>
                                 ${rows.map((row, index) => `
-                                    <tr class="${index % 2 === 0 ? 'even' : 'odd'}">
+                                    <tr class="${index % 2 === 0 ? 'even' : 'odd'}" ${index === 0 ? 'data-is-header="true"' : ''}>
                                         ${row.map((cell, cellIndex) => {
                                             const isNumeric = !isNaN(cell) && cell.trim() !== '';
                                             return `<td class="${isNumeric ? 'numeric' : ''}">${this.escapeHtml(cell)}</td>`;
@@ -145,6 +183,16 @@ class SimpleRetroDataLoader {
                 </div>
             </div>
         `;
+
+        // Přidáme event listener pro filtrování
+        setTimeout(() => {
+            const filterInput = document.getElementById(filterId);
+            if (filterInput) {
+                filterInput.addEventListener('input', (e) => {
+                    this.filterTable(tableId, e.target.value);
+                });
+            }
+        }, 100);
     }
 
     showLoading() {
@@ -184,28 +232,28 @@ class SimpleRetroDataLoader {
         
         const mockRows = isMonthly ? [
             ['Aktualizováno:', '23. 05. 2025 22:01:36', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-            ['Vsetín', 'Lukáš Krumpolc', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3'],
+            ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1'],
             ['Čepkov', 'Lukáš Kováčik', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3'],
             ['Globus', 'Jiří Pohořelský', '282', '35', '0', '13', '0', '1', '0', '7', '0', '2', '3', '0', '9'],
+            ['Čepkov', 'Tomáš Doležel', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2'],
+            ['Hlavní sklad - Senimo', 'Tomáš Valenta', '239', '19', '0', '3', '0', '0', '0', '9', '0', '0', '0', '1', '6'],
+            ['Šternberk', 'Adam Kolarčík', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4'],
             ['Přerov', 'Benny Babušík', '206', '15', '0', '5', '0', '0', '0', '4', '0', '1', '2', '0', '3'],
             ['Šternberk', 'Jakub Králik', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1'],
-            ['Hlavní sklad - Senimo', 'Tomáš Valenta', '239', '19', '0', '3', '0', '0', '0', '9', '0', '0', '0', '1', '6'],
-            ['Hlavní sklad - Senimo', 'Adéla Koldová', '58', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-            ['Čepkov', 'Tomáš Doležel', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2'],
-            ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1'],
-            ['Šternberk', 'Adam Kolarčík', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4'],
+            ['Vsetín', 'Lukáš Krumpolc', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3'],
             ['Přerov', 'Jakub Málek', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7'],
             ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1'],
-            ['Globus', 'František Vychodil', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
-            ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
             ['Přerov', 'Nový Prodejce', '91', '2', '0', '0', '0', '1', '0', '0', '0', '0', '0', '1', '0'],
-            ['Přerov', 'Radek Bulandra', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0']
+            ['Hlavní sklad - Senimo', 'Adéla Koldová', '58', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+            ['Globus', 'František Vychodil', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
+            ['Přerov', 'Radek Bulandra', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0'],
+            ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
         ] : [
             ['Aktualizováno:', '25. 05. 2025 13:12:13', '', '', '', '', '', '', '', '', '', '', '', '', ''],
             ['Globus', 'Šimon Gabriel', '14', '1', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-            ['Přerov', 'Jakub Málek', '3', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0'],
-            ['Šternberk', 'Adam Kolarčík', '8', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
             ['Čepkov', 'Lukáš Kováčik', '11', '2', '1', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0'],
+            ['Šternberk', 'Adam Kolarčík', '8', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+            ['Přerov', 'Jakub Málek', '3', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0'],
             ['Vsetín', 'Štěpán Kundera', '3', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
         ];
 
@@ -226,7 +274,94 @@ class SimpleRetroDataLoader {
         div.textContent = text || '';
         return div.innerHTML;
     }
+
+    filterTable(tableId, filterText) {
+        const table = document.getElementById(tableId);
+        if (!table) return;
+
+        const rows = table.querySelectorAll('tbody tr');
+        const filter = filterText.toLowerCase();
+
+        rows.forEach((row, index) => {
+            // První řádek (aktualizace) vždy zobrazit
+            if (index === 0) {
+                row.style.display = '';
+                return;
+            }
+
+            const cells = row.querySelectorAll('td');
+            let shouldShow = false;
+
+            if (filter === '') {
+                shouldShow = true;
+            } else {
+                cells.forEach(cell => {
+                    if (cell.textContent.toLowerCase().includes(filter)) {
+                        shouldShow = true;
+                    }
+                });
+            }
+
+            row.style.display = shouldShow ? '' : 'none';
+        });
+    }
 }
+
+// Globální funkce pro řazení tabulky
+window.sortTable = function(tableId, columnIndex) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    // Oddělíme první řádek (aktualizace) od ostatních
+    const headerRow = rows[0];
+    const dataRows = rows.slice(1);
+
+    // Zjistíme aktuální směr řazení
+    const header = table.querySelectorAll('th')[columnIndex];
+    const currentSort = header.getAttribute('data-sort') || 'none';
+    const newSort = currentSort === 'asc' ? 'desc' : 'asc';
+
+    // Resetujeme všechny indikátory řazení
+    table.querySelectorAll('th').forEach(th => {
+        th.setAttribute('data-sort', 'none');
+        const indicator = th.querySelector('.sort-indicator');
+        if (indicator) indicator.textContent = '⇅';
+    });
+
+    // Nastavíme nový indikátor
+    header.setAttribute('data-sort', newSort);
+    const indicator = header.querySelector('.sort-indicator');
+    if (indicator) {
+        indicator.textContent = newSort === 'asc' ? '↑' : '↓';
+    }
+
+    // Seřadíme datové řádky
+    dataRows.sort((a, b) => {
+        const cellA = a.cells[columnIndex].textContent.trim();
+        const cellB = b.cells[columnIndex].textContent.trim();
+
+        // Pokusíme se o číselné porovnání
+        const numA = parseFloat(cellA);
+        const numB = parseFloat(cellB);
+
+        if (!isNaN(numA) && !isNaN(numB)) {
+            return newSort === 'asc' ? numA - numB : numB - numA;
+        } else {
+            // Textové porovnání
+            return newSort === 'asc' 
+                ? cellA.localeCompare(cellB, 'cs') 
+                : cellB.localeCompare(cellA, 'cs');
+        }
+    });
+
+    // Znovu vložíme řádky do tabulky
+    tbody.innerHTML = '';
+    tbody.appendChild(headerRow);
+    dataRows.forEach(row => tbody.appendChild(row));
+};
 
 // Export pro použití v jiných souborech
 window.SimpleRetroDataLoader = SimpleRetroDataLoader; 
