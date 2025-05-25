@@ -367,11 +367,11 @@ class BazarDataLoader {
                             <div class="stat-value">${prodaneRows.length}</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">// NASKLADNĚNO</div>
+                            <div class="stat-label">// NEPRODÁNO</div>
                             <div class="stat-value">${naskladneneCount}</div>
                         </div>
                         <div class="stat-box">
-                            <div class="stat-label">// CELKEM</div>
+                            <div class="stat-label">// VYKOUPENO CELKEM</div>
                             <div class="stat-value">${celkemCount}</div>
                         </div>
                     </div>
@@ -379,11 +379,11 @@ class BazarDataLoader {
                     <!-- Doplňkové statistiky -->
                     <div class="bazar-stats-small">
                         <div class="stat-box-small">
-                            <div class="stat-label-small">// NÁKUPNÍ CENY CELKEM</div>
+                            <div class="stat-label-small">// VYKOUPENO ZA</div>
                             <div class="stat-value-small">${nakupniCenySum.toLocaleString('cs-CZ')} Kč</div>
                         </div>
                         <div class="stat-box-small">
-                            <div class="stat-label-small">// PRODEJNÍ CENY CELKEM</div>
+                            <div class="stat-label-small">// PRODÁNO ZA</div>
                             <div class="stat-value-small">${prodejniCenySum.toLocaleString('cs-CZ')} Kč</div>
                         </div>
                         <div class="stat-box-small">
