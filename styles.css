@@ -2014,6 +2014,10 @@ tr:hover td {
     cursor: pointer;
     position: relative;
     z-index: 10;
+    pointer-events: auto !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
 
 .date-input-group input[type="date"]:focus {
@@ -2138,6 +2142,11 @@ tr:hover td {
         min-width: auto;
         flex: 1;
         font-size: 16px; /* Prevence zoom na iOS */
+        pointer-events: auto !important;
+        cursor: pointer;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
     }
     
     .clear-dates-btn {

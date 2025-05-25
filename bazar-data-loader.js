@@ -470,11 +470,6 @@ class BazarDataLoader {
     }
 
     setupEventListeners() {
-        // Nastavit výchozí datový filtr na poslední týden
-        setTimeout(() => {
-            this.setDefaultDateFilter();
-        }, 100);
-        
         // Přidat event listenery pro všechny filtrovací prvky
         setTimeout(() => {
             const dateFromInput = document.getElementById('dateFrom');
@@ -483,20 +478,52 @@ class BazarDataLoader {
             const clearBtn = document.getElementById('clearDatesBtn');
             const showAllBtn = document.getElementById('showAllBtn');
             
+            console.log('Hledám elementy:', {
+                dateFrom: !!dateFromInput,
+                dateTo: !!dateToInput,
+                textFilter: !!textFilter,
+                clearBtn: !!clearBtn,
+                showAllBtn: !!showAllBtn
+            });
+            
             if (dateFromInput) {
+                // Odstranit staré event listenery
+                dateFromInput.removeEventListener('change', this.filterTable);
+                dateFromInput.removeEventListener('input', this.filterTable);
+                
+                // Přidat nové event listenery
                 dateFromInput.addEventListener('change', () => {
                     console.log('Date FROM changed:', dateFromInput.value);
                     this.filterTable();
                 });
-                dateFromInput.addEventListener('input', () => this.filterTable());
+                dateFromInput.addEventListener('input', () => {
+                    console.log('Date FROM input:', dateFromInput.value);
+                    this.filterTable();
+                });
+                
+                // Zajistit, že input je klikatelný
+                dateFromInput.style.pointerEvents = 'auto';
+                dateFromInput.style.cursor = 'pointer';
             }
             
             if (dateToInput) {
+                // Odstranit staré event listenery
+                dateToInput.removeEventListener('change', this.filterTable);
+                dateToInput.removeEventListener('input', this.filterTable);
+                
+                // Přidat nové event listenery
                 dateToInput.addEventListener('change', () => {
                     console.log('Date TO changed:', dateToInput.value);
                     this.filterTable();
                 });
-                dateToInput.addEventListener('input', () => this.filterTable());
+                dateToInput.addEventListener('input', () => {
+                    console.log('Date TO input:', dateToInput.value);
+                    this.filterTable();
+                });
+                
+                // Zajistit, že input je klikatelný
+                dateToInput.style.pointerEvents = 'auto';
+                dateToInput.style.cursor = 'pointer';
             }
             
             if (textFilter) {
@@ -505,11 +532,17 @@ class BazarDataLoader {
             }
             
             if (clearBtn) {
-                clearBtn.addEventListener('click', () => this.clearDateFilter());
+                clearBtn.addEventListener('click', () => {
+                    console.log('Clear button clicked');
+                    this.clearDateFilter();
+                });
             }
             
             if (showAllBtn) {
-                showAllBtn.addEventListener('click', () => this.showAllRecords());
+                showAllBtn.addEventListener('click', () => {
+                    console.log('Show all button clicked');
+                    this.showAllRecords();
+                });
             }
             
             // Event listenery pro stránkování
@@ -533,6 +566,10 @@ class BazarDataLoader {
                 showAllBtn: !!showAllBtn,
                 paginationBtns: paginationBtns.length
             });
+            
+            // NEPOUŽÍVAT výchozí datový filtr - zobrazit všechna data
+            console.log('Zobrazujem všechna data bez filtru');
+            
         }, 200);
     }
 
