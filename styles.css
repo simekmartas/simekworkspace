@@ -1454,6 +1454,36 @@ tr:hover td {
     transform: translateY(-1px);
 }
 
+.retro-refresh-btn {
+    background: linear-gradient(135deg, var(--retro-cyan) 0%, var(--retro-dark-blue) 100%);
+    color: var(--retro-white);
+    border: 2px solid var(--retro-cyan);
+    padding: 0.6rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 0 10px rgba(0, 255, 231, 0.3),
+        inset 0 0 10px rgba(228, 11, 77, 0.1);
+    white-space: nowrap;
+    margin-left: 0.5rem;
+}
+
+.retro-refresh-btn:hover {
+    background: linear-gradient(135deg, var(--retro-pink) 0%, var(--retro-cyan) 100%);
+    color: var(--retro-black);
+    border-color: var(--retro-pink);
+    box-shadow: 
+        0 0 20px rgba(228, 11, 77, 0.5),
+        inset 0 0 10px rgba(0, 255, 231, 0.2);
+    transform: translateY(-1px);
+}
+
 /* Řazení tabulky */
 .sortable-header {
     cursor: pointer;
@@ -1513,6 +1543,13 @@ tr:hover td {
     .retro-filter-clear {
         align-self: center;
         padding: 0.8rem 1.5rem;
+    }
+    
+    .retro-refresh-btn {
+        align-self: center;
+        padding: 0.8rem 1.5rem;
+        margin-left: 0;
+        margin-top: 0.5rem;
     }
     
     .sortable-header {

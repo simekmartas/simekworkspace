@@ -36,7 +36,11 @@
                 </div>
                 <div class="retro-info-line">
                     <span class="retro-prompt">&gt;</span>
-                    <span class="retro-text">Poslední aktualizace je uvedena v prvním řádku tabulky</span>
+                    <span class="retro-text">Webová stránka se automaticky obnovuje každou hodinu</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Pro manuální obnovení použijte tlačítko [OBNOVIT]</span>
                 </div>
                 <div class="retro-info-line">
                     <span class="retro-prompt">&gt;</span>
@@ -91,6 +95,12 @@
         // Načtení dat pomocí nového jednoduchého data loaderu
         const dataLoader = new SimpleRetroDataLoader('data-container');
         dataLoader.loadData(false); // false = aktuální data (ne měsíční)
+        
+        // Globální funkce pro manuální obnovení
+        window.manualRefresh = function() {
+            console.log('Manuální obnovení dat...');
+            dataLoader.refreshData();
+        };
     }
     </script>
 

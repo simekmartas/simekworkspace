@@ -36,6 +36,14 @@
                 </div>
                 <div class="retro-info-line">
                     <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Webová stránka se automaticky obnovuje každou hodinu</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Pro manuální obnovení použijte tlačítko [OBNOVIT]</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
                     <span class="retro-text">Zobrazuje data od začátku aktuálního měsíce</span>
                 </div>
                 <div class="retro-info-line">
@@ -91,6 +99,12 @@
         // Načtení měsíčních dat pomocí nového jednoduchého data loaderu
         const dataLoader = new SimpleRetroDataLoader('monthly-data-container');
         dataLoader.loadData(true); // true = měsíční data
+        
+        // Globální funkce pro manuální obnovení
+        window.manualRefresh = function() {
+            console.log('Manuální obnovení měsíčních dat...');
+            dataLoader.refreshData();
+        };
     }
     </script>
 

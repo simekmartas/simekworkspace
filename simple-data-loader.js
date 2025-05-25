@@ -5,9 +5,13 @@ class SimpleRetroDataLoader {
         // Použijeme Google Sheets JSON API místo CSV
         this.baseUrl = 'https://sheets.googleapis.com/v4/spreadsheets/1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/values/';
         this.apiKey = 'AIzaSyD-9tSrke4SkUjnlWis6ZnlgEfU4dfa6M0'; // Veřejný API klíč pro čtení
+        this.refreshInterval = null; // Pro uložení intervalu automatického obnovování
+        this.isMonthly = false; // Pro sledování typu dat
     }
 
     async loadData(isMonthly = false) {
+        this.isMonthly = isMonthly; // Uložíme typ dat pro automatické obnovování
+        
         try {
             this.showLoading();
             
@@ -32,6 +36,7 @@ class SimpleRetroDataLoader {
                 if (response.ok) {
                     const data = await response.json();
                     this.parseAndDisplayCSV(data.contents, isMonthly);
+                    this.startAutoRefresh(); // Spustíme automatické obnovování
                     return;
                 }
                 throw corsError;
@@ -40,6 +45,7 @@ class SimpleRetroDataLoader {
             if (response.ok) {
                 const csvData = await response.text();
                 this.parseAndDisplayCSV(csvData, isMonthly);
+                this.startAutoRefresh(); // Spustíme automatické obnovování
             } else {
                 throw new Error(`HTTP ${response.status}`);
             }
@@ -48,6 +54,7 @@ class SimpleRetroDataLoader {
             console.error('Chyba při načítání dat:', error);
             console.log('Zobrazujem mock data jako fallback');
             this.showMockData(isMonthly);
+            this.startAutoRefresh(); // Spustíme automatické obnovování i pro mock data
         }
     }
 
@@ -148,6 +155,7 @@ class SimpleRetroDataLoader {
                         <span class="retro-filter-label">&gt; FILTER:</span>
                         <input type="text" id="${filterId}" class="retro-filter-input" placeholder="// Zadejte text pro filtrování..." />
                         <button class="retro-filter-clear" onclick="this.previousElementSibling.value=''; this.previousElementSibling.dispatchEvent(new Event('input'));">[ CLEAR ]</button>
+                        <button class="retro-refresh-btn" onclick="window.manualRefresh && window.manualRefresh()">[ OBNOVIT ]</button>
                     </div>
                 </div>
                 <div class="retro-data-content">
@@ -303,6 +311,93 @@ class SimpleRetroDataLoader {
             }
 
             row.style.display = shouldShow ? '' : 'none';
+        });
+    }
+
+    // Spustí automatické obnovování dat každou hodinu
+    startAutoRefresh() {
+        // Nejprve zrušíme existující interval, pokud existuje
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+
+        // Pro testování můžeme použít kratší interval (odkomentuj pro test):
+        // const refreshIntervalMs = 60000; // 1 minuta pro testování
+        const refreshIntervalMs = 3600000; // 1 hodina pro produkci
+        
+        this.refreshInterval = setInterval(() => {
+            console.log('Automatické obnovování dat...');
+            this.refreshData();
+        }, refreshIntervalMs);
+
+        const intervalText = refreshIntervalMs === 60000 ? 'každou minutu (TEST REŽIM)' : 'každou hodinu';
+        console.log(`Automatické obnovování dat spuštěno (${intervalText})`);
+    }
+
+    // Zastaví automatické obnovování
+    stopAutoRefresh() {
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+            console.log('Automatické obnovování dat zastaveno');
+        }
+    }
+
+    // Obnoví data bez zobrazení loading obrazovky
+    async refreshData() {
+        try {
+            console.log('Obnovuji data...');
+            
+            const csvUrl = this.isMonthly 
+                ? 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?gid=1829845095&single=true&output=csv'
+                : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSQyn0JYmE8u7sclbQH9NQyWdgnHP-mUD-whljYrrWy4ipE1Z016AcYeumZnRB5rBfDz0x9THnH7kb8/pub?single=true&output=csv';
+            
+            let response;
+            try {
+                response = await fetch(csvUrl, {
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'text/csv'
+                    }
+                });
+            } catch (corsError) {
+                console.log('Přímý přístup selhal při obnovování, zkouším proxy...');
+                response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(csvUrl)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    this.parseAndDisplayCSV(data.contents, this.isMonthly);
+                    this.updateRefreshIndicator();
+                    return;
+                }
+                throw corsError;
+            }
+            
+            if (response.ok) {
+                const csvData = await response.text();
+                this.parseAndDisplayCSV(csvData, this.isMonthly);
+                this.updateRefreshIndicator();
+                console.log('Data úspěšně obnovena');
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.error('Chyba při automatickém obnovování dat:', error);
+            // Při chybě nebudeme zobrazovat mock data, jen necháme stávající data
+        }
+    }
+
+    // Aktualizuje indikátor posledního obnovení
+    updateRefreshIndicator() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('cs-CZ');
+        
+        // Najdeme status text a aktualizujeme ho
+        const statusElements = document.querySelectorAll('.retro-status-text');
+        statusElements.forEach(element => {
+            if (element.textContent.includes('DATA STREAM ACTIVE')) {
+                element.textContent = `// ${this.isMonthly ? 'MONTHLY' : 'LIVE'} DATA STREAM ACTIVE (aktualizováno ${timeString})`;
+            }
         });
     }
 }
