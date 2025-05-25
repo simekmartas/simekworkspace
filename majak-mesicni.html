@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mobil Maják - Měsíční</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -439,28 +439,59 @@
         /* Responsive design */
         @media (max-width: 768px) {
             .retro-iframe-container {
-                margin: 1rem;
+                margin: 0.5rem;
                 border-radius: 6px;
+                max-width: calc(100% - 1rem);
             }
             
             .retro-iframe-header {
-                padding: 0.6rem 1rem;
+                padding: 0.6rem 0.8rem;
                 flex-direction: column;
                 gap: 0.5rem;
                 text-align: center;
             }
             
             .retro-terminal-prompt {
-                font-size: 0.9rem;
+                font-size: 0.8rem;
+                word-break: break-all;
+            }
+            
+            .retro-window-controls {
+                justify-content: center;
             }
             
             .retro-iframe-content {
-                height: 500px;
+                height: 400px;
             }
             
             .retro-iframe-footer {
-                padding: 0.4rem 1rem;
+                padding: 0.4rem 0.8rem;
+                font-size: 0.7rem;
+                flex-direction: column;
+                gap: 0.3rem;
+                text-align: center;
+            }
+            
+            .retro-status-left, .retro-status-right {
+                justify-content: center;
+            }
+            
+            .retro-info-panel {
+                margin: 1rem 0.5rem;
+                padding: 0.8rem 1rem;
+                max-width: calc(100% - 1rem);
+            }
+            
+            .retro-info-line {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.3rem;
+                margin: 0.3rem 0;
+            }
+            
+            .retro-text {
                 font-size: 0.8rem;
+                line-height: 1.4;
             }
         }
     </style>
