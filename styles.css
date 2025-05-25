@@ -1976,6 +1976,17 @@ tr:hover td {
     letter-spacing: 1px;
 }
 
+.filter-info {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    margin-left: 0.5rem;
+    text-transform: none;
+    letter-spacing: 0;
+    text-shadow: none;
+}
+
 .date-filter-inputs {
     display: flex;
     align-items: center;
