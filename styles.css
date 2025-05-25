@@ -1069,4 +1069,126 @@ tr:hover td {
         font-size: 0.8rem;
         line-height: 1.4;
     }
+}
+
+/* Retro Sales Table - speciální styly pro prodejní data */
+.retro-sales-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-family: 'JetBrains Mono', monospace;
+    background: transparent;
+    font-size: 0.85rem;
+}
+
+.retro-sales-table th {
+    background: linear-gradient(135deg, var(--retro-pink) 0%, var(--retro-dark-blue) 100%);
+    color: var(--retro-white);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid var(--retro-pink);
+    padding: 0.8rem 0.5rem;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.retro-sales-table td {
+    border: 1px solid var(--retro-pink);
+    background: rgba(27, 40, 72, 0.3);
+    color: var(--retro-white);
+    padding: 0.6rem 0.5rem;
+    font-size: 0.8rem;
+    text-align: left;
+    transition: all 0.3s ease;
+}
+
+.retro-sales-table td.numeric {
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    font-weight: bold;
+    color: var(--retro-cyan);
+    text-shadow: 0 0 5px rgba(0, 255, 231, 0.3);
+}
+
+.retro-sales-table tr.even td {
+    background: rgba(27, 40, 72, 0.5);
+}
+
+.retro-sales-table tr.odd td {
+    background: rgba(27, 40, 72, 0.3);
+}
+
+.retro-sales-table tr:hover td {
+    background: rgba(228, 11, 77, 0.2) !important;
+    box-shadow: 0 0 10px rgba(228, 11, 77, 0.3);
+    transform: scale(1.01);
+}
+
+/* Speciální styling pro první řádek (aktualizace) */
+.retro-sales-table tbody tr:first-child td {
+    background: rgba(0, 255, 231, 0.1) !important;
+    color: var(--retro-cyan);
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(0, 255, 231, 0.5);
+    border-color: var(--retro-cyan);
+}
+
+.retro-sales-table tbody tr:first-child:hover td {
+    background: rgba(0, 255, 231, 0.2) !important;
+    box-shadow: 0 0 15px rgba(0, 255, 231, 0.4);
+}
+
+/* Zvýraznění vysokých hodnot */
+.retro-sales-table td.numeric:not(:empty) {
+    position: relative;
+}
+
+.retro-sales-table td.numeric[data-value]:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 255, 231, 0.1) 100%);
+    pointer-events: none;
+}
+
+/* Mobilní optimalizace pro sales table */
+@media (max-width: 768px) {
+    .retro-sales-table {
+        font-size: 0.7rem;
+        min-width: 800px;
+    }
+    
+    .retro-sales-table th {
+        padding: 0.4rem 0.3rem;
+        font-size: 0.65rem;
+    }
+    
+    .retro-sales-table td {
+        padding: 0.4rem 0.3rem;
+        font-size: 0.7rem;
+    }
+    
+    .table-scroll {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        border: 1px solid var(--retro-pink);
+        border-radius: 4px;
+    }
+}
+
+/* Animace pro loading dots */
+@keyframes loading-pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+.loading-dots {
+    animation: loading-pulse 1.5s infinite;
 } 

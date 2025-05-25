@@ -53,7 +53,7 @@
     <div class="version-info">&lt; v1.0 &gt;</div>
 
     <script src="navigation.js"></script>
-    <script src="data-loader.js"></script>
+    <script src="simple-data-loader.js"></script>
     <script>
     // Ochrana stránky pro členy
     if (!localStorage.getItem('isLoggedIn')) {
@@ -88,8 +88,8 @@
             }
         });
     } else {
-        // Načtení měsíčních dat pomocí nového data loaderu
-        const dataLoader = new RetroDataLoader('monthly-data-container');
+        // Načtení měsíčních dat pomocí nového jednoduchého data loaderu
+        const dataLoader = new SimpleRetroDataLoader('monthly-data-container');
         dataLoader.loadData(true); // true = měsíční data
     }
     </script>
