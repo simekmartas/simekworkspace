@@ -2120,6 +2120,72 @@ tr:hover td {
     text-shadow: 0 0 8px rgba(0, 255, 231, 0.6);
 }
 
+/* Styly pro rolovací datové selekty */
+.date-select-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.date-select-group label {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--retro-white);
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.date-selects {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.date-select {
+    padding: 0.6rem 0.8rem;
+    background: linear-gradient(135deg, var(--retro-dark-blue) 0%, var(--retro-black) 100%);
+    border: 2px solid var(--retro-pink);
+    border-radius: 6px;
+    color: var(--retro-white);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    box-shadow: 
+        0 0 10px rgba(228, 11, 77, 0.3),
+        inset 0 0 10px rgba(0, 255, 231, 0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-width: 80px;
+    text-align: center;
+}
+
+.date-select:focus {
+    outline: none;
+    border-color: var(--retro-cyan);
+    box-shadow: 
+        0 0 15px rgba(0, 255, 231, 0.4),
+        inset 0 0 15px rgba(228, 11, 77, 0.1);
+}
+
+.date-select:hover {
+    border-color: var(--retro-cyan);
+    box-shadow: 
+        0 0 12px rgba(0, 255, 231, 0.3),
+        inset 0 0 12px rgba(228, 11, 77, 0.1);
+}
+
+.date-select option {
+    background: var(--retro-black);
+    color: var(--retro-white);
+    padding: 0.5rem;
+}
+
+.date-filter-buttons {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1rem;
+}
+
 /* Mobilní optimalizace pro bazarové filtry */
 @media (max-width: 768px) {
     .date-filter-section {
@@ -2133,32 +2199,36 @@ tr:hover td {
         gap: 1rem;
     }
     
-    .date-input-group {
-        justify-content: space-between;
+    .date-select-group {
         width: 100%;
     }
     
-    .date-input-group input[type="date"] {
-        min-width: auto;
+    .date-selects {
+        justify-content: space-between;
+        gap: 0.3rem;
+    }
+    
+    .date-select {
         flex: 1;
-        font-size: 16px; /* Prevence zoom na iOS */
-        pointer-events: auto !important;
-        cursor: pointer;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
+        min-width: 60px;
+        font-size: 0.7rem;
+        padding: 0.5rem 0.3rem;
+    }
+    
+    .date-filter-buttons {
+        flex-direction: column;
+        gap: 0.8rem;
+        margin-top: 0.8rem;
     }
     
     .clear-dates-btn {
-        align-self: center;
         padding: 1rem 1.5rem;
-        width: auto;
+        width: 100%;
     }
     
     .show-all-btn {
-        align-self: center;
         padding: 1rem 1.5rem;
-        width: auto;
+        width: 100%;
     }
     
     .filter-stats {

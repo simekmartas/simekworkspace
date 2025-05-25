@@ -380,20 +380,74 @@ class BazarDataLoader {
                                 <span class="filter-label">// FILTR PODLE OBDOBÍ</span>
                             </div>
                             <div class="date-filter-inputs">
-                                <div class="date-input-group">
-                                    <label for="dateFrom">OD:</label>
-                                    <input type="date" id="dateFrom">
+                                <div class="date-select-group">
+                                    <label>OD:</label>
+                                    <div class="date-selects">
+                                        <select id="dayFrom" class="date-select">
+                                            <option value="">Den</option>
+                                            ${Array.from({length: 31}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                                        </select>
+                                        <select id="monthFrom" class="date-select">
+                                            <option value="">Měsíc</option>
+                                            <option value="1">Leden</option>
+                                            <option value="2">Únor</option>
+                                            <option value="3">Březen</option>
+                                            <option value="4">Duben</option>
+                                            <option value="5">Květen</option>
+                                            <option value="6">Červen</option>
+                                            <option value="7">Červenec</option>
+                                            <option value="8">Srpen</option>
+                                            <option value="9">Září</option>
+                                            <option value="10">Říjen</option>
+                                            <option value="11">Listopad</option>
+                                            <option value="12">Prosinec</option>
+                                        </select>
+                                        <select id="yearFrom" class="date-select">
+                                            <option value="">Rok</option>
+                                            <option value="2024">2024</option>
+                                            <option value="2025">2025</option>
+                                            <option value="2026">2026</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div class="date-input-group">
-                                    <label for="dateTo">DO:</label>
-                                    <input type="date" id="dateTo">
+                                <div class="date-select-group">
+                                    <label>DO:</label>
+                                    <div class="date-selects">
+                                        <select id="dayTo" class="date-select">
+                                            <option value="">Den</option>
+                                            ${Array.from({length: 31}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                                        </select>
+                                        <select id="monthTo" class="date-select">
+                                            <option value="">Měsíc</option>
+                                            <option value="1">Leden</option>
+                                            <option value="2">Únor</option>
+                                            <option value="3">Březen</option>
+                                            <option value="4">Duben</option>
+                                            <option value="5">Květen</option>
+                                            <option value="6">Červen</option>
+                                            <option value="7">Červenec</option>
+                                            <option value="8">Srpen</option>
+                                            <option value="9">Září</option>
+                                            <option value="10">Říjen</option>
+                                            <option value="11">Listopad</option>
+                                            <option value="12">Prosinec</option>
+                                        </select>
+                                        <select id="yearTo" class="date-select">
+                                            <option value="">Rok</option>
+                                            <option value="2024">2024</option>
+                                            <option value="2025">2025</option>
+                                            <option value="2026">2026</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <button type="button" class="clear-dates-btn" id="clearDatesBtn">
-                                    VYMAZAT
-                                </button>
-                                <button type="button" class="show-all-btn" id="showAllBtn">
-                                    ZOBRAZIT VŠE
-                                </button>
+                                <div class="date-filter-buttons">
+                                    <button type="button" class="clear-dates-btn" id="clearDatesBtn">
+                                        VYMAZAT
+                                    </button>
+                                    <button type="button" class="show-all-btn" id="showAllBtn">
+                                        ZOBRAZIT VŠE
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -472,60 +526,82 @@ class BazarDataLoader {
     setupEventListeners() {
         // Přidat event listenery pro všechny filtrovací prvky
         setTimeout(() => {
-            const dateFromInput = document.getElementById('dateFrom');
-            const dateToInput = document.getElementById('dateTo');
+            // Rolovací selekty pro datum OD
+            const dayFromSelect = document.getElementById('dayFrom');
+            const monthFromSelect = document.getElementById('monthFrom');
+            const yearFromSelect = document.getElementById('yearFrom');
+            
+            // Rolovací selekty pro datum DO
+            const dayToSelect = document.getElementById('dayTo');
+            const monthToSelect = document.getElementById('monthTo');
+            const yearToSelect = document.getElementById('yearTo');
+            
             const textFilter = document.getElementById('bazarFilter');
             const clearBtn = document.getElementById('clearDatesBtn');
             const showAllBtn = document.getElementById('showAllBtn');
             
             console.log('Hledám elementy:', {
-                dateFrom: !!dateFromInput,
-                dateTo: !!dateToInput,
+                dayFrom: !!dayFromSelect,
+                monthFrom: !!monthFromSelect,
+                yearFrom: !!yearFromSelect,
+                dayTo: !!dayToSelect,
+                monthTo: !!monthToSelect,
+                yearTo: !!yearToSelect,
                 textFilter: !!textFilter,
                 clearBtn: !!clearBtn,
                 showAllBtn: !!showAllBtn
             });
             
-            if (dateFromInput) {
-                // Přidat event listenery s bind pro správný kontext
-                const handleDateFromChange = () => {
-                    console.log('Date FROM changed:', dateFromInput.value);
-                    try {
-                        this.filterTable();
-                    } catch (error) {
-                        console.error('Chyba při filtrování (dateFrom):', error);
-                    }
-                };
-                
-                dateFromInput.addEventListener('change', handleDateFromChange);
-                dateFromInput.addEventListener('input', handleDateFromChange);
-                
-                // Zajistit, že input je klikatelný
-                dateFromInput.style.pointerEvents = 'auto';
-                dateFromInput.style.cursor = 'pointer';
-                
-                console.log('Date FROM input nastaven');
+            // Event listenery pro datum OD
+            const handleDateFromChange = () => {
+                const day = dayFromSelect?.value || '';
+                const month = monthFromSelect?.value || '';
+                const year = yearFromSelect?.value || '';
+                console.log('Date FROM changed:', { day, month, year });
+                try {
+                    this.filterTable();
+                } catch (error) {
+                    console.error('Chyba při filtrování (dateFrom):', error);
+                }
+            };
+            
+            if (dayFromSelect) {
+                dayFromSelect.addEventListener('change', handleDateFromChange);
+                console.log('Day FROM select nastaven');
+            }
+            if (monthFromSelect) {
+                monthFromSelect.addEventListener('change', handleDateFromChange);
+                console.log('Month FROM select nastaven');
+            }
+            if (yearFromSelect) {
+                yearFromSelect.addEventListener('change', handleDateFromChange);
+                console.log('Year FROM select nastaven');
             }
             
-            if (dateToInput) {
-                // Přidat event listenery s bind pro správný kontext
-                const handleDateToChange = () => {
-                    console.log('Date TO changed:', dateToInput.value);
-                    try {
-                        this.filterTable();
-                    } catch (error) {
-                        console.error('Chyba při filtrování (dateTo):', error);
-                    }
-                };
-                
-                dateToInput.addEventListener('change', handleDateToChange);
-                dateToInput.addEventListener('input', handleDateToChange);
-                
-                // Zajistit, že input je klikatelný
-                dateToInput.style.pointerEvents = 'auto';
-                dateToInput.style.cursor = 'pointer';
-                
-                console.log('Date TO input nastaven');
+            // Event listenery pro datum DO
+            const handleDateToChange = () => {
+                const day = dayToSelect?.value || '';
+                const month = monthToSelect?.value || '';
+                const year = yearToSelect?.value || '';
+                console.log('Date TO changed:', { day, month, year });
+                try {
+                    this.filterTable();
+                } catch (error) {
+                    console.error('Chyba při filtrování (dateTo):', error);
+                }
+            };
+            
+            if (dayToSelect) {
+                dayToSelect.addEventListener('change', handleDateToChange);
+                console.log('Day TO select nastaven');
+            }
+            if (monthToSelect) {
+                monthToSelect.addEventListener('change', handleDateToChange);
+                console.log('Month TO select nastaven');
+            }
+            if (yearToSelect) {
+                yearToSelect.addEventListener('change', handleDateToChange);
+                console.log('Year TO select nastaven');
             }
             
             if (textFilter) {
@@ -801,10 +877,35 @@ class BazarDataLoader {
             
             // Získat hodnoty filtrů
             const textFilter = document.getElementById('bazarFilter')?.value.toLowerCase() || '';
-            const dateFrom = document.getElementById('dateFrom')?.value || '';
-            const dateTo = document.getElementById('dateTo')?.value || '';
+            
+            // Sestavit datum OD z rolovacích selectů
+            const dayFrom = document.getElementById('dayFrom')?.value || '';
+            const monthFrom = document.getElementById('monthFrom')?.value || '';
+            const yearFrom = document.getElementById('yearFrom')?.value || '';
+            
+            // Sestavit datum DO z rolovacích selectů
+            const dayTo = document.getElementById('dayTo')?.value || '';
+            const monthTo = document.getElementById('monthTo')?.value || '';
+            const yearTo = document.getElementById('yearTo')?.value || '';
+            
+            // Vytvořit Date objekty pokud jsou všechny části vyplněny
+            let dateFromObj = null;
+            let dateToObj = null;
+            
+            if (dayFrom && monthFrom && yearFrom) {
+                dateFromObj = new Date(parseInt(yearFrom), parseInt(monthFrom) - 1, parseInt(dayFrom));
+            }
+            
+            if (dayTo && monthTo && yearTo) {
+                dateToObj = new Date(parseInt(yearTo), parseInt(monthTo) - 1, parseInt(dayTo));
+                dateToObj.setHours(23, 59, 59, 999); // Konec dne
+            }
 
-            console.log('Filtry:', { textFilter, dateFrom, dateTo });
+            console.log('Filtry:', { 
+                textFilter, 
+                dateFrom: { day: dayFrom, month: monthFrom, year: yearFrom, obj: dateFromObj },
+                dateTo: { day: dayTo, month: monthTo, year: yearTo, obj: dateToObj }
+            });
 
             // Filtrovat všechny řádky
             this.filteredRows = this.allRows.filter(row => {
@@ -826,21 +927,18 @@ class BazarDataLoader {
                 }
 
                 // Datový filtr
-                if (shouldShow && (dateFrom || dateTo)) {
+                if (shouldShow && (dateFromObj || dateToObj)) {
                     const rowDateStr = row[2] || ''; // sloupec C - Datum (index 2)
                     
                     try {
                         const rowDate = this.parseDate(rowDateStr);
                         
-                        if (dateFrom) {
-                            const fromDate = new Date(dateFrom);
-                            if (rowDate < fromDate) shouldShow = false;
+                        if (dateFromObj) {
+                            if (rowDate < dateFromObj) shouldShow = false;
                         }
                         
-                        if (dateTo && shouldShow) {
-                            const toDate = new Date(dateTo);
-                            toDate.setHours(23, 59, 59, 999); // Konec dne
-                            if (rowDate > toDate) shouldShow = false;
+                        if (dateToObj && shouldShow) {
+                            if (rowDate > dateToObj) shouldShow = false;
                         }
                     } catch (dateError) {
                         console.error('Chyba při parsování data:', rowDateStr, dateError);
@@ -905,16 +1003,33 @@ class BazarDataLoader {
     }
 
     clearDateFilter() {
-        document.getElementById('dateFrom').value = '';
-        document.getElementById('dateTo').value = '';
+        // Vymazat všechny rolovací selekty pro datum
+        const selects = ['dayFrom', 'monthFrom', 'yearFrom', 'dayTo', 'monthTo', 'yearTo'];
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.value = '';
+            }
+        });
         this.filterTable();
+        console.log('Datové filtry vymazány');
     }
 
     showAllRecords() {
         // Vymazat všechny filtry
-        document.getElementById('dateFrom').value = '';
-        document.getElementById('dateTo').value = '';
-        document.getElementById('bazarFilter').value = '';
+        const selects = ['dayFrom', 'monthFrom', 'yearFrom', 'dayTo', 'monthTo', 'yearTo'];
+        selects.forEach(selectId => {
+            const select = document.getElementById(selectId);
+            if (select) {
+                select.value = '';
+            }
+        });
+        
+        const textFilter = document.getElementById('bazarFilter');
+        if (textFilter) {
+            textFilter.value = '';
+        }
+        
         this.filterTable();
         console.log('Zobrazeny všechny záznamy');
     }
