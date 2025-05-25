@@ -2026,7 +2026,7 @@ tr:hover td {
     min-width: 150px !important;
     cursor: text !important;
     position: relative !important;
-    z-index: 999 !important;
+    z-index: 999999 !important;
     pointer-events: auto !important;
     -webkit-user-select: text !important;
     -moz-user-select: text !important;
@@ -2042,6 +2042,46 @@ tr:hover td {
     height: auto !important;
     margin: 0 !important;
     vertical-align: top !important;
+}
+
+/* Agresivní override pro date inputy */
+input.date-input,
+input#dateFrom,
+input#dateTo {
+    pointer-events: auto !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    cursor: text !important;
+    z-index: 999999 !important;
+    position: relative !important;
+    background: #1B2848 !important;
+    color: #FFFFFF !important;
+    border: 2px solid #E40B4D !important;
+    touch-action: manipulation !important;
+    -webkit-touch-callout: default !important;
+}
+
+input.date-input:disabled,
+input#dateFrom:disabled,
+input#dateTo:disabled {
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
+    opacity: 1 !important;
+    background: #1B2848 !important;
+    color: #FFFFFF !important;
+}
+
+input.date-input[readonly],
+input#dateFrom[readonly],
+input#dateTo[readonly] {
+    pointer-events: auto !important;
+    user-select: text !important;
+    cursor: text !important;
+    background: #1B2848 !important;
+    color: #FFFFFF !important;
 }
 
 .date-input:focus {

@@ -590,10 +590,16 @@ class BazarDataLoader {
                 // Explicitně nastavit vlastnosti inputu
                 dateFromInput.disabled = false;
                 dateFromInput.readOnly = false;
+                dateFromInput.removeAttribute('disabled');
+                dateFromInput.removeAttribute('readonly');
                 dateFromInput.style.pointerEvents = 'auto';
                 dateFromInput.style.userSelect = 'text';
                 dateFromInput.style.cursor = 'text';
                 dateFromInput.style.zIndex = '999';
+                dateFromInput.style.webkitUserSelect = 'text';
+                dateFromInput.style.mozUserSelect = 'text';
+                dateFromInput.style.msUserSelect = 'text';
+                dateFromInput.style.touchAction = 'manipulation';
                 dateFromInput.tabIndex = 0;
                 
                 dateFromInput.addEventListener('input', handleDateFromChange);
@@ -601,9 +607,22 @@ class BazarDataLoader {
                 dateFromInput.addEventListener('blur', handleDateFromChange);
                 dateFromInput.addEventListener('click', () => {
                     console.log('Date FROM input clicked');
+                    console.log('Date FROM input properties:', {
+                        disabled: dateFromInput.disabled,
+                        readOnly: dateFromInput.readOnly,
+                        pointerEvents: dateFromInput.style.pointerEvents,
+                        userSelect: dateFromInput.style.userSelect,
+                        cursor: dateFromInput.style.cursor
+                    });
                     dateFromInput.focus();
                 });
                 dateFromInput.addEventListener('focus', () => console.log('Date FROM input focused'));
+                dateFromInput.addEventListener('keydown', (e) => {
+                    console.log('Date FROM keydown:', e.key);
+                });
+                dateFromInput.addEventListener('input', (e) => {
+                    console.log('Date FROM input event:', e.target.value);
+                });
                 console.log('Date FROM input nastaven');
             }
             
@@ -611,10 +630,16 @@ class BazarDataLoader {
                 // Explicitně nastavit vlastnosti inputu
                 dateToInput.disabled = false;
                 dateToInput.readOnly = false;
+                dateToInput.removeAttribute('disabled');
+                dateToInput.removeAttribute('readonly');
                 dateToInput.style.pointerEvents = 'auto';
                 dateToInput.style.userSelect = 'text';
                 dateToInput.style.cursor = 'text';
                 dateToInput.style.zIndex = '999';
+                dateToInput.style.webkitUserSelect = 'text';
+                dateToInput.style.mozUserSelect = 'text';
+                dateToInput.style.msUserSelect = 'text';
+                dateToInput.style.touchAction = 'manipulation';
                 dateToInput.tabIndex = 0;
                 
                 dateToInput.addEventListener('input', handleDateToChange);
@@ -622,9 +647,22 @@ class BazarDataLoader {
                 dateToInput.addEventListener('blur', handleDateToChange);
                 dateToInput.addEventListener('click', () => {
                     console.log('Date TO input clicked');
+                    console.log('Date TO input properties:', {
+                        disabled: dateToInput.disabled,
+                        readOnly: dateToInput.readOnly,
+                        pointerEvents: dateToInput.style.pointerEvents,
+                        userSelect: dateToInput.style.userSelect,
+                        cursor: dateToInput.style.cursor
+                    });
                     dateToInput.focus();
                 });
                 dateToInput.addEventListener('focus', () => console.log('Date TO input focused'));
+                dateToInput.addEventListener('keydown', (e) => {
+                    console.log('Date TO keydown:', e.key);
+                });
+                dateToInput.addEventListener('input', (e) => {
+                    console.log('Date TO input event:', e.target.value);
+                });
                 console.log('Date TO input nastaven');
             }
             
