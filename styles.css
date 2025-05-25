@@ -1281,6 +1281,11 @@ tr:hover td {
     font-weight: bold;
 }
 
+/* Všechny ostatní sloupce zarovnané na střed */
+.retro-sales-table td:not(:first-child):not(:nth-child(2)) {
+    text-align: center;
+}
+
 .retro-sales-table tbody tr:first-child:hover td {
     background: rgba(0, 255, 231, 0.2) !important;
     box-shadow: 0 0 15px rgba(0, 255, 231, 0.4);
