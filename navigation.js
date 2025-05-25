@@ -24,8 +24,11 @@ function updateNavigation() {
         <li class="dropdown">
             <a href="#" class="dropdown-toggle">[ MOBIL MAJÁK ]</a>
             <ul class="dropdown-menu">
-                <li><a href="majak.html">[ AKTUÁLNÍ ]</a></li>
-                <li><a href="majak-mesicni.html">[ MĚSÍČNÍ ]</a></li>
+                <li><a href="prodejny.html">[ PRODEJNY ]</a></li>
+                <li><a href="servis.html">[ SERVIS ]</a></li>
+                <li><a href="eshop.html">[ ESHOP ]</a></li>
+                <li><a href="bazar.html">[ BAZAR ]</a></li>
+                <li><a href="celkem.html">[ CELKEM ]</a></li>
             </ul>
         </li>
         <li><a href="#" id="logout">[ ODHLÁSIT ]</a></li>
@@ -36,8 +39,12 @@ function updateNavigation() {
         <li><a href="login.html">[ PŘIHLÁSIT ]</a></li>
     `;
     
-    // Aktualizace navigace
-    nav.innerHTML = baseItems + (isLoggedIn ? memberItems : loginItem);
+    // Aktualizace navigace - MOBIL MAJÁK pouze pro přihlášené
+    if (isLoggedIn) {
+        nav.innerHTML = baseItems + memberItems;
+    } else {
+        nav.innerHTML = baseItems + loginItem;
+    }
     
     // Přidání event listeneru pro odhlášení
     const logoutButton = document.getElementById('logout');

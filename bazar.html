@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bazar - Mobil Maják</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="protected-page">
+    <header>
+        <nav>
+            <ul>
+                <!-- Navigace bude vložena JavaScriptem -->
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>&gt; BAZAR_</h1>
+            <p>Statistiky bazarových prodejů</p>
+        </section>
+
+        <section>
+            <div class="retro-data-container">
+                <div class="retro-data-header">
+                    <span class="retro-terminal-prompt">&gt; bazar_sales.csv_</span>
+                    <div class="retro-window-controls">
+                        <span class="control-dot red"></span>
+                        <span class="control-dot yellow"></span>
+                        <span class="control-dot green"></span>
+                    </div>
+                </div>
+                <div class="retro-data-content loading">
+                    <div class="loading-animation">
+                        <span class="loading-text">// Zpracováváme bazarová data</span>
+                        <span class="loading-dots">...</span>
+                    </div>
+                    <div style="text-align: center; margin-top: 2rem; color: var(--retro-cyan);">
+                        <p>📱 Tato sekce bude brzy obsahovat:</p>
+                        <ul style="list-style: none; margin-top: 1rem; line-height: 2;">
+                            <li>• Prodané bazarové telefony</li>
+                            <li>• Výkupní ceny</li>
+                            <li>• Marže na bazarech</li>
+                            <li>• Nejžádanější modely</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="retro-data-footer">
+                    <div class="retro-status-left">
+                        <span class="retro-status-text">// DEVELOPMENT MODE</span>
+                        <span class="retro-blink">●</span>
+                    </div>
+                    <div class="retro-status-right">
+                        <span class="retro-data-flow">▓▒░</span>
+                        <span class="retro-small-text">COMING SOON</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+    </footer>
+
+    <div class="version-info">v2.1.0</div>
+
+    <script src="navigation.js"></script>
+    <script>
+        // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
+        if (!localStorage.getItem('isLoggedIn')) {
+            // Okamžité přesměrování bez možnosti zobrazení obsahu
+            window.location.replace('login.html');
+        } else {
+            // Uživatel je přihlášen, zobrazit obsah
+            document.body.classList.add('authenticated');
+        }
+        
+        // Dodatečná kontrola při každém načtení stránky
+        window.addEventListener('focus', function() {
+            if (!localStorage.getItem('isLoggedIn')) {
+                window.location.replace('login.html');
+            }
+        });
+        
+        // Kontrola při změně localStorage (např. odhlášení v jiném tabu)
+        window.addEventListener('storage', function(e) {
+            if (e.key === 'isLoggedIn' && !e.newValue) {
+                window.location.replace('login.html');
+            }
+        });
+    </script>
+</body>
+</html> 
