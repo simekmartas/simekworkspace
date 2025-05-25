@@ -2575,6 +2575,11 @@ input#dateTo[readonly] {
     text-shadow: 0 0 10px rgba(255, 68, 68, 0.6) !important;
 }
 
+.sklad-value {
+    color: #ffa500 !important; /* Oranžová pro hodnotu skladu */
+    text-shadow: 0 0 10px rgba(255, 165, 0, 0.6) !important;
+}
+
 /* Mobilní optimalizace pro malé statistiky */
 @media (max-width: 768px) {
     .bazar-stats-small {

@@ -343,6 +343,13 @@ class BazarDataLoader {
         }, 0);
         const marze = prodejniCenySum - nakupniCenyProdanych;
         
+        // Hodnota skladu - neprodané telefony
+        const neprodaneRows = this.filteredRows.filter(row => row[0] === 'Naskladněno');
+        const hodnotaSkladu = neprodaneRows.reduce((sum, row) => {
+            const cena = parseFloat(row[5]?.replace(/[^\d]/g, '') || 0);
+            return sum + cena;
+        }, 0);
+        
         // Stránkování
         const totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
         const startIndex = (this.currentPage - 1) * this.itemsPerPage;
@@ -389,6 +396,10 @@ class BazarDataLoader {
                         <div class="stat-box-small">
                             <div class="stat-label-small">// MARŽE CELKEM</div>
                             <div class="stat-value-small ${marze >= 0 ? 'positive-margin' : 'negative-margin'}">${marze.toLocaleString('cs-CZ')} Kč</div>
+                        </div>
+                        <div class="stat-box-small">
+                            <div class="stat-label-small">// SKLAD</div>
+                            <div class="stat-value-small sklad-value">${neprodaneRows.length}ks / ${hodnotaSkladu.toLocaleString('cs-CZ')} Kč</div>
                         </div>
                     </div>
 
