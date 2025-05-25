@@ -1701,7 +1701,7 @@ tr:hover td {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     padding: 1.5rem 0;
 }
 
@@ -2133,5 +2133,206 @@ tr:hover td {
     
     .stats-text {
         font-size: 0.8rem;
+    }
+}
+
+/* Stránkování styly */
+.pagination-info {
+    margin: 1rem 0;
+    text-align: center;
+    padding: 0.8rem;
+    background: rgba(0, 255, 231, 0.05);
+    border: 1px solid rgba(0, 255, 231, 0.2);
+    border-radius: 4px;
+}
+
+.pagination-text {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--retro-cyan);
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(0, 255, 231, 0.6);
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--retro-black) 0%, var(--retro-dark-blue) 100%);
+    border: 2px solid var(--retro-pink);
+    border-radius: 8px;
+    box-shadow: 
+        0 0 20px rgba(228, 11, 77, 0.3),
+        inset 0 0 20px rgba(228, 11, 77, 0.1);
+}
+
+.pagination-btn {
+    background: linear-gradient(135deg, var(--retro-cyan) 0%, var(--retro-dark-blue) 100%);
+    color: var(--retro-white);
+    border: 2px solid var(--retro-cyan);
+    padding: 0.8rem 1.2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    box-shadow: 
+        0 0 10px rgba(0, 255, 231, 0.3),
+        inset 0 0 10px rgba(228, 11, 77, 0.1);
+    white-space: nowrap;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--retro-pink) 0%, var(--retro-cyan) 100%);
+    color: var(--retro-black);
+    border-color: var(--retro-pink);
+    box-shadow: 
+        0 0 15px rgba(228, 11, 77, 0.4),
+        inset 0 0 15px rgba(0, 255, 231, 0.1);
+    transform: translateY(-1px);
+}
+
+.pagination-btn:disabled {
+    background: var(--retro-gray-dark);
+    color: var(--retro-gray-medium);
+    border-color: var(--retro-gray-dark);
+    cursor: not-allowed;
+    opacity: 0.5;
+    box-shadow: none;
+}
+
+.pagination-current {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--retro-white);
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 0.8rem 1.5rem;
+    background: rgba(0, 255, 231, 0.1);
+    border: 2px solid var(--retro-cyan);
+    border-radius: 6px;
+    text-shadow: 0 0 10px rgba(0, 255, 231, 0.6);
+    white-space: nowrap;
+}
+
+/* Mobilní optimalizace pro stránkování */
+@media (max-width: 768px) {
+    .pagination-controls {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.8rem;
+    }
+    
+    .pagination-btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.7rem;
+        min-width: 80px;
+    }
+    
+    .pagination-current {
+        padding: 0.6rem 1rem;
+        font-size: 0.9rem;
+        order: -1;
+        width: 100%;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .pagination-info {
+        margin: 0.8rem 0;
+        padding: 0.6rem;
+    }
+    
+    .pagination-text {
+        font-size: 0.8rem;
+    }
+}
+
+/* Malé statistické okýnka */
+.bazar-stats-small {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 0 0 1rem 0;
+}
+
+.stat-box-small {
+    background: linear-gradient(135deg, var(--retro-black) 0%, var(--retro-dark-blue) 100%);
+    border: 1px solid var(--retro-pink);
+    border-radius: 6px;
+    padding: 1rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        0 0 15px rgba(228, 11, 77, 0.2),
+        inset 0 0 15px rgba(228, 11, 77, 0.05);
+    transition: all 0.3s ease;
+}
+
+.stat-box-small:hover {
+    border-color: var(--retro-cyan);
+    box-shadow: 
+        0 0 20px rgba(0, 255, 231, 0.3),
+        inset 0 0 20px rgba(0, 255, 231, 0.05);
+    transform: translateY(-1px);
+}
+
+.stat-box-small::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(228, 11, 77, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.stat-box-small:hover::before {
+    left: 100%;
+}
+
+.stat-label-small {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--retro-gray-medium);
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.stat-value-small {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--retro-pink);
+    text-shadow: 0 0 10px rgba(228, 11, 77, 0.6);
+}
+
+/* Mobilní optimalizace pro malé statistiky */
+@media (max-width: 768px) {
+    .bazar-stats-small {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .stat-box-small {
+        padding: 0.8rem;
+    }
+    
+    .stat-label-small {
+        font-size: 0.65rem;
+    }
+    
+    .stat-value-small {
+        font-size: 1rem;
     }
 } 

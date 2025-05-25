@@ -310,7 +310,7 @@ class BazarDataLoader {
         
         // Součet hodnot ze sloupce G (index 6) - v našich datech je to sloupec G
         const sloupecGSum = this.filteredRows.reduce((sum, row) => {
-            const hodnota = parseFloat(row[6]?.replace(/[^\d]/g, '') || 0);
+            const hodnota = parseFloat(row[6] || 0);
             return sum + hodnota;
         }, 0);
         
@@ -331,15 +331,11 @@ class BazarDataLoader {
                     </div>
                 </div>
                 <div class="retro-data-content">
-                    <!-- Statistiky -->
+                    <!-- Hlavní statistiky -->
                     <div class="bazar-stats">
                         <div class="stat-box">
                             <div class="stat-label">// PRODÁNO</div>
                             <div class="stat-value">${prodaneRows.length}</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-label">// PRODEJNÍ CENY</div>
-                            <div class="stat-value">${prodejniCenySum.toLocaleString('cs-CZ')} Kč</div>
                         </div>
                         <div class="stat-box">
                             <div class="stat-label">// NASKLADNĚNO</div>
@@ -349,9 +345,17 @@ class BazarDataLoader {
                             <div class="stat-label">// CELKEM</div>
                             <div class="stat-value">${celkemCount}</div>
                         </div>
-                        <div class="stat-box">
-                            <div class="stat-label">// SLOUPEC G SUMA</div>
-                            <div class="stat-value">${sloupecGSum.toLocaleString('cs-CZ')}</div>
+                    </div>
+
+                    <!-- Doplňkové statistiky -->
+                    <div class="bazar-stats-small">
+                        <div class="stat-box-small">
+                            <div class="stat-label-small">// PRODEJNÍ CENY CELKEM</div>
+                            <div class="stat-value-small">${prodejniCenySum.toLocaleString('cs-CZ')} Kč</div>
+                        </div>
+                        <div class="stat-box-small">
+                            <div class="stat-label-small">// SLOUPEC G SUMA</div>
+                            <div class="stat-value-small">${sloupecGSum.toLocaleString('cs-CZ')}</div>
                         </div>
                     </div>
 
@@ -531,7 +535,7 @@ class BazarDataLoader {
         // Generovat mock data s aktuálními daty
         const mockData = this.generateMockData();
 
-        const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Nabíj.', 'Krab.', 'Zár.list', 'Vykoupil', 'Jméno'];
+        const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Sloupec G', 'Nabíj.', 'Krab.', 'Vykoupil', 'Jméno'];
 
         console.log(`Mock data obsahují ${mockData.length} záznamů`);
         this.displayBazarTable(headers, mockData);
@@ -551,7 +555,9 @@ class BazarDataLoader {
             'Honor 50', 'Nothing Phone 1', 'Samsung Galaxy A53', 'iPhone SE 2022', 'Xiaomi 12',
             'OnePlus Nord 2', 'Google Pixel 7', 'Samsung Galaxy Z Flip 4', 'iPhone 13 Mini',
             'Xiaomi Redmi 10', 'Huawei Nova 9', 'Motorola Moto G52', 'Sony Xperia 10 IV',
-            'Nokia G50', 'Realme 9 Pro', 'Oppo Reno 8', 'Vivo Y33s', 'Samsung Galaxy M33'
+            'Nokia G50', 'Realme 9 Pro', 'Oppo Reno 8', 'Vivo Y33s', 'Samsung Galaxy M33',
+            'iPhone 15 Pro', 'Samsung Galaxy S24', 'Xiaomi 14', 'Google Pixel 8', 'OnePlus 12',
+            'Huawei P60', 'Sony Xperia 1 V', 'Motorola Edge 40', 'Nothing Phone 2', 'Honor Magic 5'
         ];
         
         const names = [
@@ -564,17 +570,24 @@ class BazarDataLoader {
             ['Veselá', 'Klára'], ['Horáková', 'Lenka'], ['Kratochvílová', 'Zuzana'], ['Procházková', 'Tereza'],
             ['Krejčová', 'Barbora'], ['Fialová', 'Simona'], ['Pokorná', 'Michaela'], ['Malá', 'Veronika'],
             ['Růžičková', 'Nikola'], ['Benešová', 'Adéla'], ['Čechová', 'Kristýna'], ['Nováková', 'Denisa'],
-            ['Svoboda', 'Ondřej'], ['Dvořák', 'Jakub'], ['Černý', 'Filip'], ['Veselý', 'Marek']
+            ['Svoboda', 'Ondřej'], ['Dvořák', 'Jakub'], ['Černý', 'Filip'], ['Veselý', 'Marek'],
+            ['Novák', 'Tomáš'], ['Svoboda', 'Pavel'], ['Dvořák', 'Jan'], ['Černý', 'Petr'],
+            ['Veselý', 'Marie'], ['Horák', 'Anna'], ['Kratochvíl', 'Václav'], ['Procházka', 'Zdeněk']
         ];
         
         const statuses = ['Prodáno', 'Naskladněno'];
         const yesNo = ['ano', 'ne'];
         
-        // Generovat 50 záznamů za posledních 30 dní
-        for (let i = 0; i < 50; i++) {
-            const daysAgo = Math.floor(Math.random() * 30);
-            const date = new Date(today);
-            date.setDate(today.getDate() - daysAgo);
+        // Generovat 450 záznamů za celý rok 2025 (leden až duben)
+        const startDate = new Date(2025, 0, 1); // 1. ledna 2025
+        const endDate = new Date(2025, 3, 30);  // 30. dubna 2025
+        const totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24));
+        
+        for (let i = 0; i < 450; i++) {
+            // Náhodný den mezi 1.1.2025 a 30.4.2025
+            const randomDays = Math.floor(Math.random() * totalDays);
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + randomDays);
             
             const day = date.getDate();
             const month = date.getMonth() + 1;
@@ -584,21 +597,24 @@ class BazarDataLoader {
             const phone = phones[Math.floor(Math.random() * phones.length)];
             const [surname, firstName] = names[Math.floor(Math.random() * names.length)];
             const status = statuses[Math.floor(Math.random() * statuses.length)];
-            const price = Math.floor(Math.random() * 20000) + 1000;
+            const price = Math.floor(Math.random() * 25000) + 500; // 500-25500 Kč
             
             // Generovat IMEI
             const imei = '35' + Math.floor(Math.random() * 1000000000000000).toString().padStart(13, '0');
             
+            // Generovat hodnotu pro sloupec G (náhodná hodnota 0-1000)
+            const sloupecG = Math.floor(Math.random() * 1000);
+            
             const record = [
                 status,
-                `V2501${String(i + 1).padStart(4, '0')}`,
+                `V2025${String(i + 1).padStart(4, '0')}`,
                 dateStr,
                 phone,
                 imei,
                 price.toString(),
-                yesNo[Math.floor(Math.random() * 2)],
-                yesNo[Math.floor(Math.random() * 2)],
-                yesNo[Math.floor(Math.random() * 2)],
+                sloupecG.toString(), // sloupec G
+                yesNo[Math.floor(Math.random() * 2)], // sloupec H
+                yesNo[Math.floor(Math.random() * 2)], // sloupec I
                 surname,
                 firstName
             ];
@@ -613,6 +629,7 @@ class BazarDataLoader {
             return dateB - dateA;
         });
         
+        console.log(`Vygenerováno ${mockData.length} mock záznamů od ${startDate.toLocaleDateString('cs-CZ')} do ${endDate.toLocaleDateString('cs-CZ')}`);
         return mockData;
     }
 
@@ -662,18 +679,18 @@ class BazarDataLoader {
         // Reset na první stránku po filtrování
         this.currentPage = 1;
         
-        // Znovu vykreslit tabulku
-        const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Nabíj.', 'Krab.', 'Zár.list', 'Vykoupil', 'Jméno'];
-        this.renderTable(headers);
+                 // Znovu vykreslit tabulku
+         const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Sloupec G', 'Nabíj.', 'Krab.', 'Vykoupil', 'Jméno'];
+         this.renderTable(headers);
     }
 
     goToPage(page) {
         const totalPages = Math.ceil(this.filteredRows.length / this.itemsPerPage);
-        if (page >= 1 && page <= totalPages) {
-            this.currentPage = page;
-            const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Nabíj.', 'Krab.', 'Zár.list', 'Vykoupil', 'Jméno'];
-            this.renderTable(headers);
-        }
+                 if (page >= 1 && page <= totalPages) {
+             this.currentPage = page;
+             const headers = ['Stav', 'Číslo', 'Datum', 'Typ', 'IMEI', 'Cena', 'Sloupec G', 'Nabíj.', 'Krab.', 'Vykoupil', 'Jméno'];
+             this.renderTable(headers);
+         }
     }
 
     setDefaultDateFilter() {
