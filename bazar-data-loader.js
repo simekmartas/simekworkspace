@@ -487,74 +487,106 @@ class BazarDataLoader {
             });
             
             if (dateFromInput) {
-                // Odstranit staré event listenery
-                dateFromInput.removeEventListener('change', this.filterTable);
-                dateFromInput.removeEventListener('input', this.filterTable);
-                
-                // Přidat nové event listenery
-                dateFromInput.addEventListener('change', () => {
+                // Přidat event listenery s bind pro správný kontext
+                const handleDateFromChange = () => {
                     console.log('Date FROM changed:', dateFromInput.value);
-                    this.filterTable();
-                });
-                dateFromInput.addEventListener('input', () => {
-                    console.log('Date FROM input:', dateFromInput.value);
-                    this.filterTable();
-                });
+                    try {
+                        this.filterTable();
+                    } catch (error) {
+                        console.error('Chyba při filtrování (dateFrom):', error);
+                    }
+                };
+                
+                dateFromInput.addEventListener('change', handleDateFromChange);
+                dateFromInput.addEventListener('input', handleDateFromChange);
                 
                 // Zajistit, že input je klikatelný
                 dateFromInput.style.pointerEvents = 'auto';
                 dateFromInput.style.cursor = 'pointer';
+                
+                console.log('Date FROM input nastaven');
             }
             
             if (dateToInput) {
-                // Odstranit staré event listenery
-                dateToInput.removeEventListener('change', this.filterTable);
-                dateToInput.removeEventListener('input', this.filterTable);
-                
-                // Přidat nové event listenery
-                dateToInput.addEventListener('change', () => {
+                // Přidat event listenery s bind pro správný kontext
+                const handleDateToChange = () => {
                     console.log('Date TO changed:', dateToInput.value);
-                    this.filterTable();
-                });
-                dateToInput.addEventListener('input', () => {
-                    console.log('Date TO input:', dateToInput.value);
-                    this.filterTable();
-                });
+                    try {
+                        this.filterTable();
+                    } catch (error) {
+                        console.error('Chyba při filtrování (dateTo):', error);
+                    }
+                };
+                
+                dateToInput.addEventListener('change', handleDateToChange);
+                dateToInput.addEventListener('input', handleDateToChange);
                 
                 // Zajistit, že input je klikatelný
                 dateToInput.style.pointerEvents = 'auto';
                 dateToInput.style.cursor = 'pointer';
+                
+                console.log('Date TO input nastaven');
             }
             
             if (textFilter) {
-                textFilter.addEventListener('keyup', () => this.filterTable());
-                textFilter.addEventListener('input', () => this.filterTable());
+                const handleTextFilter = () => {
+                    try {
+                        this.filterTable();
+                    } catch (error) {
+                        console.error('Chyba při textovém filtrování:', error);
+                    }
+                };
+                
+                textFilter.addEventListener('keyup', handleTextFilter);
+                textFilter.addEventListener('input', handleTextFilter);
+                
+                console.log('Text filter nastaven');
             }
             
             if (clearBtn) {
-                clearBtn.addEventListener('click', () => {
+                const handleClearBtn = () => {
                     console.log('Clear button clicked');
-                    this.clearDateFilter();
-                });
+                    try {
+                        this.clearDateFilter();
+                    } catch (error) {
+                        console.error('Chyba při mazání datového filtru:', error);
+                    }
+                };
+                
+                clearBtn.addEventListener('click', handleClearBtn);
+                console.log('Clear button nastaven');
             }
             
             if (showAllBtn) {
-                showAllBtn.addEventListener('click', () => {
+                const handleShowAllBtn = () => {
                     console.log('Show all button clicked');
-                    this.showAllRecords();
-                });
+                    try {
+                        this.showAllRecords();
+                    } catch (error) {
+                        console.error('Chyba při zobrazení všech záznamů:', error);
+                    }
+                };
+                
+                showAllBtn.addEventListener('click', handleShowAllBtn);
+                console.log('Show all button nastaven');
             }
             
             // Event listenery pro stránkování
             const paginationBtns = document.querySelectorAll('.pagination-btn');
             paginationBtns.forEach(btn => {
                 if (!btn.disabled) {
-                    btn.addEventListener('click', () => {
+                    const handlePaginationClick = () => {
                         const page = parseInt(btn.getAttribute('data-page'));
                         if (page && !isNaN(page)) {
-                            this.goToPage(page);
+                            try {
+                                this.goToPage(page);
+                            } catch (error) {
+                                console.error('Chyba při přechodu na stránku:', error);
+                            }
                         }
-                    });
+                    };
+                    
+                    btn.addEventListener('click', handlePaginationClick);
                 }
             });
             
@@ -758,54 +790,81 @@ class BazarDataLoader {
     }
 
     filterTable() {
-        // Získat hodnoty filtrů
-        const textFilter = document.getElementById('bazarFilter')?.value.toLowerCase() || '';
-        const dateFrom = document.getElementById('dateFrom')?.value || '';
-        const dateTo = document.getElementById('dateTo')?.value || '';
+        try {
+            console.log('=== FILTROVÁNÍ TABULKY ===');
+            
+            // Zkontrolovat, zda máme data
+            if (!this.allRows || this.allRows.length === 0) {
+                console.log('Žádná data k filtrování');
+                return;
+            }
+            
+            // Získat hodnoty filtrů
+            const textFilter = document.getElementById('bazarFilter')?.value.toLowerCase() || '';
+            const dateFrom = document.getElementById('dateFrom')?.value || '';
+            const dateTo = document.getElementById('dateTo')?.value || '';
 
-        // Filtrovat všechny řádky
-        this.filteredRows = this.allRows.filter(row => {
-            let shouldShow = true;
+            console.log('Filtry:', { textFilter, dateFrom, dateTo });
 
-            // Textový filtr
-            if (textFilter) {
-                let textMatch = false;
-                for (let j = 0; j < row.length; j++) {
-                    const cellText = (row[j] || '').toString().toLowerCase();
-                    if (cellText.includes(textFilter)) {
-                        textMatch = true;
-                        break;
+            // Filtrovat všechny řádky
+            this.filteredRows = this.allRows.filter(row => {
+                if (!row || !Array.isArray(row)) return false;
+                
+                let shouldShow = true;
+
+                // Textový filtr
+                if (textFilter) {
+                    let textMatch = false;
+                    for (let j = 0; j < row.length; j++) {
+                        const cellText = (row[j] || '').toString().toLowerCase();
+                        if (cellText.includes(textFilter)) {
+                            textMatch = true;
+                            break;
+                        }
+                    }
+                    if (!textMatch) shouldShow = false;
+                }
+
+                // Datový filtr
+                if (shouldShow && (dateFrom || dateTo)) {
+                    const rowDateStr = row[2] || ''; // sloupec C - Datum (index 2)
+                    
+                    try {
+                        const rowDate = this.parseDate(rowDateStr);
+                        
+                        if (dateFrom) {
+                            const fromDate = new Date(dateFrom);
+                            if (rowDate < fromDate) shouldShow = false;
+                        }
+                        
+                        if (dateTo && shouldShow) {
+                            const toDate = new Date(dateTo);
+                            toDate.setHours(23, 59, 59, 999); // Konec dne
+                            if (rowDate > toDate) shouldShow = false;
+                        }
+                    } catch (dateError) {
+                        console.error('Chyba při parsování data:', rowDateStr, dateError);
+                        // Pokud se nepodaří parsovat datum, řádek nezobrazíme
+                        shouldShow = false;
                     }
                 }
-                if (!textMatch) shouldShow = false;
-            }
 
-            // Datový filtr
-            if (shouldShow && (dateFrom || dateTo)) {
-                const rowDateStr = row[2] || ''; // sloupec C - Datum (index 2)
-                const rowDate = this.parseDate(rowDateStr);
-                
-                if (dateFrom) {
-                    const fromDate = new Date(dateFrom);
-                    if (rowDate < fromDate) shouldShow = false;
-                }
-                
-                if (dateTo && shouldShow) {
-                    const toDate = new Date(dateTo);
-                    toDate.setHours(23, 59, 59, 999); // Konec dne
-                    if (rowDate > toDate) shouldShow = false;
-                }
-            }
+                return shouldShow;
+            });
 
-            return shouldShow;
-        });
+            console.log(`Filtrováno: ${this.filteredRows.length} z ${this.allRows.length} řádků`);
 
-        // Reset na první stránku po filtrování
-        this.currentPage = 1;
-        
-                          // Znovu vykreslit tabulku
-          const headers = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
-           this.renderTable(headers);
+            // Reset na první stránku po filtrování
+            this.currentPage = 1;
+            
+            // Znovu vykreslit tabulku
+            const headers = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
+            this.renderTable(headers);
+            
+        } catch (error) {
+            console.error('Chyba při filtrování tabulky:', error);
+            console.error('Stack trace:', error.stack);
+        }
     }
 
     goToPage(page) {
