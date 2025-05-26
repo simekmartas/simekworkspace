@@ -1068,7 +1068,7 @@ class BazarDataLoader {
     }
 
     setDefaultDateRange() {
-        console.log('🗓️ === NASTAVUJI VÝCHOZÍ DATOVÝ ROZSAH ===');
+        console.log('🗓️ === NASTAVUJI VÝCHOZÍ ROZSAH DO DATE-PICKERŮ ===');
         
         // Nastavit výchozí období od 1.1.2025 do dneška
         const today = new Date();
@@ -1085,20 +1085,21 @@ class BazarDataLoader {
             const todayStr = `${today.getDate()}.${today.getMonth() + 1}.${today.getFullYear()}`;
             dateToInput.value = todayStr;
             
-            console.log('✅ Výchozí datový rozsah nastaven:', {
+            console.log('✅ Výchozí rozsah nastaven do date-pickerů:', {
                 od: '1.1.2025',
                 do: todayStr
             });
             
-            // Aplikovat filtr
-            this.filterTable();
+            // Spustit 'input' event pro automatické filtrování
+            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
+            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
             console.log('❌ Nepodařilo se najít datové inputy');
         }
     }
 
     setWeekFilter() {
-        console.log('📅 === NASTAVUJI TÝDENNÍ FILTR ===');
+        console.log('📅 === NASTAVUJI TÝDENNÍ ROZSAH DO DATE-PICKERŮ ===');
         
         const today = new Date();
         const weekAgo = new Date(today);
@@ -1117,20 +1118,21 @@ class BazarDataLoader {
             const todayStr = `${today.getDate()}.${today.getMonth() + 1}.${today.getFullYear()}`;
             dateToInput.value = todayStr;
             
-            console.log('✅ Týdenní filtr nastaven:', {
+            console.log('✅ Týdenní rozsah nastaven do date-pickerů:', {
                 od: weekAgoStr,
                 do: todayStr
             });
             
-            // Aplikovat filtr
-            this.filterTable();
+            // Spustit 'input' event pro automatické filtrování
+            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
+            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
             console.log('❌ Nepodařilo se najít datové inputy');
         }
     }
 
     setMonthFilter(monthNumber = null) {
-        console.log('📅 === NASTAVUJI MĚSÍČNÍ FILTR ===');
+        console.log('📅 === NASTAVUJI MĚSÍČNÍ ROZSAH DO DATE-PICKERŮ ===');
         
         const today = new Date();
         const currentYear = today.getFullYear();
@@ -1171,14 +1173,15 @@ class BazarDataLoader {
                 'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
             ];
             
-            console.log('✅ Měsíční filtr nastaven:', {
+            console.log('✅ Měsíční rozsah nastaven do date-pickerů:', {
                 od: monthStartStr,
                 do: monthEndStr,
                 mesic: `${monthNames[targetMonth]} ${targetYear}`
             });
             
-            // Aplikovat filtr
-            this.filterTable();
+            // Spustit 'input' event pro automatické filtrování
+            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
+            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
             console.log('❌ Nepodařilo se najít datové inputy');
         }
@@ -1191,35 +1194,54 @@ class BazarDataLoader {
     }
 
     clearDateFilter() {
+        console.log('🗑️ === MAZÁNÍ ROZSAHU Z DATE-PICKERŮ ===');
+        
         // Vymazat textové inputy pro datum
-        const inputs = ['dateFrom', 'dateTo'];
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.value = '';
-            }
-        });
-        this.filterTable();
-        console.log('Datové filtry vymazány');
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
+        
+        if (dateFromInput) {
+            dateFromInput.value = '';
+            // Spustit 'input' event pro automatické filtrování
+            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        if (dateToInput) {
+            dateToInput.value = '';
+            // Spustit 'input' event pro automatické filtrování
+            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        console.log('✅ Datové rozsahy vymazány z date-pickerů');
     }
 
     showAllRecords() {
-        // Vymazat všechny filtry
-        const inputs = ['dateFrom', 'dateTo'];
-        inputs.forEach(inputId => {
-            const input = document.getElementById(inputId);
-            if (input) {
-                input.value = '';
-            }
-        });
+        console.log('🔄 === ZOBRAZUJI VŠECHNY ZÁZNAMY ===');
         
+        // Vymazat date-pickery
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
+        
+        if (dateFromInput) {
+            dateFromInput.value = '';
+        }
+        
+        if (dateToInput) {
+            dateToInput.value = '';
+        }
+        
+        // Vymazat textový filtr
         const textFilter = document.getElementById('bazarFilter');
         if (textFilter) {
             textFilter.value = '';
         }
         
-        this.filterTable();
-        console.log('Zobrazeny všechny záznamy');
+        // Spustit 'input' event pro automatické filtrování (pouze jednou na konci)
+        if (dateFromInput) {
+            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        
+        console.log('✅ Všechny filtry vymazány, zobrazeny všechny záznamy');
     }
 
     updateFilterStats(visibleCount, totalCount) {
