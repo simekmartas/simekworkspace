@@ -21,7 +21,6 @@ function updateNavigation() {
     
     // Položky pouze pro přihlášené uživatele
     const memberItems = `
-        <li><a href="dashboard.html">[ DASHBOARD ]</a></li>
         <li class="dropdown">
             <a href="#" class="dropdown-toggle">[ MOBIL MAJÁK ]</a>
             <ul class="dropdown-menu">
@@ -135,103 +134,4 @@ function updateNavigation() {
 }
 
 // Spuštění při načtení stránky
-document.addEventListener('DOMContentLoaded', updateNavigation);
-
-// Definice navigačních položek
-const navigationItems = [
-    { href: 'index.html', text: 'Domů' },
-    { href: 'dashboard.html', text: 'Dashboard', protected: true },
-    { href: 'majak.html', text: 'Statistiky maják', protected: true },
-    { href: 'prodejny.html', text: 'Prodejny', protected: true },
-    { href: 'bazar.html', text: 'Bazar', protected: true },
-    { href: 'servis.html', text: 'Servis', protected: true },
-    { href: 'celkem.html', text: 'Celkem', protected: true },
-    { href: 'eshop.html', text: 'E-Shop', protected: true }
-];
-
-// Funkce pro vytvoření navigace
-function createNavigation() {
-    // Zkontrolovat, zda je uživatel přihlášen
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    
-    // Najít všechny navigační elementy
-    const navElements = document.querySelectorAll('nav ul');
-    
-    navElements.forEach(navElement => {
-        // Vyčistit existující navigaci
-        navElement.innerHTML = '';
-        
-        // Přidat navigační položky
-        navigationItems.forEach(item => {
-            // Přeskočit chráněné položky, pokud uživatel není přihlášen
-            if (item.protected && !isLoggedIn) {
-                return;
-            }
-            
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            a.href = item.href;
-            a.textContent = `[ ${item.text} ]`;
-            
-            // Přidat aktivní třídu pro aktuální stránku
-            if (window.location.pathname.endsWith(item.href) || 
-                (window.location.pathname.endsWith('/') && item.href === 'index.html')) {
-                a.classList.add('active');
-            }
-            
-            li.appendChild(a);
-            navElement.appendChild(li);
-        });
-        
-        // Přidat tlačítko pro odhlášení, pokud je uživatel přihlášen
-        if (isLoggedIn) {
-            const li = document.createElement('li');
-            const a = document.createElement('a');
-            a.href = '#';
-            a.textContent = '[ Odhlásit ]';
-            a.onclick = function(e) {
-                e.preventDefault();
-                logout();
-            };
-            li.appendChild(a);
-            navElement.appendChild(li);
-        }
-    });
-}
-
-// Funkce pro odhlášení
-function logout() {
-    if (window.authSystem) {
-        window.authSystem.logout();
-    } else {
-        // Fallback pokud authSystem není dostupný
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('currentUser');
-        localStorage.removeItem('viewingUser');
-        window.location.href = 'login.html';
-    }
-}
-
-// Funkce pro kontrolu přihlášení na chráněných stránkách
-function checkAuth() {
-    const isProtectedPage = document.body.classList.contains('protected-page');
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    
-    if (isProtectedPage && !isLoggedIn) {
-        window.location.href = 'login.html';
-    }
-}
-
-// Načíst navigaci při načtení stránky
-document.addEventListener('DOMContentLoaded', function() {
-    createNavigation();
-    checkAuth();
-});
-
-// Aktualizovat navigaci při změně localStorage (např. přihlášení/odhlášení v jiném tabu)
-window.addEventListener('storage', function(e) {
-    if (e.key === 'isLoggedIn') {
-        createNavigation();
-        checkAuth();
-    }
-}); 
+document.addEventListener('DOMContentLoaded', updateNavigation); 
