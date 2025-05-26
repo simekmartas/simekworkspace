@@ -25,12 +25,14 @@ class ProdejnyDataLoader {
         try {
             this.showLoading();
             
-            // Vytvoříme timestamp pro cache-busting
+            // Agresivní cache-busting s více parametry
             const timestamp = new Date().getTime();
+            const randomId = Math.random().toString(36).substring(2, 15);
+            const dateString = new Date().toISOString().split('T')[0];
             
-            // URL pro CSV export
+            // URL pro CSV export s více cache-busting parametry
             const gid = isMonthly ? this.monthlyGid : this.mainGid;
-            const csvUrl = `${this.basePublishedUrl}&gid=${gid}&cachebust=${timestamp}`;
+            const csvUrl = `${this.basePublishedUrl}&gid=${gid}&cachebust=${timestamp}&rand=${randomId}&date=${dateString}&v=${Date.now()}`;
             
             console.log('CSV URL:', csvUrl);
             
@@ -45,10 +47,13 @@ class ProdejnyDataLoader {
                 const proxyResponse = await fetch(proxyUrl, {
                     cache: 'no-cache',
                     headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
                         'Pragma': 'no-cache',
                         'Expires': '0',
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+                        'If-None-Match': '*',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-Cache-Bust': timestamp.toString()
                     }
                 });
                 
@@ -72,9 +77,12 @@ class ProdejnyDataLoader {
                     const proxyResponse = await fetch(proxyUrl, {
                         cache: 'no-cache',
                         headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
                             'Pragma': 'no-cache',
-                            'Expires': '0'
+                            'Expires': '0',
+                            'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+                            'If-None-Match': '*',
+                            'X-Cache-Bust': timestamp.toString()
                         }
                     });
                     
@@ -100,9 +108,12 @@ class ProdejnyDataLoader {
                         cache: 'no-cache',
                         headers: {
                             'Accept': 'text/csv, text/plain, */*',
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
                             'Pragma': 'no-cache',
-                            'Expires': '0'
+                            'Expires': '0',
+                            'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+                            'If-None-Match': '*',
+                            'X-Cache-Bust': timestamp.toString()
                         }
                     });
                     
@@ -282,6 +293,9 @@ class ProdejnyDataLoader {
                              <button class="retro-filter-clear" id="clearFilterBtn">
                                  VYMAZAT
                              </button>
+                             <button class="retro-refresh-btn" id="refreshDataBtn">
+                                 OBNOVIT DATA
+                             </button>
                          </div>
                      </div>
 
@@ -316,7 +330,7 @@ class ProdejnyDataLoader {
                     </div>
                     <div class="retro-status-right">
                         <span class="retro-data-flow">▓▒░</span>
-                        <span class="retro-small-text">SYNC: 100%</span>
+                        <span class="retro-small-text">SYNC: 100% | AKTUALIZOVÁNO: ${new Date().toLocaleTimeString('cs-CZ')}</span>
                     </div>
                 </div>
             </div>
@@ -343,6 +357,15 @@ class ProdejnyDataLoader {
                     filterInput.value = '';
                     this.filterTable();
                 }
+            });
+        }
+
+        // Event listener pro obnovení dat
+        const refreshBtn = document.getElementById('refreshDataBtn');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                console.log('Manuální obnovení dat...');
+                this.loadData(this.isMonthly);
             });
         }
 
@@ -460,11 +483,11 @@ class ProdejnyDataLoader {
     }
 
     startAutoRefresh() {
-        // Automatické obnovení každých 5 minut
+        // Automatické obnovení každé 2 minuty pro aktuálnější data
         this.refreshInterval = setInterval(() => {
             console.log('Auto-refresh prodejních dat...');
             this.loadData(this.isMonthly);
-        }, 5 * 60 * 1000);
+        }, 2 * 60 * 1000);
     }
 
     stopAutoRefresh() {
