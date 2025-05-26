@@ -99,9 +99,69 @@ class ProdejnyDataLoader {
                 }
             }
             
-            // Přístup 3: Přímý fetch
+            // Přístup 3: Corsproxy.io
             if (!csvData || csvData.length < 100) {
-                console.log('=== PŘÍSTUP 3: Přímý fetch ===');
+                console.log('=== PŘÍSTUP 3: Corsproxy.io ===');
+                try {
+                    const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(csvUrl)}`;
+                    console.log('Corsproxy.io URL:', proxyUrl);
+                    
+                    const proxyResponse = await fetch(proxyUrl, {
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                            'Pragma': 'no-cache',
+                            'Expires': '0',
+                            'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+                            'If-None-Match': '*',
+                            'X-Cache-Bust': timestamp.toString()
+                        }
+                    });
+                    
+                    console.log('Corsproxy.io response status:', proxyResponse.status);
+                    
+                    if (proxyResponse.ok) {
+                        csvData = await proxyResponse.text();
+                        console.log('Corsproxy.io ÚSPĚŠNÝ - délka dat:', csvData.length);
+                    }
+                } catch (error) {
+                    console.log('Corsproxy.io přístup selhal:', error.message);
+                }
+            }
+
+            // Přístup 4: Proxy-cors.isomorphic-git.org
+            if (!csvData || csvData.length < 100) {
+                console.log('=== PŘÍSTUP 4: Proxy-cors.isomorphic-git.org ===');
+                try {
+                    const proxyUrl = `https://proxy-cors.isomorphic-git.org/${csvUrl}`;
+                    console.log('Proxy-cors URL:', proxyUrl);
+                    
+                    const proxyResponse = await fetch(proxyUrl, {
+                        cache: 'no-cache',
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                            'Pragma': 'no-cache',
+                            'Expires': '0',
+                            'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+                            'If-None-Match': '*',
+                            'X-Cache-Bust': timestamp.toString()
+                        }
+                    });
+                    
+                    console.log('Proxy-cors response status:', proxyResponse.status);
+                    
+                    if (proxyResponse.ok) {
+                        csvData = await proxyResponse.text();
+                        console.log('Proxy-cors ÚSPĚŠNÝ - délka dat:', csvData.length);
+                    }
+                } catch (error) {
+                    console.log('Proxy-cors přístup selhal:', error.message);
+                }
+            }
+
+            // Přístup 5: Přímý fetch
+            if (!csvData || csvData.length < 100) {
+                console.log('=== PŘÍSTUP 5: Přímý fetch ===');
                 try {
                     const response = await fetch(csvUrl, {
                         mode: 'cors',
@@ -131,11 +191,15 @@ class ProdejnyDataLoader {
             // Zpracování dat pokud se podařilo je načíst
             if (csvData && csvData.length > 100) {
                 console.log('=== ÚSPĚCH: Data načtena ===');
+                console.log('Délka načtených dat:', csvData.length);
+                console.log('První 200 znaků:', csvData.substring(0, 200));
                 this.parseAndDisplayData(csvData, isMonthly);
                 this.startAutoRefresh();
                 return;
             } else {
                 console.log('=== SELHÁNÍ: Zobrazujem mock data ===');
+                console.log('Délka csvData:', csvData ? csvData.length : 'null');
+                console.log('csvData obsah:', csvData ? csvData.substring(0, 100) : 'null');
                 throw new Error('Nepodařilo se načíst validní data');
             }
             
@@ -159,11 +223,23 @@ class ProdejnyDataLoader {
             return;
         }
 
-        // Parsování CSV
-        const headers = this.parseCSVLine(lines[0]);
-        console.log('Parsované headers:', headers);
+        // Najít řádek s headers (může být první nebo druhý řádek)
+        let headerRowIndex = 0;
+        let headers = [];
         
-        const rows = lines.slice(1)
+        for (let i = 0; i < Math.min(3, lines.length); i++) {
+            const testHeaders = this.parseCSVLine(lines[i]);
+            if (testHeaders.includes('prodejna') || testHeaders.includes('prodejce')) {
+                headers = testHeaders;
+                headerRowIndex = i;
+                break;
+            }
+        }
+        
+        console.log('Parsované headers:', headers);
+        console.log('Header řádek index:', headerRowIndex);
+        
+        const rows = lines.slice(headerRowIndex + 1)
             .map(line => this.parseCSVLine(line))
             .filter(row => row.some(cell => cell.trim())); // Odfiltrovat prázdné řádky
 
@@ -438,13 +514,14 @@ class ProdejnyDataLoader {
                 ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
             ];
         } else {
-            // Mock data pro aktuální přehled (nižší čísla)
+            // Mock data pro aktuální přehled (podle screenshotu z 26.05.2025)
             mockData = [
-                ['Globus', 'Šimon Gabriel', '32', '6', '1', '1', '1', '0', '0', '1', '0', '1', '0', '0', '1'],
-                ['Čepkov', 'Lukáš Kováčik', '30', '6', '2', '0', '0', '0', '0', '3', '1', '0', '0', '0', '0'],
-                ['Přerov', 'Jakub Málek', '12', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0'],
-                ['Vsetín', 'Štěpán Kundera', '12', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-                ['Šternberk', 'Adam Kolarčík', '11', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '12', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '0', '0'],
+                ['Vsetín', 'Lukáš Krumpolc', '10', '1', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0'],
+                ['Přerov', 'Benny Babušík', '8', '2', '0', '0', '0', '0', '0', '1', '0', '1', '0', '0', '0'],
+                ['Šternberk', 'Jakub Králik', '6', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+                ['Globus', 'Jiří Pohořelský', '4', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
+                ['Hlavní sklad - Senimo', 'Adéla Koldová', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
             ];
         }
 
