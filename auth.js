@@ -16,14 +16,53 @@ class AuthSystem {
 
     async loadDatabase() {
         try {
-            const response = await fetch(this.dbUrl);
-            if (!response.ok) throw new Error('Nelze načíst databázi');
-            return await response.json();
+            console.log('Načítám databázi z:', this.dbUrl);
+            const response = await fetch(this.dbUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                cache: 'no-cache'
+            });
+            
+            console.log('Response status:', response.status);
+            console.log('Response headers:', response.headers.get('content-type'));
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const text = await response.text();
+            console.log('Response text length:', text.length);
+            console.log('First 100 chars:', text.substring(0, 100));
+            
+            const data = JSON.parse(text);
+            console.log('Databáze úspěšně načtena, počet uživatelů:', data.users?.length || 0);
+            return data;
         } catch (error) {
             console.error('Chyba při načítání databáze:', error);
-            // Vrátit výchozí strukturu, pokud soubor neexistuje
+            console.error('Používám fallback databázi');
+            
+            // Fallback databáze s testovacími uživateli
             return {
-                users: [],
+                users: [
+                    {
+                        id: 1,
+                        username: "admin",
+                        password: "admin123",
+                        role: "admin",
+                        name: "Administrátor",
+                        prodejna: "Všechny"
+                    },
+                    {
+                        id: 2,
+                        username: "gabriel",
+                        password: "globus123",
+                        role: "prodejce",
+                        name: "Šimon Gabriel",
+                        prodejna: "Globus"
+                    }
+                ],
                 dailyStats: [],
                 salesHistory: []
             };
