@@ -78,6 +78,9 @@ class BazarDataLoader {
                     statisticsCsvData = statisticsData;
                 } else {
                     console.log('❌ Statistická data se nepodařilo načíst nebo jsou příliš krátká:', statisticsData ? statisticsData.length : 'null');
+                    console.log('⚠️ Používám mock statistická data místo reálných');
+                    // Vygenerovat mock data hned
+                    this.generateMockStatisticsData();
                 }
                 
                 if (bazarCsvData) {
@@ -278,6 +281,13 @@ class BazarDataLoader {
         console.log('První 3 zpracované řádky:', sortedRows.slice(0, 3));
 
         const displayHeaders = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
+        
+        // Ujistit se, že máme statistická data
+        if (!this.statisticsData || this.statisticsData.length === 0) {
+            console.log('⚠️ Statistická data nejsou k dispozici po parsování bazarových dat, generuji mock data');
+            this.generateMockStatisticsData();
+        }
+        
         this.displayBazarTable(displayHeaders, sortedRows);
     }
 
@@ -358,6 +368,11 @@ class BazarDataLoader {
         this.currentPage = 1;
         
         this.renderTable(headers);
+        
+        // Nastavit výchozí datový rozsah a spustit filtrování
+        setTimeout(() => {
+            this.setDefaultDateRange();
+        }, 100);
     }
 
     renderTable(headers) {
