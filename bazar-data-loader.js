@@ -22,6 +22,9 @@ class BazarDataLoader {
         // Data pro statistiky z druhé tabulky
         this.statisticsData = [];
         this.filteredStatisticsData = [];
+        
+        // Flag pro sledování, zda jsou statistická data inicializována
+        this.statisticsDataInitialized = false;
     }
 
     async loadBazarData() {
@@ -201,6 +204,9 @@ class BazarDataLoader {
         
         // Inicializovat filtrovaná data
         this.filteredStatisticsData = [...this.statisticsData];
+        
+        // Označit jako inicializované
+        this.statisticsDataInitialized = true;
     }
 
     parseCenaHelper(cenaStr) {
@@ -357,6 +363,17 @@ class BazarDataLoader {
             return isNaN(number) ? 0 : number;
         };
         
+        // ZAJISTIT, ŽE MÁME STATISTICKÁ DATA
+        if (!this.statisticsData || this.statisticsData.length === 0) {
+            console.log('⚠️ Statistická data nejsou k dispozici, generuji mock data');
+            this.generateMockStatisticsData();
+        }
+        
+        if (!this.filteredStatisticsData || this.filteredStatisticsData.length === 0) {
+            console.log('⚠️ Filtrovaná statistická data nejsou k dispozici, používám všechna data');
+            this.filteredStatisticsData = [...this.statisticsData];
+        }
+        
         // STATISTIKY Z DRUHÉ TABULKY (gid=1892426010)
         // Počet prodaných telefonů a součet prodejních cen z filtrovaných statistických dat
         const prodanoCount = this.filteredStatisticsData.length;
@@ -367,9 +384,10 @@ class BazarDataLoader {
         
         console.log('📊 Statistiky z druhé tabulky:', {
             prodanoCount,
-            prodanoZaSum,
+            prodanoZaSum: prodanoZaSum.toLocaleString('cs-CZ'),
             filteredStatisticsDataLength: this.filteredStatisticsData.length,
             totalStatisticsDataLength: this.statisticsData ? this.statisticsData.length : 0,
+            statisticsDataInitialized: this.statisticsDataInitialized,
             prvnichPet: this.filteredStatisticsData.slice(0, 5)
         });
         
@@ -957,7 +975,7 @@ class BazarDataLoader {
         // Generovat mock data s aktuálními daty
         const mockData = this.generateMockData();
         
-        // Generovat mock statistická data
+        // Generovat mock statistická data (vždy při použití mock dat)
         this.generateMockStatisticsData();
 
         const headers = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
@@ -1069,6 +1087,12 @@ class BazarDataLoader {
     }
 
     generateMockStatisticsData() {
+        // Pokud už jsou data inicializována, neděláme nic
+        if (this.statisticsDataInitialized && this.statisticsData.length > 0) {
+            console.log('📊 Mock statistická data už jsou inicializována, přeskakuji');
+            return;
+        }
+        
         console.log('=== GENERUJI MOCK STATISTICKÁ DATA ===');
         
         const today = new Date();
@@ -1112,6 +1136,9 @@ class BazarDataLoader {
         
         // Inicializovat filtrovaná data
         this.filteredStatisticsData = [...this.statisticsData];
+        
+        // Označit jako inicializované
+        this.statisticsDataInitialized = true;
         
         console.log(`Vygenerováno ${this.statisticsData.length} mock statistických záznamů`);
         console.log('První 5 mock statistických záznamů:', this.statisticsData.slice(0, 5));
@@ -1210,6 +1237,12 @@ class BazarDataLoader {
             console.log(`Filtrováno: ${this.filteredRows.length} z ${this.allRows.length} řádků`);
 
             // FILTROVAT I STATISTICKÁ DATA PODLE STEJNÉHO DATOVÉHO ROZSAHU
+            // Zajistit, že máme statistická data
+            if (!this.statisticsData || this.statisticsData.length === 0) {
+                console.log('⚠️ Statistická data nejsou k dispozici při filtrování, generuji mock data');
+                this.generateMockStatisticsData();
+            }
+            
             if (this.statisticsData && this.statisticsData.length > 0) {
                 this.filteredStatisticsData = this.statisticsData.filter(item => {
                     if (!item || !item.datum) return false;
