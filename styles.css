@@ -1881,6 +1881,15 @@ tr:hover td {
     animation: retro-pulse 2s ease-in-out infinite alternate;
 }
 
+.stat-subvalue {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--retro-gray-medium);
+    text-shadow: 0 0 5px rgba(136, 136, 136, 0.5);
+    margin-top: -0.3rem;
+    text-transform: lowercase;
+}
+
 .top-types {
     margin-bottom: 2rem;
     padding: 1.5rem;
