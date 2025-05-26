@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Přihlášení - Fitness Tracker | Simek.work</title>
+    <link rel="stylesheet" href="fitness.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Specifické styly pro přihlašovací stránku */
+        body {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .login-header p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            position: relative;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border: 2px solid var(--border);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: var(--transition);
+            background: var(--background);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: var(--surface);
+        }
+
+        .form-group i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .login-btn {
+            padding: 15px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .login-btn:disabled {
+            background: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: var(--secondary-color);
+            color: white;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            margin-top: 15px;
+            display: none;
+            font-size: 0.9rem;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        .back-link a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .back-link a:hover {
+            color: var(--primary-color);
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1><i class="fas fa-dumbbell"></i> Fitness Tracker</h1>
+            <p>Přihlaste se pro přístup k aplikaci</p>
+        </div>
+
+        <form class="login-form" id="loginForm">
+            <div class="form-group">
+                <i class="fas fa-user"></i>
+                <input type="text" id="username" placeholder="Uživatelské jméno" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="password" placeholder="Heslo" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">
+                <span class="btn-text">Přihlásit se</span>
+                <div class="loading-spinner" id="loadingSpinner"></div>
+            </button>
+
+            <div class="error-message" id="errorMessage">
+                Nesprávné uživatelské jméno nebo heslo!
+            </div>
+        </form>
+
+        <div class="back-link">
+            <a href="index.html">
+                <i class="fas fa-arrow-left"></i> Zpět na hlavní stránku
+            </a>
+        </div>
+    </div>
+
+    <script>
+        class FitnessLogin {
+            constructor() {
+                this.correctUsername = 'simekmartas';
+                this.correctPassword = '0Mehegru12';
+                this.init();
+            }
+
+            init() {
+                // Zkontroluj, jestli už není přihlášený
+                if (localStorage.getItem('fitnessLoggedIn') === 'true') {
+                    window.location.href = 'fitness.html';
+                    return;
+                }
+
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                const form = document.getElementById('loginForm');
+                const usernameInput = document.getElementById('username');
+                const passwordInput = document.getElementById('password');
+
+                form.addEventListener('submit', (e) => this.handleLogin(e));
+
+                // Enter key support
+                [usernameInput, passwordInput].forEach(input => {
+                    input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.handleLogin(e);
+                        }
+                    });
+                });
+
+                // Clear error on input
+                [usernameInput, passwordInput].forEach(input => {
+                    input.addEventListener('input', () => {
+                        this.hideError();
+                    });
+                });
+            }
+
+            async handleLogin(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                const loginBtn = document.getElementById('loginBtn');
+                const btnText = document.querySelector('.btn-text');
+                const spinner = document.getElementById('loadingSpinner');
+
+                // Show loading state
+                this.setLoadingState(true);
+
+                // Simulate API call delay for better UX
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                if (username === this.correctUsername && password === this.correctPassword) {
+                    // Successful login
+                    localStorage.setItem('fitnessLoggedIn', 'true');
+                    localStorage.setItem('fitnessUsername', username);
+                    localStorage.setItem('fitnessLoginTime', new Date().toISOString());
+                    
+                    this.showSuccess();
+                    
+                    // Redirect after short delay
+                    setTimeout(() => {
+                        window.location.href = 'fitness.html';
+                    }, 1500);
+                } else {
+                    // Failed login
+                    this.setLoadingState(false);
+                    this.showError();
+                    this.shakeForm();
+                }
+            }
+
+            setLoadingState(loading) {
+                const loginBtn = document.getElementById('loginBtn');
+                const btnText = document.querySelector('.btn-text');
+                const spinner = document.getElementById('loadingSpinner');
+
+                if (loading) {
+                    loginBtn.disabled = true;
+                    btnText.textContent = 'Přihlašuji...';
+                    spinner.style.display = 'block';
+                } else {
+                    loginBtn.disabled = false;
+                    btnText.textContent = 'Přihlásit se';
+                    spinner.style.display = 'none';
+                }
+            }
+
+            showError() {
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.style.display = 'block';
+                
+                // Auto hide after 5 seconds
+                setTimeout(() => {
+                    this.hideError();
+                }, 5000);
+            }
+
+            hideError() {
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.style.display = 'none';
+            }
+
+            showSuccess() {
+                const loginBtn = document.getElementById('loginBtn');
+                const btnText = document.querySelector('.btn-text');
+                
+                loginBtn.style.background = 'var(--primary-color)';
+                btnText.textContent = 'Přihlášení úspěšné!';
+                
+                // Add success icon
+                btnText.innerHTML = '<i class="fas fa-check"></i> Přihlášení úspěšné!';
+            }
+
+            shakeForm() {
+                const container = document.querySelector('.login-container');
+                container.style.animation = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    container.style.animation = '';
+                }, 500);
+            }
+        }
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize login system
+        document.addEventListener('DOMContentLoaded', () => {
+            new FitnessLogin();
+        });
+    </script>
+</body>
+</html> 

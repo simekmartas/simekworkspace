@@ -15,6 +15,7 @@ function updateNavigation() {
     // Základní položky menu pro všechny uživatele
     const baseItems = `
         <li><a href="index.html">[ DOMŮ ]</a></li>
+        <li><a href="fitness-login.html">[ FITNESS ]</a></li>
         <li><a href="index.html#o-nas">[ O NÁS ]</a></li>
         <li><a href="index.html#kontakt">[ KONTAKT ]</a></li>
     `;
