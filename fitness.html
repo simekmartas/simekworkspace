@@ -69,7 +69,12 @@
                         <i class="fas fa-upload"></i>
                         Nahrát foto
                     </button>
-                    <input type="file" id="fileInput" accept="image/*" capture="environment" style="display: none;">
+                    <button class="btn-gallery" id="galleryPhoto">
+                        <i class="fas fa-images"></i>
+                        Galerie
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" capture="environment" multiple="false" style="display: none;">
+                    <input type="file" id="galleryInput" accept="image/*" multiple="false" style="display: none;">
                 </div>
             </div>
 

@@ -11,6 +11,11 @@ class FitnessTracker {
         this.apiUrl = window.location.origin + '/api/analyze-food.php'; // Pro PHP
         // this.apiUrl = 'http://localhost:3001/api/analyze-food'; // Pro Node.js local development
         
+        // Detekce zařízení a prohlížeče
+        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+        this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+        
         this.init();
     }
 
@@ -19,6 +24,32 @@ class FitnessTracker {
         this.updateDisplay();
         this.displayCurrentDate();
         this.loadTodaysMeals();
+        this.checkCameraSupport();
+    }
+
+    checkCameraSupport() {
+        // Zkontroluj podporu kamery a zobraz informace
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            console.log('Kamera není podporována');
+            document.getElementById('startCamera').style.display = 'none';
+            this.showNotification('Kamera není podporována. Použijte tlačítka pro nahrání fotek.', 'warning');
+        } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+            console.log('HTTPS je vyžadováno pro kameru');
+            document.getElementById('startCamera').style.display = 'none';
+            this.showNotification('Pro kameru je vyžadováno HTTPS připojení.', 'warning');
+        } else {
+            console.log('Kamera je podporována');
+        }
+
+        // Zobraz informace o zařízení v konzoli
+        console.log('Informace o zařízení:', {
+            isMobile: this.isMobile,
+            isIOS: this.isIOS,
+            isSafari: this.isSafari,
+            userAgent: navigator.userAgent,
+            protocol: location.protocol,
+            hostname: location.hostname
+        });
     }
 
     setupEventListeners() {
@@ -26,7 +57,9 @@ class FitnessTracker {
         document.getElementById('startCamera').addEventListener('click', () => this.startCamera());
         document.getElementById('capturePhoto').addEventListener('click', () => this.capturePhoto());
         document.getElementById('uploadPhoto').addEventListener('click', () => this.triggerFileUpload());
+        document.getElementById('galleryPhoto').addEventListener('click', () => this.triggerGalleryUpload());
         document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileUpload(e));
+        document.getElementById('galleryInput').addEventListener('change', (e) => this.handleFileUpload(e));
 
         // Manual add
         document.getElementById('addManual').addEventListener('click', () => this.addManualMeal());
@@ -86,26 +119,111 @@ class FitnessTracker {
 
     async startCamera() {
         try {
-            const constraints = {
-                video: {
-                    facingMode: 'environment', // Zadní kamera na mobilu
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
-                }
-            };
+            // Zkontroluj, jestli je k dispozici getUserMedia
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                throw new Error('Kamera není podporována v tomto prohlížeči');
+            }
 
-            this.currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+            // Zkontroluj HTTPS (kamery na mobilech vyžadují HTTPS)
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                this.showNotification('Kamera vyžaduje HTTPS připojení. Zkuste nahrát foto z galerie.', 'warning');
+                return;
+            }
+
+            this.showNotification('Žádám o přístup ke kameře...', 'info');
+
+            // Zkus různé konfigurace kamery
+            const constraints = [
+                // Ideální konfigurace pro mobily
+                {
+                    video: {
+                        facingMode: { exact: 'environment' },
+                        width: { ideal: 1280, max: 1920 },
+                        height: { ideal: 720, max: 1080 }
+                    }
+                },
+                // Fallback bez exact facingMode
+                {
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                },
+                // Základní konfigurace
+                {
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                },
+                // Minimální konfigurace
+                {
+                    video: true
+                }
+            ];
+
+            let stream = null;
+            let lastError = null;
+
+            // Zkus postupně všechny konfigurace
+            for (const constraint of constraints) {
+                try {
+                    console.log('Zkouším konfiguraci kamery:', constraint);
+                    stream = await navigator.mediaDevices.getUserMedia(constraint);
+                    break;
+                } catch (error) {
+                    console.log('Konfigurace selhala:', error);
+                    lastError = error;
+                    continue;
+                }
+            }
+
+            if (!stream) {
+                throw lastError || new Error('Nepodařilo se získat přístup ke kameře');
+            }
+
+            this.currentStream = stream;
             const video = document.getElementById('camera');
-            video.srcObject = this.currentStream;
+            video.srcObject = stream;
+
+            // Počkej na načtení videa
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = resolve;
+                video.onerror = reject;
+                setTimeout(reject, 5000); // Timeout po 5 sekundách
+            });
 
             // Show/hide controls
             document.getElementById('startCamera').style.display = 'none';
             document.getElementById('capturePhoto').style.display = 'flex';
             document.querySelector('.camera-overlay').style.display = 'flex';
 
+            this.showNotification('Kamera je připravena!', 'success');
+
         } catch (error) {
             console.error('Chyba při spouštění kamery:', error);
-            this.showNotification('Nepodařilo se spustit kameru. Zkuste nahrát foto.', 'error');
+            
+            let errorMessage = 'Nepodařilo se spustit kameru. ';
+            
+            if (error.name === 'NotAllowedError') {
+                errorMessage += 'Přístup ke kameře byl zamítnut. Povolte přístup v nastavení prohlížeče.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage += 'Kamera nebyla nalezena.';
+            } else if (error.name === 'NotSupportedError') {
+                errorMessage += 'Kamera není podporována.';
+            } else if (error.name === 'NotReadableError') {
+                errorMessage += 'Kamera je používána jinou aplikací.';
+            } else {
+                errorMessage += 'Zkuste nahrát foto z galerie.';
+            }
+            
+            this.showNotification(errorMessage, 'error');
+            
+            // Automaticky otevři galerii jako fallback
+            setTimeout(() => {
+                this.triggerFileUpload();
+            }, 2000);
         }
     }
 
@@ -141,14 +259,42 @@ class FitnessTracker {
     }
 
     triggerFileUpload() {
-        document.getElementById('fileInput').click();
+        const fileInput = document.getElementById('fileInput');
+        
+        if (this.isMobile) {
+            // Na mobilech přidej možnost vybrat z kamery nebo galerie
+            fileInput.setAttribute('capture', 'environment');
+            this.showNotification('Pořiďte nové foto kamerou', 'info');
+        } else {
+            // Na desktopu odstraň capture atribut
+            fileInput.removeAttribute('capture');
+            this.showNotification('Vyberte foto ze souboru', 'info');
+        }
+        
+        fileInput.click();
+    }
+
+    triggerGalleryUpload() {
+        const galleryInput = document.getElementById('galleryInput');
+        
+        // Galerie nikdy nepoužívá capture atribut
+        galleryInput.removeAttribute('capture');
+        this.showNotification('Vyberte foto z galerie', 'info');
+        
+        galleryInput.click();
     }
 
     handleFileUpload(event) {
         const file = event.target.files[0];
         if (file && file.type.startsWith('image/')) {
+            this.showNotification('Foto načteno úspěšně!', 'success');
             this.showPhotoPreview(file);
+        } else if (file) {
+            this.showNotification('Prosím vyberte obrázek (JPG, PNG, atd.)', 'error');
         }
+        
+        // Vyčisti input pro možnost nahrát stejný soubor znovu
+        event.target.value = '';
     }
 
     showPhotoPreview(imageBlob) {
