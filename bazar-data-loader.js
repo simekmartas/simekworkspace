@@ -149,11 +149,29 @@ class BazarDataLoader {
             return;
         }
 
-        // Seřadit podle data (sloupec C - Datum) od nejnovějšího
-        const sortedRows = this.sortRowsByDate(rows, 2); // index 2 = sloupec C (Datum)
-        console.log(`Po seřazení: ${sortedRows.length} řádků`);
+        // Upravit řádky pro správné zobrazení - extrahovat pouze potřebné sloupce
+        const processedRows = rows.map(row => {
+            // Podle skutečné struktury Google tabulky:
+            // A=Stav, B=Výkupka, C=Datum, D=Typ, E=IMEI, F=?, G=Nákupní cena, ..., M=Vykoupil, ..., W=Prodejní cena
+            return [
+                row[0] || '',  // A - Stav
+                row[1] || '',  // B - Výkupka  
+                row[2] || '',  // C - Datum
+                row[3] || '',  // D - Typ
+                row[4] || '',  // E - IMEI
+                row[6] || '',  // G - Nákupní cena (index 6, ne 5!)
+                row[12] || '', // M - Vykoupil (index 12)
+                row[22] || ''  // W - Prodejní cena (index 22)
+            ];
+        });
 
-        this.displayBazarTable(headers, sortedRows);
+        // Seřadit podle data (sloupec C - Datum) od nejnovějšího
+        const sortedRows = this.sortRowsByDate(processedRows, 2); // index 2 = sloupec C (Datum)
+        console.log(`Po seřazení: ${sortedRows.length} řádků`);
+        console.log('První 3 zpracované řádky:', sortedRows.slice(0, 3));
+
+        const displayHeaders = ['Stav', 'Výkupka', 'Datum', 'Typ', 'IMEI', 'Nákupní cena', 'Vykoupil', 'Prodejní cena'];
+        this.displayBazarTable(displayHeaders, sortedRows);
     }
 
     parseCSVLine(line) {
@@ -250,13 +268,13 @@ class BazarDataLoader {
             return isNaN(number) ? 0 : number;
         };
         
-        // Součet nákupních cen (sloupec G - index 5)
+        // Součet nákupních cen (index 5 ve zpracovaných datech)
         const nakupniCenySum = this.filteredRows.reduce((sum, row) => {
             const cena = parseCena(row[5]);
             return sum + cena;
         }, 0);
         
-        // Součet prodejních cen (sloupec W - index 7) - pouze pro prodané telefony
+        // Součet prodejních cen (index 7 ve zpracovaných datech) - pouze pro prodané telefony
         const prodejniCenySum = prodaneRows.reduce((sum, row) => {
             const cena = parseCena(row[7]);
             return sum + cena;
@@ -390,21 +408,23 @@ class BazarDataLoader {
                                             if (index === 0) {
                                                 return `<td class="status-cell">${this.escapeHtml(cell)}</td>`;
                                             }
-                                            // Zvýraznit nákupní cenu (sloupec G - index 5)
+                                            // Zvýraznit nákupní cenu (index 5 ve zpracovaných datech)
                                             if (index === 5 && cell) {
                                                 const cleanPrice = cell.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
-                                                if (!isNaN(parseFloat(cleanPrice))) {
+                                                if (!isNaN(parseFloat(cleanPrice)) && parseFloat(cleanPrice) > 0) {
                                                     const formattedPrice = parseFloat(cleanPrice).toLocaleString('cs-CZ');
                                                     return `<td class="buy-price-cell">${formattedPrice} Kč</td>`;
                                                 }
+                                                return `<td class="buy-price-cell">${this.escapeHtml(cell)}</td>`;
                                             }
-                                            // Zvýraznit prodejní cenu (sloupec W - index 7)
+                                            // Zvýraznit prodejní cenu (index 7 ve zpracovaných datech)
                                             if (index === 7 && cell) {
                                                 const cleanPrice = cell.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
-                                                if (!isNaN(parseFloat(cleanPrice))) {
+                                                if (!isNaN(parseFloat(cleanPrice)) && parseFloat(cleanPrice) > 0) {
                                                     const formattedPrice = parseFloat(cleanPrice).toLocaleString('cs-CZ');
                                                     return `<td class="sell-price-cell">${formattedPrice} Kč</td>`;
                                                 }
+                                                return `<td class="sell-price-cell">${this.escapeHtml(cell)}</td>`;
                                             }
                                             return `<td>${this.escapeHtml(cell)}</td>`;
                                         }).join('')}
@@ -860,14 +880,14 @@ class BazarDataLoader {
             const vykoupil = `${surname} ${firstName}`;
             
             const record = [
-                status,                    // A - Stav
-                `V2025${String(i + 1).padStart(4, '0')}`, // B - Výkupka
-                dateStr,                   // C - Datum
-                phone,                     // D - Typ
-                imei,                      // E - IMEI
-                nakupniCena.toString(),    // G - Nákupní cena
-                vykoupil,                  // M - Vykoupil
-                prodejniCena               // W - Prodejní cena
+                status,                    // 0 - Stav
+                `V2025${String(i + 1).padStart(4, '0')}`, // 1 - Výkupka
+                dateStr,                   // 2 - Datum
+                phone,                     // 3 - Typ
+                imei,                      // 4 - IMEI
+                nakupniCena.toString(),    // 5 - Nákupní cena
+                vykoupil,                  // 6 - Vykoupil
+                prodejniCena               // 7 - Prodejní cena
             ];
             
             mockData.push(record);
