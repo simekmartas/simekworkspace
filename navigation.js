@@ -63,24 +63,22 @@ function updateNavigation() {
     const dropdown = document.querySelector('.dropdown');
     
     if (dropdownToggle && dropdown) {
+        // Kliknutí na dropdown toggle
         dropdownToggle.addEventListener('click', function(e) {
             e.preventDefault();
+            e.stopPropagation();
             dropdown.classList.toggle('active');
+            console.log('Dropdown toggled:', dropdown.classList.contains('active'));
         });
         
-        // Zavření dropdown při kliknutí mimo
+        // Zavření dropdown při kliknutí mimo (pouze pokud není mobilní menu otevřené)
         document.addEventListener('click', function(e) {
-            if (!dropdown.contains(e.target)) {
+            if (!dropdown.contains(e.target) && !nav.classList.contains('active')) {
                 dropdown.classList.remove('active');
             }
         });
         
-        // Zavření dropdown při hover out
-        dropdown.addEventListener('mouseleave', function() {
-            dropdown.classList.remove('active');
-        });
-        
-        // Otevření dropdown při hover (pouze na desktopu)
+        // Desktop hover efekty (pouze na desktopu)
         if (window.innerWidth > 768) {
             dropdown.addEventListener('mouseenter', function() {
                 dropdown.classList.add('active');
@@ -90,6 +88,18 @@ function updateNavigation() {
                 dropdown.classList.remove('active');
             });
         }
+        
+        // Kliknutí na dropdown položky - zavřít menu na mobilu
+        const dropdownLinks = dropdown.querySelectorAll('.dropdown-menu a');
+        dropdownLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    dropdown.classList.remove('active');
+                    hamburger.classList.remove('active');
+                    nav.classList.remove('active');
+                }
+            });
+        });
     }
     
     // Hamburger menu funkcionalita
@@ -106,8 +116,8 @@ function updateNavigation() {
             if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
                 hamburger.classList.remove('active');
                 nav.classList.remove('active');
-                // Zavřít i dropdown
-                if (dropdown) {
+                // Zavřít i dropdown pouze na mobilu
+                if (dropdown && window.innerWidth <= 768) {
                     dropdown.classList.remove('active');
                 }
             }
