@@ -1090,9 +1090,8 @@ class BazarDataLoader {
                 do: todayStr
             });
             
-            // Spustit 'input' event pro automatické filtrování
-            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
-            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // Přímo spustit filtrování po nastavení hodnot
+            this.filterTable();
         } else {
             console.log('❌ Nepodařilo se najít datové inputy');
         }
@@ -1123,9 +1122,8 @@ class BazarDataLoader {
                 do: todayStr
             });
             
-            // Spustit 'input' event pro automatické filtrování
-            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
-            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // Přímo spustit filtrování po nastavení hodnot
+            this.filterTable();
         } else {
             console.log('❌ Nepodařilo se najít datové inputy');
         }
@@ -1179,9 +1177,8 @@ class BazarDataLoader {
                 mesic: `${monthNames[targetMonth]} ${targetYear}`
             });
             
-            // Spustit 'input' event pro automatické filtrování
-            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
-            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
+            // Přímo spustit filtrování po nastavení hodnot
+            this.filterTable();
         } else {
             console.log('❌ Nepodařilo se najít datové inputy');
         }
@@ -1202,15 +1199,14 @@ class BazarDataLoader {
         
         if (dateFromInput) {
             dateFromInput.value = '';
-            // Spustit 'input' event pro automatické filtrování
-            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
         
         if (dateToInput) {
             dateToInput.value = '';
-            // Spustit 'input' event pro automatické filtrování
-            dateToInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
+        
+        // Přímo spustit filtrování po vymazání hodnot
+        this.filterTable();
         
         console.log('✅ Datové rozsahy vymazány z date-pickerů');
     }
@@ -1236,10 +1232,8 @@ class BazarDataLoader {
             textFilter.value = '';
         }
         
-        // Spustit 'input' event pro automatické filtrování (pouze jednou na konci)
-        if (dateFromInput) {
-            dateFromInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
+        // Přímo spustit filtrování po vymazání všech filtrů
+        this.filterTable();
         
         console.log('✅ Všechny filtry vymazány, zobrazeny všechny záznamy');
     }
