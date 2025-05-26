@@ -4,12 +4,12 @@ function updateNavigation() {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     
     // Přidání hamburger menu pro mobily
-    const header = document.querySelector('header');
-    if (!header.querySelector('.hamburger')) {
+    const headerContent = document.querySelector('.header-content');
+    if (headerContent && !headerContent.querySelector('.hamburger')) {
         const hamburger = document.createElement('button');
         hamburger.className = 'hamburger';
         hamburger.innerHTML = '<span></span><span></span><span></span>';
-        header.appendChild(hamburger);
+        headerContent.appendChild(hamburger);
     }
     
     // Základní položky menu pro všechny uživatele
