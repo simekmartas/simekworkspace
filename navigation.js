@@ -21,6 +21,7 @@ function updateNavigation() {
     
     // Položky pouze pro přihlášené uživatele
     const memberItems = `
+        <li><a href="dashboard.html">[ DASHBOARD ]</a></li>
         <li class="dropdown">
             <a href="#" class="dropdown-toggle">[ MOBIL MAJÁK ]</a>
             <ul class="dropdown-menu">

@@ -11,6 +11,11 @@ class StatsManager {
         const user = await this.getUserById(userId);
         if (!user) return this.getEmptyStats();
 
+        // Pro admina zobrazit celkové statistiky, pro prodejce pouze jejich prodejnu
+        if (user.role === 'admin' && user.prodejna === 'Všechny') {
+            return await this.getAdminStats();
+        }
+
         // Načíst aktuální data z Google Sheets
         const currentData = await this.fetchCurrentData();
         const monthlyData = await this.fetchMonthlyData();
@@ -25,6 +30,33 @@ class StatsManager {
             monthlySales: userMonthlyStats ? parseInt(userMonthlyStats.polozky_nad_100) || 0 : 0,
             monthlyServices: userMonthlyStats ? parseInt(userMonthlyStats.sluzby_celkem) || 0 : 0
         };
+    }
+
+    // Získat celkové statistiky pro admina
+    async getAdminStats() {
+        try {
+            const currentData = await this.fetchCurrentData();
+            const monthlyData = await this.fetchMonthlyData();
+
+            let todaySales = 0, todayServices = 0, monthlySales = 0, monthlyServices = 0;
+
+            // Sečíst všechny prodejny pro aktuální den
+            currentData.forEach(row => {
+                if (row.polozky_nad_100) todaySales += parseInt(row.polozky_nad_100) || 0;
+                if (row.sluzby_celkem) todayServices += parseInt(row.sluzby_celkem) || 0;
+            });
+
+            // Sečíst všechny prodejny pro měsíc
+            monthlyData.forEach(row => {
+                if (row.polozky_nad_100) monthlySales += parseInt(row.polozky_nad_100) || 0;
+                if (row.sluzby_celkem) monthlyServices += parseInt(row.sluzby_celkem) || 0;
+            });
+
+            return { todaySales, todayServices, monthlySales, monthlyServices };
+        } catch (error) {
+            console.error('Chyba při načítání admin statistik:', error);
+            return this.getEmptyStats();
+        }
     }
 
     // Získat data pro graf

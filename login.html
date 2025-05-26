@@ -9,21 +9,43 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            background: var(--terminal-bg);
+            color: var(--terminal-green);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
         .login-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            background: linear-gradient(45deg, var(--terminal-bg) 0%, #1a1a1a 100%);
         }
         
         .login-box {
             background: var(--terminal-bg);
-            border: 2px solid var(--terminal-green);
+            border: 2px solid var(--terminal-pink);
             padding: 40px;
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+            box-shadow: 
+                0 0 20px rgba(255, 20, 147, 0.4),
+                0 0 40px rgba(0, 255, 65, 0.2);
+            position: relative;
+        }
+        
+        .login-box::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--terminal-pink), var(--terminal-green), var(--terminal-blue));
+            z-index: -1;
+            border-radius: 4px;
         }
         
         .login-form {
@@ -39,69 +61,104 @@
         }
         
         .form-label {
-            color: var(--terminal-green);
+            color: var(--terminal-pink);
             font-size: 14px;
             text-transform: uppercase;
+            font-weight: 700;
         }
         
         .form-input {
-            background: #000;
+            background: rgba(0, 0, 0, 0.8);
             border: 1px solid var(--terminal-green);
-            color: var(--terminal-green);
+            color: var(--terminal-white);
             padding: 12px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 16px;
+            transition: all 0.3s ease;
         }
         
         .form-input:focus {
             outline: none;
-            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            border-color: var(--terminal-pink);
+            box-shadow: 0 0 15px rgba(255, 20, 147, 0.5);
+            background: rgba(0, 0, 0, 0.9);
+        }
+        
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
         }
         
         .login-button {
-            background: var(--terminal-green);
-            color: #000;
+            background: linear-gradient(45deg, var(--terminal-pink), var(--terminal-green));
+            color: var(--terminal-bg);
             border: none;
-            padding: 12px 24px;
+            padding: 15px 24px;
             font-family: 'JetBrains Mono', monospace;
             font-weight: 700;
             font-size: 16px;
             cursor: pointer;
             text-transform: uppercase;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         
         .login-button:hover {
-            background: #fff;
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 5px 15px rgba(255, 20, 147, 0.4),
+                0 0 30px rgba(0, 255, 65, 0.3);
+        }
+        
+        .login-button:active {
+            transform: translateY(0);
         }
         
         .error-message {
-            color: #ff0040;
+            color: var(--terminal-red);
             font-size: 14px;
             margin-top: 10px;
             display: none;
+            padding: 10px;
+            border: 1px solid var(--terminal-red);
+            background: rgba(255, 0, 64, 0.1);
         }
         
         .demo-accounts {
             margin-top: 30px;
             padding-top: 30px;
-            border-top: 1px solid rgba(0, 255, 65, 0.3);
+            border-top: 1px solid rgba(255, 20, 147, 0.3);
         }
         
         .demo-title {
-            color: var(--terminal-green);
+            color: var(--terminal-blue);
             font-size: 12px;
             text-transform: uppercase;
             margin-bottom: 10px;
-            opacity: 0.7;
+            opacity: 0.8;
         }
         
         .demo-account {
             color: var(--terminal-green);
             font-size: 12px;
             margin: 5px 0;
-            opacity: 0.6;
+            opacity: 0.7;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        
+        .demo-account:hover {
+            opacity: 1;
+            color: var(--terminal-pink);
+        }
+        
+        h1 {
+            color: var(--terminal-green);
+            text-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+        
+        h1 span {
+            color: var(--terminal-pink);
         }
     </style>
 </head>
@@ -139,7 +196,7 @@
     
     <div class="version-info">v2.2.0</div>
     
-    <script src="auth.js"></script>
+    <script src="auth-new.js"></script>
     <script>
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
