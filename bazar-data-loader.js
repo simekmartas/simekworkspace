@@ -241,21 +241,30 @@ class BazarDataLoader {
         const naskladneneCount = this.filteredRows.filter(row => row[0] === 'Naskladněno').length;
         const celkemCount = this.filteredRows.length;
         
+        // Pomocná funkce pro parsování ceny
+        const parseCena = (cenaStr) => {
+            if (!cenaStr) return 0;
+            // Odstraníme "Kč" a mezery, ale zachováme čísla, tečky a čárky
+            const cleanStr = cenaStr.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
+            const number = parseFloat(cleanStr);
+            return isNaN(number) ? 0 : number;
+        };
+        
         // Součet nákupních cen (sloupec G - index 5)
         const nakupniCenySum = this.filteredRows.reduce((sum, row) => {
-            const cena = parseFloat(row[5]?.replace(/[^\d]/g, '') || 0);
+            const cena = parseCena(row[5]);
             return sum + cena;
         }, 0);
         
         // Součet prodejních cen (sloupec W - index 7) - pouze pro prodané telefony
         const prodejniCenySum = prodaneRows.reduce((sum, row) => {
-            const cena = parseFloat(row[7]?.replace(/[^\d]/g, '') || 0);
+            const cena = parseCena(row[7]);
             return sum + cena;
         }, 0);
         
         // Marže = prodejní ceny - nákupní ceny (pouze pro prodané telefony)
         const nakupniCenyProdanych = prodaneRows.reduce((sum, row) => {
-            const cena = parseFloat(row[5]?.replace(/[^\d]/g, '') || 0);
+            const cena = parseCena(row[5]);
             return sum + cena;
         }, 0);
         const marze = prodejniCenySum - nakupniCenyProdanych;
@@ -263,7 +272,7 @@ class BazarDataLoader {
         // Hodnota skladu - neprodané telefony
         const neprodaneRows = this.filteredRows.filter(row => row[0] === 'Naskladněno');
         const hodnotaSkladu = neprodaneRows.reduce((sum, row) => {
-            const cena = parseFloat(row[5]?.replace(/[^\d]/g, '') || 0);
+            const cena = parseCena(row[5]);
             return sum + cena;
         }, 0);
         
@@ -382,12 +391,20 @@ class BazarDataLoader {
                                                 return `<td class="status-cell">${this.escapeHtml(cell)}</td>`;
                                             }
                                             // Zvýraznit nákupní cenu (sloupec G - index 5)
-                                            if (index === 5 && cell && !isNaN(cell.replace(/[^\d]/g, ''))) {
-                                                return `<td class="buy-price-cell">${this.escapeHtml(cell)} Kč</td>`;
+                                            if (index === 5 && cell) {
+                                                const cleanPrice = cell.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
+                                                if (!isNaN(parseFloat(cleanPrice))) {
+                                                    const formattedPrice = parseFloat(cleanPrice).toLocaleString('cs-CZ');
+                                                    return `<td class="buy-price-cell">${formattedPrice} Kč</td>`;
+                                                }
                                             }
                                             // Zvýraznit prodejní cenu (sloupec W - index 7)
-                                            if (index === 7 && cell && !isNaN(cell.replace(/[^\d]/g, ''))) {
-                                                return `<td class="sell-price-cell">${this.escapeHtml(cell)} Kč</td>`;
+                                            if (index === 7 && cell) {
+                                                const cleanPrice = cell.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
+                                                if (!isNaN(parseFloat(cleanPrice))) {
+                                                    const formattedPrice = parseFloat(cleanPrice).toLocaleString('cs-CZ');
+                                                    return `<td class="sell-price-cell">${formattedPrice} Kč</td>`;
+                                                }
                                             }
                                             return `<td>${this.escapeHtml(cell)}</td>`;
                                         }).join('')}
