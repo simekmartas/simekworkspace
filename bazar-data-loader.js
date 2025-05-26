@@ -71,13 +71,20 @@ class BazarDataLoader {
                 if (statisticsData && statisticsData.length > 100) {
                     console.log('=== ÚSPĚCH: Statistická data načtena rychle ===');
                     console.log('Celková délka statistických CSV dat:', statisticsData.length);
+                    console.log('První 500 znaků statistických dat:', statisticsData.substring(0, 500));
                     statisticsCsvData = statisticsData;
+                } else {
+                    console.log('❌ Statistická data se nepodařilo načíst nebo jsou příliš krátká:', statisticsData ? statisticsData.length : 'null');
                 }
                 
                 if (bazarCsvData) {
                     // Parsovat statistická data
                     if (statisticsCsvData) {
                         this.parseStatisticsData(statisticsCsvData);
+                    } else {
+                        console.log('⚠️ Statistická data se nenačetla, používám prázdný dataset');
+                        this.statisticsData = [];
+                        this.filteredStatisticsData = [];
                     }
                     
                     // Parsovat a zobrazit bazarová data
@@ -172,15 +179,36 @@ class BazarDataLoader {
         this.statisticsData = rows.map(row => {
             return {
                 datum: row[0] || '',      // Sloupec A - Datum
+                nakupniCena: row[4] || '', // Sloupec E - Nákupní cena (index 4, protože je 0-based)
                 prodejniCena: row[5] || '' // Sloupec F - Prodejní cena (index 5, protože je 0-based)
             };
-        }).filter(item => item.datum); // Pouze řádky s datem
+        }).filter(item => item.datum && item.datum.trim() !== '' && item.datum !== 'Datum'); // Pouze řádky s datem, vyloučit header
 
         console.log(`Zpracováno ${this.statisticsData.length} statistických záznamů`);
-        console.log('První 3 zpracované statistické záznamy:', this.statisticsData.slice(0, 3));
+        console.log('První 5 zpracované statistické záznamy:', this.statisticsData.slice(0, 5));
+        
+        // Debug - zkontrolovat strukturu dat
+        console.log('🔍 Debug statistických dat:');
+        this.statisticsData.slice(0, 10).forEach((item, index) => {
+            console.log(`Řádek ${index + 1}:`, {
+                datum: item.datum,
+                nakupniCena: item.nakupniCena,
+                prodejniCena: item.prodejniCena,
+                parsedDate: this.parseDate(item.datum),
+                                 parsedProdejniCena: this.parseCenaHelper(item.prodejniCena)
+            });
+        });
         
         // Inicializovat filtrovaná data
         this.filteredStatisticsData = [...this.statisticsData];
+    }
+
+    parseCenaHelper(cenaStr) {
+        if (!cenaStr) return 0;
+        // Odstraníme "Kč" a mezery, ale zachováme čísla, tečky a čárky
+        const cleanStr = cenaStr.toString().replace(/[^\d,.-]/g, '').replace(',', '.');
+        const number = parseFloat(cleanStr);
+        return isNaN(number) ? 0 : number;
     }
 
     parseAndDisplayBazarData(csvData) {
@@ -341,7 +369,18 @@ class BazarDataLoader {
             prodanoCount,
             prodanoZaSum,
             filteredStatisticsDataLength: this.filteredStatisticsData.length,
+            totalStatisticsDataLength: this.statisticsData ? this.statisticsData.length : 0,
             prvnichPet: this.filteredStatisticsData.slice(0, 5)
+        });
+        
+        // Debug - zkontrolovat aktuální filtry
+        const dateFromInput = document.getElementById('dateFrom');
+        const dateToInput = document.getElementById('dateTo');
+        console.log('🔍 Aktuální filtry:', {
+            dateFrom: dateFromInput ? dateFromInput.value : 'N/A',
+            dateTo: dateToInput ? dateToInput.value : 'N/A',
+            filteredRowsCount: this.filteredRows.length,
+            allRowsCount: this.allRows.length
         });
         
         // STATISTIKY Z HLAVNÍ TABULKY (bazarová data)
@@ -1053,11 +1092,13 @@ class BazarDataLoader {
             const year = date.getFullYear();
             const dateStr = `${day}.${month}.${year}`;
             
-            // Generovat prodejní cenu (1000-25000 Kč)
-            const prodejniCena = Math.floor(Math.random() * 24000) + 1000;
+            // Generovat nákupní a prodejní cenu
+            const nakupniCena = Math.floor(Math.random() * 14000) + 500;
+            const prodejniCena = Math.floor(nakupniCena * (1.2 + Math.random() * 1.3)); // 1.2x až 2.5x nákupní ceny
             
             this.statisticsData.push({
                 datum: dateStr,
+                nakupniCena: nakupniCena.toString(),
                 prodejniCena: prodejniCena.toString()
             });
         }
@@ -1197,6 +1238,16 @@ class BazarDataLoader {
                 });
                 
                 console.log(`Filtrovaná statistická data: ${this.filteredStatisticsData.length} z ${this.statisticsData.length} záznamů`);
+                
+                // Debug - ukázat první 5 filtrovaných statistických záznamů
+                console.log('🔍 První 5 filtrovaných statistických záznamů:', 
+                    this.filteredStatisticsData.slice(0, 5).map(item => ({
+                        datum: item.datum,
+                        prodejniCena: item.prodejniCena,
+                        parsedDate: this.parseDate(item.datum),
+                        parsedCena: this.parseCenaHelper(item.prodejniCena)
+                    }))
+                );
             } else {
                 console.log('Žádná statistická data k filtrování');
                 this.filteredStatisticsData = [];
