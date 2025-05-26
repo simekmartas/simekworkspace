@@ -1,6 +1,10 @@
 // Fitness Tracker App - JavaScript
+console.log('fitness.js se načítá...');
+
 class FitnessTracker {
     constructor() {
+        console.log('FitnessTracker constructor spuštěn');
+        
         this.dailyGoal = parseInt(localStorage.getItem('dailyGoal')) || 2000;
         this.weeklyGoal = parseInt(localStorage.getItem('weeklyGoal')) || 14000;
         this.meals = JSON.parse(localStorage.getItem('meals')) || [];
@@ -16,6 +20,7 @@ class FitnessTracker {
         this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
         this.isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
         
+        console.log('FitnessTracker: Inicializuji...');
         this.init();
     }
 
@@ -53,13 +58,59 @@ class FitnessTracker {
     }
 
     setupEventListeners() {
+        console.log('FitnessTracker: Nastavuji event listenery...');
+        
         // Camera controls
-        document.getElementById('startCamera').addEventListener('click', () => this.startCamera());
-        document.getElementById('capturePhoto').addEventListener('click', () => this.capturePhoto());
-        document.getElementById('uploadPhoto').addEventListener('click', () => this.triggerFileUpload());
-        document.getElementById('galleryPhoto').addEventListener('click', () => this.triggerGalleryUpload());
-        document.getElementById('fileInput').addEventListener('change', (e) => this.handleFileUpload(e));
-        document.getElementById('galleryInput').addEventListener('change', (e) => this.handleFileUpload(e));
+        const startCamera = document.getElementById('startCamera');
+        if (startCamera) {
+            startCamera.addEventListener('click', () => {
+                console.log('Start camera kliknuto');
+                this.startCamera();
+            });
+            console.log('Event listener pro startCamera přidán');
+        } else {
+            console.error('Element startCamera nenalezen!');
+        }
+        
+        const capturePhoto = document.getElementById('capturePhoto');
+        if (capturePhoto) {
+            capturePhoto.addEventListener('click', () => this.capturePhoto());
+            console.log('Event listener pro capturePhoto přidán');
+        }
+        
+        const uploadPhoto = document.getElementById('uploadPhoto');
+        if (uploadPhoto) {
+            uploadPhoto.addEventListener('click', () => {
+                console.log('Upload photo kliknuto');
+                this.triggerFileUpload();
+            });
+            console.log('Event listener pro uploadPhoto přidán');
+        } else {
+            console.error('Element uploadPhoto nenalezen!');
+        }
+        
+        const galleryPhoto = document.getElementById('galleryPhoto');
+        if (galleryPhoto) {
+            galleryPhoto.addEventListener('click', () => {
+                console.log('Gallery photo kliknuto');
+                this.triggerGalleryUpload();
+            });
+            console.log('Event listener pro galleryPhoto přidán');
+        } else {
+            console.error('Element galleryPhoto nenalezen!');
+        }
+        
+        const fileInput = document.getElementById('fileInput');
+        if (fileInput) {
+            fileInput.addEventListener('change', (e) => this.handleFileUpload(e));
+            console.log('Event listener pro fileInput přidán');
+        }
+        
+        const galleryInput = document.getElementById('galleryInput');
+        if (galleryInput) {
+            galleryInput.addEventListener('change', (e) => this.handleFileUpload(e));
+            console.log('Event listener pro galleryInput přidán');
+        }
 
         // Manual add
         document.getElementById('addManual').addEventListener('click', () => this.addManualMeal());
@@ -946,7 +997,14 @@ class FitnessTracker {
 
 // Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    window.fitnessApp = new FitnessTracker();
+    console.log('DOM loaded, inicializuji FitnessTracker...');
+    try {
+        window.fitnessApp = new FitnessTracker();
+        console.log('FitnessTracker úspěšně inicializován');
+    } catch (error) {
+        console.error('Chyba při inicializaci FitnessTracker:', error);
+        alert('Chyba při načítání aplikace: ' + error.message);
+    }
 });
 
 // Service Worker registration for PWA functionality

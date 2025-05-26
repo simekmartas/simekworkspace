@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Bypass - Test</title>
+</head>
+<body>
+    <h1>Nastavuji přihlášení pro test...</h1>
+    <p>Přesměrovávám na hlavní aplikaci...</p>
+    
+    <script>
+        console.log('Bypass: Nastavuji přihlášení...');
+        
+        // Nastav přihlášení
+        localStorage.setItem('fitnessLoggedIn', 'true');
+        localStorage.setItem('fitnessUsername', 'simekmartas');
+        localStorage.setItem('fitnessLoginTime', new Date().toISOString());
+        
+        console.log('Bypass: Přihlášení nastaveno');
+        console.log('fitnessLoggedIn:', localStorage.getItem('fitnessLoggedIn'));
+        
+        // Přesměruj po 1 sekundě
+        setTimeout(() => {
+            console.log('Bypass: Přesměrovávám na fitness.html');
+            window.location.href = 'fitness.html';
+        }, 1000);
+    </script>
+</body>
+</html> 

@@ -278,17 +278,30 @@
     <script>
         // Kontrola přihlášení před načtením aplikace
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM načten, kontroluji přihlášení...');
+            
             const isLoggedIn = localStorage.getItem('fitnessLoggedIn');
+            console.log('Stav přihlášení:', isLoggedIn);
             
             if (!isLoggedIn || isLoggedIn !== 'true') {
+                console.log('Uživatel není přihlášený, přesměrovávám...');
                 // Přesměruj na přihlašovací stránku
                 window.location.href = 'fitness-login.html';
                 return;
             }
             
+            console.log('Uživatel je přihlášený, načítám aplikaci...');
+            
             // Pokud je přihlášený, načti hlavní aplikaci
             const script = document.createElement('script');
             script.src = 'fitness.js';
+            script.onload = function() {
+                console.log('fitness.js úspěšně načten');
+            };
+            script.onerror = function() {
+                console.error('Chyba při načítání fitness.js');
+                alert('Chyba při načítání aplikace. Zkontrolujte, že soubor fitness.js existuje.');
+            };
             document.body.appendChild(script);
         });
     </script>

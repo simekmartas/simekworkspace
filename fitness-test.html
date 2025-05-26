@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Test | Simek.work</title>
+    <link rel="stylesheet" href="fitness.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-dumbbell"></i> Fitness Test</h1>
+            <div class="header-actions">
+                <div class="date-display" id="currentDate"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Test Section -->
+            <div class="summary-card">
+                <h3>Test tlačítek</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button onclick="alert('Test 1 funguje!')" style="padding: 10px; background: #4CAF50; color: white; border: none; border-radius: 8px;">
+                        Test 1 - Základní onclick
+                    </button>
+                    <button id="test2" style="padding: 10px; background: #FF6B6B; color: white; border: none; border-radius: 8px;">
+                        Test 2 - Event listener
+                    </button>
+                    <button id="test3" style="padding: 10px; background: #FFA726; color: white; border: none; border-radius: 8px;">
+                        Test 3 - Kamera test
+                    </button>
+                </div>
+            </div>
+
+            <!-- Camera Section -->
+            <div class="camera-section">
+                <div class="camera-container" id="cameraContainer">
+                    <video id="camera" autoplay playsinline></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div class="camera-overlay">
+                        <div class="camera-frame"></div>
+                        <p class="camera-instruction">Test kamery</p>
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button class="btn-camera" id="startCamera">
+                        <i class="fas fa-camera"></i>
+                        Spustit kameru
+                    </button>
+                    <button class="btn-upload" id="uploadPhoto">
+                        <i class="fas fa-upload"></i>
+                        Nahrát foto
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        console.log('Test script se načítá...');
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM je načten');
+            
+            // Test 2 - Event listener
+            const test2 = document.getElementById('test2');
+            if (test2) {
+                test2.addEventListener('click', function() {
+                    alert('Test 2 - Event listener funguje!');
+                    console.log('Test 2 kliknuto');
+                });
+                console.log('Event listener pro test2 přidán');
+            } else {
+                console.error('Element test2 nenalezen');
+            }
+            
+            // Test 3 - Kamera test
+            const test3 = document.getElementById('test3');
+            if (test3) {
+                test3.addEventListener('click', function() {
+                    console.log('Test 3 - Testování kamery');
+                    testCamera();
+                });
+                console.log('Event listener pro test3 přidán');
+            }
+            
+            // Tlačítko kamery
+            const startCamera = document.getElementById('startCamera');
+            if (startCamera) {
+                startCamera.addEventListener('click', function() {
+                    console.log('Tlačítko kamery kliknuto');
+                    alert('Kamera tlačítko funguje!');
+                    testCamera();
+                });
+                console.log('Event listener pro kameru přidán');
+            }
+            
+            // Tlačítko upload
+            const uploadPhoto = document.getElementById('uploadPhoto');
+            if (uploadPhoto) {
+                uploadPhoto.addEventListener('click', function() {
+                    console.log('Upload tlačítko kliknuto');
+                    document.getElementById('fileInput').click();
+                });
+                console.log('Event listener pro upload přidán');
+            }
+            
+            // File input
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        alert('Soubor vybrán: ' + file.name);
+                        console.log('Soubor vybrán:', file);
+                    }
+                });
+                console.log('Event listener pro file input přidán');
+            }
+            
+            console.log('Všechny event listenery přidány');
+        });
+        
+        function testCamera() {
+            console.log('Testování kamery...');
+            
+            if (!navigator.mediaDevices) {
+                alert('navigator.mediaDevices není podporováno');
+                return;
+            }
+            
+            if (!navigator.mediaDevices.getUserMedia) {
+                alert('getUserMedia není podporováno');
+                return;
+            }
+            
+            console.log('Základní API je podporováno');
+            
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    console.log('Kamera úspěšně získána');
+                    alert('Kamera funguje!');
+                    
+                    const video = document.getElementById('camera');
+                    if (video) {
+                        video.srcObject = stream;
+                    }
+                    
+                    // Zastavit stream po 3 sekundách
+                    setTimeout(() => {
+                        stream.getTracks().forEach(track => track.stop());
+                        console.log('Stream zastaven');
+                    }, 3000);
+                })
+                .catch(function(error) {
+                    console.error('Chyba kamery:', error);
+                    alert('Chyba kamery: ' + error.message);
+                });
+        }
+        
+        console.log('Test script načten');
+    </script>
+</body>
+</html> 
