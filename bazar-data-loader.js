@@ -59,8 +59,8 @@ class BazarDataLoader {
             try {
                 const [bazarData, statisticsData] = await Promise.race([
                     Promise.all([
-                        this.tryLoadData(bazarCsvUrl),
-                        this.tryLoadData(statisticsCsvUrl)
+                        this.tryLoadData(bazarCsvUrl, this.bazarGid),
+                        this.tryLoadData(statisticsCsvUrl, this.statisticsGid)
                     ]),
                     quickTimeout
                 ]);
@@ -102,16 +102,23 @@ class BazarDataLoader {
             
             // Pokud rychlé načítání selhalo, zobrazíme mock data
             console.log('=== ZOBRAZUJEM MOCK BAZAROVÁ DATA ===');
+            // Ujistit se, že máme i mock statistická data
+            this.generateMockStatisticsData();
             this.showMockBazarData();
             
         } catch (error) {
             console.error('Chyba při načítání bazarových dat:', error.message);
             console.log('=== ZOBRAZUJEM MOCK DATA ===');
+            // Ujistit se, že máme i mock statistická data
+            this.generateMockStatisticsData();
             this.showMockBazarData();
         }
     }
 
-    async tryLoadData(csvUrl) {
+    async tryLoadData(csvUrl, gid = null) {
+        // Pokud není gid specifikováno, extrahujeme ho z URL
+        const targetGid = gid || this.bazarGid;
+        
         // Zkusíme několik rychlých přístupů paralelně
         const attempts = [
             // Přímý přístup k CSV
@@ -122,14 +129,14 @@ class BazarDataLoader {
             }),
             
             // Publikované URL
-            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${this.bazarGid}&single=true&output=csv`, {
+            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${targetGid}&single=true&output=csv`, {
                 mode: 'cors',
                 cache: 'no-cache',
                 signal: AbortSignal.timeout(2000)
             }),
             
             // Alternativní formát
-            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${this.bazarGid}`, {
+            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${targetGid}`, {
                 mode: 'cors',
                 cache: 'no-cache',
                 signal: AbortSignal.timeout(2000)
@@ -143,17 +150,17 @@ class BazarDataLoader {
                 if (response.ok) {
                     const data = await response.text();
                     if (data && data.length > 100) {
-                        console.log('✅ Úspěšně načteno:', data.length, 'znaků');
+                        console.log('✅ Úspěšně načteno:', data.length, 'znaků pro gid:', targetGid);
                         return data;
                     }
                 }
             } catch (error) {
-                console.log('❌ Pokus selhal:', error.message);
+                console.log('❌ Pokus selhal pro gid', targetGid, ':', error.message);
                 continue;
             }
         }
         
-        throw new Error('Všechny rychlé pokusy selhaly');
+        throw new Error(`Všechny rychlé pokusy selhaly pro gid: ${targetGid}`);
     }
 
     parseStatisticsData(csvData) {
@@ -364,6 +371,11 @@ class BazarDataLoader {
         };
         
         // ZAJISTIT, ŽE MÁME STATISTICKÁ DATA
+        console.log('🔍 Kontrola statistických dat v renderTable():');
+        console.log('  - this.statisticsData.length:', this.statisticsData ? this.statisticsData.length : 'null');
+        console.log('  - this.filteredStatisticsData.length:', this.filteredStatisticsData ? this.filteredStatisticsData.length : 'null');
+        console.log('  - this.statisticsDataInitialized:', this.statisticsDataInitialized);
+        
         if (!this.statisticsData || this.statisticsData.length === 0) {
             console.log('⚠️ Statistická data nejsou k dispozici, generuji mock data');
             this.generateMockStatisticsData();
@@ -373,6 +385,10 @@ class BazarDataLoader {
             console.log('⚠️ Filtrovaná statistická data nejsou k dispozici, používám všechna data');
             this.filteredStatisticsData = [...this.statisticsData];
         }
+        
+        console.log('🔍 Po kontrole:');
+        console.log('  - this.statisticsData.length:', this.statisticsData ? this.statisticsData.length : 'null');
+        console.log('  - this.filteredStatisticsData.length:', this.filteredStatisticsData ? this.filteredStatisticsData.length : 'null');
         
         // STATISTIKY Z DRUHÉ TABULKY (gid=1892426010)
         // Počet prodaných telefonů a součet prodejních cen z filtrovaných statistických dat
