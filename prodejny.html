@@ -23,6 +23,14 @@
             <h1>&gt; MOBIL MAJÁK_</h1>
             <p>Statistiky prodejů podle prodejen</p>
             
+            <!-- Výběr data pro historická data -->
+            <div class="date-selector" style="margin: 20px 0;">
+                <label style="color: var(--terminal-green); margin-right: 10px;">Zobrazit data pro den:</label>
+                <input type="date" id="historicalDatePicker" style="background: #000; border: 1px solid var(--terminal-green); color: var(--terminal-green); padding: 5px 10px; font-family: 'JetBrains Mono', monospace;">
+                <button onclick="loadHistoricalData()" style="background: var(--terminal-green); color: #000; border: none; padding: 5px 15px; margin-left: 10px; font-family: 'JetBrains Mono', monospace; cursor: pointer;">Načíst</button>
+                <button onclick="loadCurrentData()" style="background: transparent; color: var(--terminal-green); border: 1px solid var(--terminal-green); padding: 5px 15px; margin-left: 5px; font-family: 'JetBrains Mono', monospace; cursor: pointer;">Aktuální data</button>
+            </div>
+            
             <!-- Překlikávátko pro přepínání mezi aktuálními a měsíčními daty -->
             <div class="retro-tab-switcher">
                 <div class="retro-tab-container">
@@ -64,6 +72,7 @@
 
     <script src="navigation.js"></script>
     <script src="prodejny-data-loader.js"></script>
+    <script src="daily-snapshot.js"></script>
     <script>
         // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
         if (!localStorage.getItem('isLoggedIn')) {
@@ -134,6 +143,45 @@
             });
         });
 
+        // Funkce pro načtení historických dat
+        function loadHistoricalData() {
+            const datePicker = document.getElementById('historicalDatePicker');
+            const selectedDate = datePicker.value;
+            
+            if (!selectedDate) {
+                alert('Prosím vyberte datum');
+                return;
+            }
+            
+            if (window.dailySnapshot) {
+                const historicalData = window.dailySnapshot.getHistoricalData(selectedDate);
+                if (historicalData) {
+                    // Zobrazit historická data
+                    const activeTab = document.querySelector('.retro-tab.active').getAttribute('data-tab');
+                    if (activeTab === 'current' && currentLoader) {
+                        currentLoader.displayHistoricalData(historicalData, selectedDate);
+                    } else if (activeTab === 'monthly' && monthlyLoader) {
+                        monthlyLoader.displayHistoricalData(historicalData, selectedDate);
+                    }
+                } else {
+                    alert('Pro vybrané datum nejsou k dispozici žádná data');
+                }
+            }
+        }
+        
+        // Funkce pro načtení aktuálních dat
+        function loadCurrentData() {
+            const activeTab = document.querySelector('.retro-tab.active').getAttribute('data-tab');
+            if (activeTab === 'current' && currentLoader) {
+                currentLoader.loadData(false);
+            } else if (activeTab === 'monthly' && monthlyLoader) {
+                monthlyLoader.loadData(true);
+            }
+            
+            // Vyčistit výběr data
+            document.getElementById('historicalDatePicker').value = '';
+        }
+
         // Inicializace při načtení stránky
         document.addEventListener('DOMContentLoaded', function() {
             // Inicializace data loaderů
@@ -150,6 +198,10 @@
             setTimeout(() => {
                 switchTab('current');
             }, 100);
+            
+            // Nastavit maximální datum na dnešek
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('historicalDatePicker').max = today;
         });
     </script>
 </body>

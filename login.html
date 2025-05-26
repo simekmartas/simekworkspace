@@ -2,39 +2,171 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RETRO WEB - Přihlášení</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Přihlášení - Mobil Maják</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-box {
+            background: var(--terminal-bg);
+            border: 2px solid var(--terminal-green);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+        }
+        
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-label {
+            color: var(--terminal-green);
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .form-input {
+            background: #000;
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green);
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 16px;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+        
+        .login-button {
+            background: var(--terminal-green);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        
+        .login-button:hover {
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.8);
+        }
+        
+        .error-message {
+            color: #ff0040;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .demo-accounts {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(0, 255, 65, 0.3);
+        }
+        
+        .demo-title {
+            color: var(--terminal-green);
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+        
+        .demo-account {
+            color: var(--terminal-green);
+            font-size: 12px;
+            margin: 5px 0;
+            opacity: 0.6;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <ul>
-                <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
-            </ul>
-        </nav>
-    </header>
-
-    <main>
-        <section class="hero">
-            <h1>&gt; Přihlášení do systému_</h1>
-            <form id="login-form" class="login-form">
-                <input type="text" id="username" placeholder="// Uživatelské jméno" required>
-                <input type="password" id="password" placeholder="// Heslo" required>
-                <button type="submit">[ PŘIHLÁSIT ]</button>
+    <div class="login-container">
+        <div class="login-box">
+            <h1 style="color: var(--terminal-green); margin-bottom: 30px; text-align: center;">
+                &gt; MOBIL MAJÁK_<br>
+                <span style="font-size: 16px; opacity: 0.7;">// PŘIHLÁŠENÍ</span>
+            </h1>
+            
+            <form class="login-form" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="username">Uživatelské jméno</label>
+                    <input type="text" id="username" name="username" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Heslo</label>
+                    <input type="password" id="password" name="password" class="form-input" required>
+                </div>
+                
+                <button type="submit" class="login-button">Přihlásit se</button>
+                
+                <div class="error-message" id="errorMessage"></div>
             </form>
-            <p id="login-message" class="message"></p>
-        </section>
-    </main>
-
-    <footer>
-        <p>// &copy; 2024 RETRO WEB</p>
-    </footer>
-
-    <div class="version-info">&lt; v1.0 &gt;</div>
-
-    <script src="navigation.js"></script>
-    <script src="login.js"></script>
+            
+            <div class="demo-accounts">
+                <div class="demo-title">// Testovací účty:</div>
+                <div class="demo-account">Admin: admin / admin123</div>
+                <div class="demo-account">Prodejce: gabriel / globus123</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="version-info">v2.2.0</div>
+    
+    <script src="auth.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // Skrýt předchozí chybovou hlášku
+            errorMessage.style.display = 'none';
+            
+            try {
+                const result = await window.authSystem.login(username, password);
+                
+                if (result.success) {
+                    // Přesměrovat na dashboard
+                    window.location.href = 'dashboard.html';
+                } else {
+                    errorMessage.textContent = result.message || 'Neplatné přihlašovací údaje';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Chyba při přihlašování:', error);
+                errorMessage.textContent = 'Chyba při přihlašování. Zkuste to prosím později.';
+                errorMessage.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html> 
