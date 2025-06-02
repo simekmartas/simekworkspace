@@ -1,0 +1,18 @@
+{
+  "name": "mobil-majak-web",
+  "version": "1.0.0",
+  "description": "Webová aplikace pro Mobil Maják s Google Sheets integrací",
+  "main": "index.html",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'No build process needed'",
+    "deploy": "netlify deploy --prod"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+} 

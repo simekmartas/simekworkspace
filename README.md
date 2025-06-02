@@ -1,33 +1,70 @@
-# RETRO WEB
+# Mobil Maják - Webová aplikace
 
-Webové stránky v retro stylu s integrací Mobil Majáku a Google Sheets statistik.
+Webová aplikace pro zobrazování statistik a dat z Google Sheets.
 
-## Nasazení na Netlify
+## 🚀 Nové funkce
 
-1. **Přihlaste se na Netlify**
-   - Přejděte na [netlify.com](https://netlify.com) a přihlaste se nebo zaregistrujte
+### API Proxy pro Google Sheets
+- **Vlastní Netlify funkce** pro obcházení CORS omezení
+- **Extrémní cache-busting** pro aktuální data
+- **Automatické obnovování** každé 2 minuty
+- **Tlačítko "VYMAZAT CACHE & OBNOVIT"** pro manuální refresh
 
-2. **Možnost 1: Nasazení pomocí Netlify CLI**
-   - Nainstalujte Netlify CLI: `npm install -g netlify-cli`
-   - V adresáři projektu spusťte: `netlify deploy`
-   - Postupujte podle instrukcí pro autentizaci a výběr týmu
-   - Pro produkční nasazení: `netlify deploy --prod`
+## 📁 Struktura projektu
 
-3. **Možnost 2: Nasazení přes Netlify UI**
-   - Na dashboard stránce klikněte na "Add new site" > "Deploy manually"
-   - Přetáhněte celou složku WEB do Netlify rozhraní
+```
+WEB/
+├── api/
+│   └── sheets.js          # Netlify funkce pro Google Sheets proxy
+├── prodejny.html          # Stránka s prodejními statistikami
+├── prodejny-data-loader.js # Data loader s novým API
+├── netlify.toml          # Konfigurace Netlify
+├── package.json          # Node.js dependencies
+└── styles.css            # Styly
+```
 
-4. **Konfigurace environmentu**
-   - Ve nastavení webu v sekci "Build & deploy" -> "Environment":
-   - Název domény získáte v sekci "Domain settings"
+## 🔧 Nastavení
 
-## Struktura projektu
+### 1. Local development
+```bash
+npm install
+npm run dev
+```
 
-- `index.html` - Hlavní stránka
-- `majak.html` - Stránka s Mobil Majákem a Google Sheets statistikami
-- `styles.css` - Hlavní CSS soubory
-- `navigation.js` - Logika pro navigaci
-- `netlify.toml` - Konfigurace pro Netlify
+### 2. Deployment na Netlify
+```bash
+npm run deploy
+```
+
+### 3. Jak funguje nové API
+
+1. **Frontend** volá `/api/sheets?spreadsheetId=...&gid=...`
+2. **Netlify funkce** (`api/sheets.js`) zprostředkuje požadavek
+3. **Google Sheets** vrátí CSV data
+4. **Data se zobrazí** v real-time bez CORS problémů
+
+## 🐛 Řešení problémů
+
+### Data se neaktualizují
+1. Klikněte na "VYMAZAT CACHE & OBNOVIT"
+2. Zkontrolujte konzoli prohlížeče (F12)
+3. Ověřte, že Netlify funkce funguje: `/api/sheets?spreadsheetId=1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE&gid=0`
+
+### CORS chyby
+- Nové API řešení by mělo vyřešit všechny CORS problémy
+- Pokud stále probíhají, zkontrolujte `netlify.toml` konfiguraci
+
+## 📊 Google Sheets integrace
+
+- **Spreadsheet ID**: `1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE`
+- **Aktuální data**: gid=0
+- **Měsíční data**: gid=1829845095
+
+## 🔄 Auto-refresh
+
+- Data se automaticky obnovují **každé 2 minuty**
+- Manuální refresh pomocí tlačítka
+- Agresivní cache-busting pro čerstvá data
 
 ## Poznámky
 

@@ -1,5 +1,6 @@
 [build]
-  publish = "/"
+  publish = "."
+  functions = "api"
 
 # Nastavení HTTPS a HTTP hlaviček
 [[headers]]
@@ -8,7 +9,20 @@
     Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
     X-Content-Type-Options = "nosniff"
     X-Frame-Options = "DENY"
-    Content-Security-Policy = "default-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com https://docs.google.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:;"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = '''
+      default-src 'self' https:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
+      style-src 'self' 'unsafe-inline' https:;
+      img-src 'self' data: https:;
+      font-src 'self' https:;
+      connect-src 'self' https: wss:;
+      frame-src 'none';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    '''
 
 # Přesměrování HTTP na HTTPS
 [[redirects]]
@@ -42,4 +56,19 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
-  status = 200 
+  status = 200
+
+# Redirects for Netlify functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# API proxy for Google Sheets
+[[redirects]]
+  from = "/api/sheets/*"
+  to = "/.netlify/functions/sheets"
+  status = 200
+
+[functions]
+  directory = "api" 
