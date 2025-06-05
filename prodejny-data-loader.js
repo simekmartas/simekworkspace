@@ -1,7 +1,9 @@
 // Specializovaný data loader pro prodejny s podporou "králů"
 class ProdejnyDataLoader {
-    constructor(containerId) {
+    constructor(containerId, tabType = 'current') {
         this.container = document.getElementById(containerId);
+        this.tabType = tabType;
+        this.isMonthly = tabType === 'monthly';
         
         // Google Sheets ID a gid pro hlavní list
         this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
@@ -12,7 +14,11 @@ class ProdejnyDataLoader {
         this.basePublishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv`;
         
         this.refreshInterval = null;
-        this.isMonthly = false;
+        
+        // Automaticky načte data po vytvoření instance
+        setTimeout(() => {
+            this.loadData(this.isMonthly);
+        }, 100);
     }
 
     async loadData(isMonthly = false) {
@@ -260,7 +266,7 @@ class ProdejnyDataLoader {
             
         } catch (error) {
             console.error('Chyba při načítání dat:', error.message);
-            this.showMockData(isMonthly);
+            this.showError(error);
         }
     }
 
@@ -344,54 +350,25 @@ class ProdejnyDataLoader {
         });
     }
 
-    findKings(rows) {
-        if (rows.length === 0) return { polozkyKing: null, sluzbyKing: null };
-        
-        // Najít krále položek (nejvíc v sloupci C - index 2)
-        let maxPolozky = 0;
-        let polozkyKing = null;
-        
-        // Najít krále služeb (nejvíc v sloupci D - index 3)
-        let maxSluzby = 0;
-        let sluzbyKing = null;
-        
-        rows.forEach(row => {
-            // Přeskočit řádek s aktualizací (první řádek obvykle obsahuje timestamp)
-            if (row[0] && row[0].includes('Aktualizováno')) return;
-            
-            const polozky = parseInt(row[2]) || 0;
-            const sluzby = parseInt(row[3]) || 0;
-            const prodejce = row[1]; // sloupec B - prodejce
-            
-            if (polozky > maxPolozky && prodejce && prodejce.trim()) {
-                maxPolozky = polozky;
-                polozkyKing = { name: prodejce, value: polozky };
-            }
-            
-            if (sluzby > maxSluzby && prodejce && prodejce.trim()) {
-                maxSluzby = sluzby;
-                sluzbyKing = { name: prodejce, value: sluzby };
-            }
-        });
-        
-        return { polozkyKing, sluzbyKing };
-    }
-
     displayTable(headers, rows, isMonthly) {
-        // Najít krále
-        const { polozkyKing, sluzbyKing } = this.findKings(rows);
+        // Upravit zobrazení - pro aktuální podle prodejen, pro měsíční podle prodejců
+        const processedData = this.processDataForDisplay(rows, isMonthly);
+        const { polozkyKing, sluzbyKing, aligatorTotal, aligatorKing } = this.findKings(processedData.rows, isMonthly);
         
         // Filtrovat řádky - odstranit aktualizační řádek a prázdné řádky
-        const dataRows = rows.filter(row => {
+        const dataRows = processedData.rows.filter(row => {
             return row[0] && !row[0].includes('Aktualizováno') && 
-                   row[1] && row[1].trim() && // má prodejce
-                   (parseInt(row[2]) > 0 || parseInt(row[3]) > 0); // má nějaké položky nebo služby
+                   row[processedData.nameColumnIndex] && row[processedData.nameColumnIndex].trim() && // název musí existovat
+                   (isMonthly 
+                       ? (parseInt(row[1]) > 0 || parseInt(row[2]) > 0) // měsíční: položky a služby v indexech 1,2
+                       : (parseInt(row[2]) > 0 || parseInt(row[3]) > 0) // aktuální: položky a služby v indexech 2,3
+                   );
         });
 
         this.container.innerHTML = `
             <div class="retro-data-container">
                 <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; prodejny_${isMonthly ? 'monthly' : 'current'}.csv_</span>
+                    <span class="retro-terminal-prompt">&gt; ${isMonthly ? 'prodejci_monthly' : 'prodejny_current'}.csv_</span>
                     <div class="retro-window-controls">
                         <span class="control-dot red"></span>
                         <span class="control-dot yellow"></span>
@@ -413,6 +390,18 @@ class ProdejnyDataLoader {
                             <div class="king-name">${sluzbyKing ? sluzbyKing.name : 'N/A'}</div>
                             <div class="king-value">${sluzbyKing ? sluzbyKing.value : 0} služeb</div>
                         </div>
+                        <div class="king-box">
+                            <div class="king-crown">📱</div>
+                            <div class="king-label">// ALIGATOR CELKEM</div>
+                            <div class="king-name">Všichni prodejci</div>
+                            <div class="king-value">${aligatorTotal || 0} telefonů</div>
+                        </div>
+                        <div class="king-box">
+                            <div class="king-crown">🐊</div>
+                            <div class="king-label">// KRÁL ALIGATOR</div>
+                            <div class="king-name">${aligatorKing ? aligatorKing.name : 'N/A'}</div>
+                            <div class="king-value">${aligatorKing ? aligatorKing.value : 0} telefonů</div>
+                        </div>
                     </div>
 
                                          <!-- Filtr -->
@@ -420,7 +409,7 @@ class ProdejnyDataLoader {
                          <div class="retro-filter-row">
                              <span class="retro-filter-label">// FILTR:</span>
                              <input type="text" class="retro-filter-input" id="prodejnyFilter" 
-                                    placeholder="Filtrovat podle prodejny nebo prodejce...">
+                                    placeholder="Filtrovat podle ${isMonthly ? 'prodejce' : 'prodejny'}...">
                              <button class="retro-filter-clear" id="clearFilterBtn">
                                  VYMAZAT
                              </button>
@@ -435,15 +424,16 @@ class ProdejnyDataLoader {
                          <table class="retro-sales-table" id="prodejnyTable">
                              <thead>
                                  <tr>
-                                     ${headers.map(header => `<th class="sortable-header" data-column="${this.escapeHtml(header)}">${this.escapeHtml(header)} <span class="sort-indicator">▼</span></th>`).join('')}
+                                     ${processedData.headers.map(header => `<th class="sortable-header" data-column="${this.escapeHtml(header)}">${this.escapeHtml(header)} <span class="sort-indicator">▼</span></th>`).join('')}
                                  </tr>
                              </thead>
                             <tbody>
                                 ${dataRows.map((row, index) => `
                                     <tr class="${index % 2 === 0 ? 'even' : 'odd'}">
                                         ${row.map((cell, cellIndex) => {
-                                            // Zvýraznit číselné hodnoty
-                                            if (cellIndex >= 2 && !isNaN(cell) && cell.trim() !== '') {
+                                            // Pro měsíční: číselné od indexu 1, pro aktuální: číselné od indexu 2
+                                            const isNumeric = isMonthly ? (cellIndex >= 1) : (cellIndex >= 2);
+                                            if (isNumeric && !isNaN(cell) && cell.trim() !== '') {
                                                 return `<td class="numeric" data-value="${cell}">${this.escapeHtml(cell)}</td>`;
                                             }
                                             return `<td>${this.escapeHtml(cell)}</td>`;
@@ -456,7 +446,7 @@ class ProdejnyDataLoader {
                 </div>
                 <div class="retro-data-footer">
                     <div class="retro-status-left">
-                        <span class="retro-status-text">// PRODEJNY DATA STREAM ACTIVE</span>
+                        <span class="retro-status-text">// ${isMonthly ? 'PRODEJCI' : 'PRODEJNY'} DATA STREAM ACTIVE</span>
                         <span class="retro-blink">●</span>
                     </div>
                     <div class="retro-status-right">
@@ -467,8 +457,131 @@ class ProdejnyDataLoader {
             </div>
         `;
         
-        // Nastavit event listenery po vygenerování HTML
         this.setupEventListeners();
+    }
+
+    // Nová metoda pro zpracování dat podle typu zobrazení
+    processDataForDisplay(rows, isMonthly) {
+        if (isMonthly) {
+            // Měsíční - zobrazit podle prodejců (sloupec prodejce, pak součty podle prodejce)
+            const prodejciData = new Map();
+            
+            rows.forEach(row => {
+                if (row[0] && !row[0].includes('Aktualizováno') && row[1] && row[1].trim()) {
+                    const prodejce = row[1]; // sloupec B - prodejce
+                    const prodejna = row[0]; // sloupec A - prodejna
+                    
+                    if (!prodejciData.has(prodejce)) {
+                        // Inicializovat data pro prodejce
+                        const newRow = [prodejce]; // název prodejce jako první sloupec
+                        for (let i = 2; i < row.length; i++) {
+                            newRow.push(parseInt(row[i]) || 0);
+                        }
+                        prodejciData.set(prodejce, newRow);
+                    } else {
+                        // Sečíst hodnoty k existujícímu prodejci
+                        const existingRow = prodejciData.get(prodejce);
+                        for (let i = 2; i < row.length; i++) {
+                            existingRow[i - 1] = (existingRow[i - 1] || 0) + (parseInt(row[i]) || 0);
+                        }
+                    }
+                }
+            });
+            
+            // Vytvořit nové headers pro prodejce
+            const newHeaders = ['prodejce', 'polozky_nad_100', 'sluzby_celkem'];
+            
+            // Přidat zbývající sloupce z původních headers pokud existují
+            const originalHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
+            for (let i = 4; i < originalHeaders.length; i++) {
+                newHeaders.push(originalHeaders[i]);
+            }
+            
+            return {
+                headers: newHeaders,
+                rows: Array.from(prodejciData.values()),
+                nameColumnIndex: 0 // prodejce je v prvním sloupci
+            };
+        } else {
+            // Aktuální - zachovat původní formát (prodejna + prodejce + všechny ostatní sloupce)
+            const originalHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
+            
+            return {
+                headers: originalHeaders,
+                rows: rows, // původní řádky beze změny
+                nameColumnIndex: 1 // prodejce je ve druhém sloupci (index 1)
+            };
+        }
+    }
+
+    findKings(rows, isMonthly) {
+        if (rows.length === 0) return { polozkyKing: null, sluzbyKing: null, aligatorTotal: 0, aligatorKing: null };
+        
+        let maxPolozky = 0;
+        let polozkyKing = null;
+        let maxSluzby = 0;
+        let sluzbyKing = null;
+        let aligatorTotal = 0;
+        let maxAligator = 0;
+        let aligatorKing = null;
+        
+        rows.forEach(row => {
+            if (row[0] && row[0].includes('Aktualizováno')) return;
+            
+            if (isMonthly) {
+                // Pro měsíční data (zpracovaná): prodejce v 0, položky v 1, služby v 2, ALIGATOR v 14
+                const polozky = parseInt(row[1]) || 0;
+                const sluzby = parseInt(row[2]) || 0;
+                const aligator = parseInt(row[14]) || 0; // ALIGATOR je na indexu 14 pro měsíční
+                const name = row[0]; // prodejce
+                
+                if (polozky > maxPolozky && name && name.trim()) {
+                    maxPolozky = polozky;
+                    polozkyKing = { name: name, value: polozky };
+                }
+                
+                if (sluzby > maxSluzby && name && name.trim()) {
+                    maxSluzby = sluzby;
+                    sluzbyKing = { name: name, value: sluzby };
+                }
+                
+                // Přidat k celkovému součtu ALIGATOR
+                aligatorTotal += aligator;
+                
+                // Najít krále ALIGATOR
+                if (aligator > maxAligator && name && name.trim()) {
+                    maxAligator = aligator;
+                    aligatorKing = { name: name, value: aligator };
+                }
+            } else {
+                // Pro aktuální data: prodejna v 0, prodejce v 1, položky v 2, služby v 3, ALIGATOR v 15
+                const polozky = parseInt(row[2]) || 0;
+                const sluzby = parseInt(row[3]) || 0;
+                const aligator = parseInt(row[15]) || 0; // ALIGATOR je na indexu 15
+                const name = row[1]; // prodejce
+                
+                if (polozky > maxPolozky && name && name.trim()) {
+                    maxPolozky = polozky;
+                    polozkyKing = { name: name, value: polozky };
+                }
+                
+                if (sluzby > maxSluzby && name && name.trim()) {
+                    maxSluzby = sluzby;
+                    sluzbyKing = { name: name, value: sluzby };
+                }
+                
+                // Přidat k celkovému součtu ALIGATOR
+                aligatorTotal += aligator;
+                
+                // Najít krále ALIGATOR
+                if (aligator > maxAligator && name && name.trim()) {
+                    maxAligator = aligator;
+                    aligatorKing = { name: name, value: aligator };
+                }
+            }
+        });
+        
+        return { polozkyKing, sluzbyKing, aligatorTotal, aligatorKing };
     }
 
     setupEventListeners() {
@@ -546,39 +659,39 @@ class ProdejnyDataLoader {
     showMockData(isMonthly) {
         console.log('=== ZOBRAZUJEM MOCK PRODEJNÍ DATA ===');
         
-        const mockHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'];
+        const mockHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
         
         let mockData;
         
         if (isMonthly) {
             // Mock data pro měsíční přehled (vyšší čísla)
             mockData = [
-                ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1'],
-                ['Čepkov', 'Lukáš Kováčik', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3'],
-                ['Globus', 'Jiří Pohořelský', '282', '35', '0', '13', '0', '1', '0', '7', '0', '2', '3', '0', '9'],
-                ['Čepkov', 'Tomáš Doležel', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2'],
-                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '239', '19', '0', '3', '0', '0', '0', '9', '0', '0', '0', '1', '6'],
-                ['Šternberk', 'Adam Kolarčík', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4'],
-                ['Přerov', 'Benny Babušík', '206', '15', '0', '5', '0', '0', '0', '4', '0', '1', '2', '0', '3'],
-                ['Šternberk', 'Jakub Králik', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1'],
-                ['Vsetín', 'Lukáš Krumpolc', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3'],
-                ['Přerov', 'Jakub Málek', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7'],
-                ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1'],
-                ['Přerov', 'Nový Prodejce', '91', '2', '0', '0', '0', '1', '0', '0', '0', '0', '0', '1', '0'],
-                ['Hlavní sklad - Senimo', 'Adéla Koldová', '58', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-                ['Globus', 'František Vychodil', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
-                ['Přerov', 'Radek Bulandra', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0'],
-                ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+                ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1', '1'],
+                ['Čepkov', 'Lukáš Kováčik', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3', '0'],
+                ['Globus', 'Jiří Pohořelský', '282', '35', '0', '13', '0', '1', '0', '7', '0', '2', '3', '0', '9', '0'],
+                ['Čepkov', 'Tomáš Doležel', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2', '0'],
+                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '239', '19', '0', '3', '0', '0', '0', '9', '0', '0', '0', '1', '6', '0'],
+                ['Šternberk', 'Adam Kolarčík', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4', '0'],
+                ['Přerov', 'Benny Babušík', '206', '15', '0', '5', '0', '0', '0', '4', '0', '1', '2', '0', '3', '0'],
+                ['Šternberk', 'Jakub Králik', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1', '0'],
+                ['Vsetín', 'Lukáš Krumpolc', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3', '0'],
+                ['Přerov', 'Jakub Málek', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7', '0'],
+                ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1', '0'],
+                ['Přerov', 'Nový Prodejce', '91', '2', '0', '0', '0', '1', '0', '0', '0', '0', '0', '1', '0', '0'],
+                ['Hlavní sklad - Senimo', 'Adéla Koldová', '58', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+                ['Globus', 'František Vychodil', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0'],
+                ['Přerov', 'Radek Bulandra', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0', '0'],
+                ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
             ];
         } else {
             // Mock data pro aktuální přehled (podle screenshotu z 26.05.2025)
             mockData = [
-                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '12', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '0', '0'],
-                ['Vsetín', 'Lukáš Krumpolc', '10', '1', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0'],
-                ['Přerov', 'Benny Babušík', '8', '2', '0', '0', '0', '0', '0', '1', '0', '1', '0', '0', '0'],
-                ['Šternberk', 'Jakub Králik', '6', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-                ['Globus', 'Jiří Pohořelský', '4', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
-                ['Hlavní sklad - Senimo', 'Adéla Koldová', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '12', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '0', '0', '0'],
+                ['Vsetín', 'Lukáš Krumpolc', '10', '1', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
+                ['Přerov', 'Benny Babušík', '8', '2', '0', '0', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0'],
+                ['Šternberk', 'Jakub Králik', '6', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+                ['Globus', 'Jiří Pohořelský', '4', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0'],
+                ['Hlavní sklad - Senimo', 'Adéla Koldová', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
             ];
         }
 
@@ -598,12 +711,24 @@ class ProdejnyDataLoader {
             const cells = row.getElementsByTagName('td');
             let shouldShow = false;
 
-            // Prohledat první dva sloupce (prodejna a prodejce)
-            for (let j = 0; j < Math.min(2, cells.length); j++) {
-                const cellText = cells[j].textContent.toLowerCase();
-                if (cellText.includes(filterText)) {
-                    shouldShow = true;
-                    break;
+            // Pro měsíční filtrovat podle prvního sloupce (prodejce)
+            // Pro aktuální filtrovat podle prvních dvou sloupců (prodejna a prodejce)
+            if (this.isMonthly) {
+                // Měsíční - filtrovat pouze podle prodejce (první sloupec)
+                if (cells.length > 0) {
+                    const cellText = cells[0].textContent.toLowerCase();
+                    if (cellText.includes(filterText)) {
+                        shouldShow = true;
+                    }
+                }
+            } else {
+                // Aktuální - filtrovat podle prodejny (index 0) nebo prodejce (index 1)
+                for (let j = 0; j < Math.min(2, cells.length); j++) {
+                    const cellText = cells[j].textContent.toLowerCase();
+                    if (cellText.includes(filterText)) {
+                        shouldShow = true;
+                        break;
+                    }
                 }
             }
 
@@ -722,6 +847,51 @@ class ProdejnyDataLoader {
         } catch (error) {
             console.error('Chyba při mazání cache:', error);
         }
+    }
+
+    showError(error) {
+        if (!this.container) return;
+        
+        console.error('Data loading error:', error);
+        
+        this.container.innerHTML = `
+            <div class="retro-data-container">
+                <div class="retro-data-header">
+                    <span class="retro-terminal-prompt">&gt; error_${this.tabType}_data.csv_</span>
+                    <div class="retro-window-controls">
+                        <span class="control-dot red"></span>
+                        <span class="control-dot yellow"></span>
+                        <span class="control-dot green"></span>
+                    </div>
+                </div>
+                <div class="retro-data-content">
+                    <div class="error-state">
+                        <div class="error-icon">⚠️</div>
+                        <div class="error-title">Chyba při načítání dat</div>
+                        <div class="error-message">${error.message || 'Neznámá chyba'}</div>
+                        <div class="error-actions">
+                            <button class="retry-button" onclick="location.reload()">
+                                🔄 Znovu načíst stránku
+                            </button>
+                            <button class="retry-button" onclick="this.parentElement.parentElement.parentElement.parentElement.parentElement.style.display='none'">
+                                ❌ Skrýt chybu
+                            </button>
+                        </div>
+                        <div class="error-details">
+                            <details>
+                                <summary>Technické detaily</summary>
+                                <pre>${JSON.stringify({
+                                    loader: 'File loader (CSV)',
+                                    tabType: this.tabType,
+                                    isMonthly: this.isMonthly,
+                                    timestamp: new Date().toISOString(),
+                                    error: error.stack || error.message
+                                }, null, 2)}</pre>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
     }
 }
 

@@ -7,59 +7,65 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#ff1493">
 </head>
 <body class="protected-page">
     <header>
         <div class="header-content">
-            <a href="index.html" class="logo">MOBIL MAJÁK</a>
+            <a href="index.html" class="logo">Mobil Maják</a>
             <nav>
                 <ul>
                     <!-- Navigace bude vložena JavaScriptem -->
                 </ul>
             </nav>
+            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
         </div>
     </header>
 
     <main>
         <section class="hero">
-            <h1>&gt; ESHOP_</h1>
-            <p>Statistiky online prodejů</p>
+            <div class="container">
+                <h1>Eshop</h1>
+                <p>Statistiky online prodejů</p>
+            </div>
         </section>
 
         <section>
-            <div class="retro-data-container">
-                <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; eshop_analytics.csv_</span>
-                    <div class="retro-window-controls">
-                        <span class="control-dot red"></span>
-                        <span class="control-dot yellow"></span>
-                        <span class="control-dot green"></span>
+            <div class="container">
+                <div class="retro-data-container">
+                    <div class="retro-data-header">
+                        <span class="retro-terminal-prompt">&gt; eshop_analytics.csv_</span>
+                        <div class="retro-window-controls">
+                            <span class="control-dot red"></span>
+                            <span class="control-dot yellow"></span>
+                            <span class="control-dot green"></span>
+                        </div>
                     </div>
-                </div>
-                <div class="retro-data-content loading">
-                    <div class="loading-animation">
-                        <span class="loading-text">// Analyzujeme online prodeje</span>
-                        <span class="loading-dots">...</span>
+                    <div class="retro-data-content loading">
+                        <div class="loading-animation">
+                            <span class="loading-text">// Analyzujeme online prodeje</span>
+                            <span class="loading-dots">...</span>
+                        </div>
+                        <div style="text-align: center; margin-top: 2rem; color: var(--text-secondary);">
+                            <p>🛒 Tato sekce bude brzy obsahovat:</p>
+                            <ul style="list-style: none; margin-top: 1rem; line-height: 2;">
+                                <li>• Objednávky a tržby</li>
+                                <li>• Nejprodávanější produkty</li>
+                                <li>• Konverze návštěvníků</li>
+                                <li>• Geografické rozložení</li>
+                            </ul>
+                        </div>
                     </div>
-                    <div style="text-align: center; margin-top: 2rem; color: var(--retro-cyan);">
-                        <p>🛒 Tato sekce bude brzy obsahovat:</p>
-                        <ul style="list-style: none; margin-top: 1rem; line-height: 2;">
-                            <li>• Objednávky a tržby</li>
-                            <li>• Nejprodávanější produkty</li>
-                            <li>• Konverze návštěvníků</li>
-                            <li>• Geografické rozložení</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="retro-data-footer">
-                    <div class="retro-status-left">
-                        <span class="retro-status-text">// DEVELOPMENT MODE</span>
-                        <span class="retro-blink">●</span>
-                    </div>
-                    <div class="retro-status-right">
-                        <span class="retro-data-flow">▓▒░</span>
-                        <span class="retro-small-text">COMING SOON</span>
+                    <div class="retro-data-footer">
+                        <div class="retro-status-left">
+                            <span class="retro-status-text">// DEVELOPMENT MODE</span>
+                            <span class="retro-blink">●</span>
+                        </div>
+                        <div class="retro-status-right">
+                            <span class="retro-data-flow">▓▒░</span>
+                            <span class="retro-small-text">COMING SOON</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -67,34 +73,34 @@
     </main>
 
     <footer>
-        <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        <div class="container">
+            <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        </div>
     </footer>
 
-    <div class="version-info">v2.1.0</div>
+    <div class="version-info">v2.3.0</div>
 
+    <script src="access-control.js"></script>
+    <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
     <script>
-        // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
-        if (!localStorage.getItem('isLoggedIn')) {
-            // Okamžité přesměrování bez možnosti zobrazení obsahu
-            window.location.replace('login.html');
-        } else {
-            // Uživatel je přihlášen, zobrazit obsah
-            document.body.classList.add('authenticated');
-        }
-        
-        // Dodatečná kontrola při každém načtení stránky
-        window.addEventListener('focus', function() {
-            if (!localStorage.getItem('isLoggedIn')) {
-                window.location.replace('login.html');
-            }
-        });
-        
-        // Kontrola při změně localStorage (např. odhlášení v jiném tabu)
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'isLoggedIn' && !e.newValue) {
-                window.location.replace('login.html');
-            }
+        // Inicializace pouze po úspěšné autentifikaci
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Eshop.html inicializace dokončena');
+            
+            // Kontrola přístupů se provádí automaticky v access-control.js
+            // Pokud má uživatel přístup, zobrazí se obsah
+            setTimeout(() => {
+                if (document.body.classList.contains('authenticated')) {
+                    console.log('Eshop obsah je přístupný pro aktuální roli');
+                }
+                
+                // Wait for theme manager to be ready
+                if (window.themeManager) {
+                    window.themeManager.updateAllToggleButtons();
+                    console.log('Theme toggle buttons aktualizovány na eshop.html');
+                }
+            }, 200);
         });
     </script>
 </body>

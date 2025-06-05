@@ -7,64 +7,1006 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#ff1493">
 </head>
 <body class="protected-page">
     <header>
-        <nav>
-            <ul>
-                <!-- Navigace bude vložena JavaScriptem -->
-            </ul>
-        </nav>
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude vložena JavaScriptem -->
+                </ul>
+            </nav>
+            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
+        </div>
     </header>
 
     <main>
         <section class="hero">
-            <h1>&gt; BAZAR_</h1>
-            <p>Statistiky bazarových prodejů</p>
+            <div class="container">
+                <h1>Bazar</h1>
+                <p>Statistiky bazarových prodejů</p>
+            </div>
         </section>
 
         <section>
-            <div id="bazarDataContainer">
-                <!-- Bazarová data budou načtena zde -->
+            <div class="container">
+                <!-- Tlačítko pro přidání nového bazaru -->
+                <div style="text-align: center; margin: 2rem 0;">
+                    <button id="newBazarBtn" class="btn btn-primary" style="margin-bottom: 2rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                        Nový Bazar
+                    </button>
+                </div>
+
+                <!-- Formulář pro nový bazar (skrytý) -->
+                <div id="newBazarForm" class="data-container" style="display: none; max-width: 800px; margin: 2rem auto;">
+                    <div class="data-header">
+                        <div class="data-title">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <path d="M9 9h6v6H9z"></path>
+                            </svg>
+                            Nový záznam do bazaru
+                        </div>
+                        <button id="closeFormBtn" style="background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <form id="bazarForm" style="padding: 2rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                            <!-- Základní informace -->
+                            <div>
+                                <label for="vykupka" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Výkupka *
+                                </label>
+                                <input type="text" id="vykupka" name="vykupka" required style="width: 100%;">
+                            </div>
+                            
+                            <div>
+                                <label for="typTelefonu" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Typ telefonu *
+                                </label>
+                                <input type="text" id="typTelefonu" name="typTelefonu" required style="width: 100%;">
+                            </div>
+                            
+                            <div>
+                                <label for="imei" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    IMEI *
+                                </label>
+                                <input type="text" id="imei" name="imei" required style="width: 100%;">
+                            </div>
+                            
+                            <div>
+                                <label for="jakSeONasDozvedelKlient" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Jak se o nás klient dozvěděl?
+                                </label>
+                                <select id="jakSeONasDozvedelKlient" name="jakSeONasDozvedelKlient" style="width: 100%;">
+                                    <option value="">Vyberte...</option>
+                                    <option value="internet">Internet</option>
+                                    <option value="facebook">Facebook</option>
+                                    <option value="google">Google</option>
+                                    <option value="doporuceni">Doporučení</option>
+                                    <option value="reklama">Reklama</option>
+                                    <option value="prochazka">Procházka kolem</option>
+                                    <option value="jine">Jiné</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="cena" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Cena (Kč) *
+                                </label>
+                                <input type="number" id="cena" name="cena" required style="width: 100%;" min="0" step="1">
+                            </div>
+                            
+                            <!-- Příslušenství -->
+                            <div>
+                                <label for="nabijjecka" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Nabíječka
+                                </label>
+                                <select id="nabijjecka" name="nabijjecka" style="width: 100%;">
+                                    <option value="ne">Ne</option>
+                                    <option value="ano">Ano</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="krabicka" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Krabička
+                                </label>
+                                <select id="krabicka" name="krabicka" style="width: 100%;">
+                                    <option value="ne">Ne</option>
+                                    <option value="ano">Ano</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="zarucniList" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Záruční list
+                                </label>
+                                <select id="zarucniList" name="zarucniList" style="width: 100%;">
+                                    <option value="ne">Ne</option>
+                                    <option value="ano">Ano</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="zarukaDo" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Záruka do
+                                    <small style="color: var(--text-secondary); font-weight: normal;">(DD.MM.YYYY nebo rolovátka)</small>
+                                </label>
+                                <div class="date-input-container">
+                                    <div style="position: relative; width: 100%;">
+                                        <input type="text" id="zarukaDo" name="zarukaDo" 
+                                               style="width: 100%; padding-right: 45px;" 
+                                               placeholder="např. 15.12.2025" 
+                                               pattern="^([0-2][0-9]|3[0-1])\.(0[1-9]|1[0-2])\.([0-9]{4})$"
+                                               title="Zadejte datum ve formátu DD.MM.YYYY">
+                                        <button type="button" class="date-toggle-btn" onclick="toggleDateInput('zarukaDo')" title="Přepnout na rolovátka">
+                                            📅
+                                        </button>
+                                    </div>
+                                    <div class="date-selects" id="zarukaDo_selects" style="display: none;">
+                                        <select class="date-select day-select" data-field="zarukaDo">
+                                            <option value="">Den</option>
+                                        </select>
+                                        <select class="date-select month-select" data-field="zarukaDo">
+                                            <option value="">Měsíc</option>
+                                            <option value="01">Leden</option>
+                                            <option value="02">Únor</option>
+                                            <option value="03">Březen</option>
+                                            <option value="04">Duben</option>
+                                            <option value="05">Květen</option>
+                                            <option value="06">Červen</option>
+                                            <option value="07">Červenec</option>
+                                            <option value="08">Srpen</option>
+                                            <option value="09">Září</option>
+                                            <option value="10">Říjen</option>
+                                            <option value="11">Listopad</option>
+                                            <option value="12">Prosinec</option>
+                                        </select>
+                                        <select class="date-select year-select" data-field="zarukaDo">
+                                            <option value="">Rok</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="pouziteDily" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Použité díly (Kč)
+                                </label>
+                                <input type="number" id="pouziteDily" name="pouziteDily" style="width: 100%;" min="0" step="1" value="0">
+                            </div>
+                            
+                            <div>
+                                <label for="vykoupil" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Vykoupil (příjmení) *
+                                </label>
+                                <input type="text" id="vykoupil" name="vykoupil" required style="width: 100%;">
+                            </div>
+                        </div>
+                        
+                        <!-- Informace o klientovi -->
+                        <h3 style="color: var(--text-primary); margin: 2rem 0 1rem 0; font-size: 1.25rem;">Informace o klientovi</h3>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+                            <div>
+                                <label for="jmenoKlienta" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Jméno klienta *
+                                </label>
+                                <input type="text" id="jmenoKlienta" name="jmenoKlienta" required style="width: 100%;">
+                            </div>
+                            
+                            <div>
+                                <label for="prijmeniKlienta" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Příjmení klienta *
+                                </label>
+                                <input type="text" id="prijmeniKlienta" name="prijmeniKlienta" required style="width: 100%;">
+                            </div>
+                            
+                            <div style="grid-column: 1 / -1;">
+                                <label for="adresaKlienta" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Adresa klienta *
+                                </label>
+                                <input type="text" id="adresaKlienta" name="adresaKlienta" required style="width: 100%;">
+                            </div>
+                            
+                            <div>
+                                <label for="rodneCislo" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Rodné číslo *
+                                </label>
+                                <input type="text" id="rodneCislo" name="rodneCislo" required style="width: 100%;" placeholder="000000/0000">
+                            </div>
+                            
+                            <div>
+                                <label for="rodinnyStav" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Rodinný stav
+                                </label>
+                                <select id="rodinnyStav" name="rodinnyStav" style="width: 100%;">
+                                    <option value="">Vyberte...</option>
+                                    <option value="svobodný/á">Svobodný/á</option>
+                                    <option value="ženatý/vdaná">Ženatý/vdaná</option>
+                                    <option value="rozvedený/á">Rozvedený/á</option>
+                                    <option value="vdovec/vdova">Vdovec/vdova</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="mistoVydaniDokladu" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Místo vydání dokladu *
+                                </label>
+                                <input type="text" id="mistoVydaniDokladu" name="mistoVydaniDokladu" required style="width: 100%;">
+                            </div>
+                            
+                            <div>
+                                <label for="datumVydaniDokladu" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Datum vydání OP *
+                                    <small style="color: var(--text-secondary); font-weight: normal;">(DD.MM.YYYY nebo rolovátka)</small>
+                                </label>
+                                <div class="date-input-container">
+                                    <div style="position: relative; width: 100%;">
+                                        <input type="text" id="datumVydaniDokladu" name="datumVydaniDokladu" required 
+                                               style="width: 100%; padding-right: 45px;" 
+                                               placeholder="např. 10.01.2020" 
+                                               pattern="^([0-2][0-9]|3[0-1])\.(0[1-9]|1[0-2])\.([0-9]{4})$"
+                                               title="Zadejte datum ve formátu DD.MM.YYYY">
+                                        <button type="button" class="date-toggle-btn" onclick="toggleDateInput('datumVydaniDokladu')" title="Přepnout na rolovátka">
+                                            📅
+                                        </button>
+                                    </div>
+                                    <div class="date-selects" id="datumVydaniDokladu_selects" style="display: none;">
+                                        <select class="date-select day-select" data-field="datumVydaniDokladu">
+                                            <option value="">Den</option>
+                                        </select>
+                                        <select class="date-select month-select" data-field="datumVydaniDokladu">
+                                            <option value="">Měsíc</option>
+                                            <option value="01">Leden</option>
+                                            <option value="02">Únor</option>
+                                            <option value="03">Březen</option>
+                                            <option value="04">Duben</option>
+                                            <option value="05">Květen</option>
+                                            <option value="06">Červen</option>
+                                            <option value="07">Červenec</option>
+                                            <option value="08">Srpen</option>
+                                            <option value="09">Září</option>
+                                            <option value="10">Říjen</option>
+                                            <option value="11">Listopad</option>
+                                            <option value="12">Prosinec</option>
+                                        </select>
+                                        <select class="date-select year-select" data-field="datumVydaniDokladu">
+                                            <option value="">Rok</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="platnostDo" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Platnost OP *
+                                    <small style="color: var(--text-secondary); font-weight: normal;">(DD.MM.YYYY nebo rolovátka)</small>
+                                </label>
+                                <div class="date-input-container">
+                                    <div style="position: relative; width: 100%;">
+                                        <input type="text" id="platnostDo" name="platnostDo" required 
+                                               style="width: 100%; padding-right: 45px;" 
+                                               placeholder="např. 10.01.2030" 
+                                               pattern="^([0-2][0-9]|3[0-1])\.(0[1-9]|1[0-2])\.([0-9]{4})$"
+                                               title="Zadejte datum ve formátu DD.MM.YYYY">
+                                        <button type="button" class="date-toggle-btn" onclick="toggleDateInput('platnostDo')" title="Přepnout na rolovátka">
+                                            📅
+                                        </button>
+                                    </div>
+                                    <div class="date-selects" id="platnostDo_selects" style="display: none;">
+                                        <select class="date-select day-select" data-field="platnostDo">
+                                            <option value="">Den</option>
+                                        </select>
+                                        <select class="date-select month-select" data-field="platnostDo">
+                                            <option value="">Měsíc</option>
+                                            <option value="01">Leden</option>
+                                            <option value="02">Únor</option>
+                                            <option value="03">Březen</option>
+                                            <option value="04">Duben</option>
+                                            <option value="05">Květen</option>
+                                            <option value="06">Červen</option>
+                                            <option value="07">Červenec</option>
+                                            <option value="08">Srpen</option>
+                                            <option value="09">Září</option>
+                                            <option value="10">Říjen</option>
+                                            <option value="11">Listopad</option>
+                                            <option value="12">Prosinec</option>
+                                        </select>
+                                        <select class="date-select year-select" data-field="platnostDo">
+                                            <option value="">Rok</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="datumNarozeni" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Datum narození *
+                                    <small style="color: var(--text-secondary); font-weight: normal;">(DD.MM.YYYY nebo rolovátka)</small>
+                                </label>
+                                <div class="date-input-container">
+                                    <div style="position: relative; width: 100%;">
+                                        <input type="text" id="datumNarozeni" name="datumNarozeni" required 
+                                               style="width: 100%; padding-right: 45px;" 
+                                               placeholder="např. 15.03.1990" 
+                                               pattern="^([0-2][0-9]|3[0-1])\.(0[1-9]|1[0-2])\.([0-9]{4})$"
+                                               title="Zadejte datum ve formátu DD.MM.YYYY">
+                                        <button type="button" class="date-toggle-btn" onclick="toggleDateInput('datumNarozeni')" title="Přepnout na rolovátka">
+                                            📅
+                                        </button>
+                                    </div>
+                                    <div class="date-selects" id="datumNarozeni_selects" style="display: none;">
+                                        <select class="date-select day-select" data-field="datumNarozeni">
+                                            <option value="">Den</option>
+                                        </select>
+                                        <select class="date-select month-select" data-field="datumNarozeni">
+                                            <option value="">Měsíc</option>
+                                            <option value="01">Leden</option>
+                                            <option value="02">Únor</option>
+                                            <option value="03">Březen</option>
+                                            <option value="04">Duben</option>
+                                            <option value="05">Květen</option>
+                                            <option value="06">Červen</option>
+                                            <option value="07">Červenec</option>
+                                            <option value="08">Srpen</option>
+                                            <option value="09">Září</option>
+                                            <option value="10">Říjen</option>
+                                            <option value="11">Listopad</option>
+                                            <option value="12">Prosinec</option>
+                                        </select>
+                                        <select class="date-select year-select" data-field="datumNarozeni">
+                                            <option value="">Rok</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="pohlavi" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Pohlaví *
+                                </label>
+                                <select id="pohlavi" name="pohlavi" required style="width: 100%;">
+                                    <option value="">Vyberte...</option>
+                                    <option value="muž">Muž</option>
+                                    <option value="žena">Žena</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label for="cisloOP" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Číslo OP *
+                                </label>
+                                <input type="text" id="cisloOP" name="cisloOP" required style="width: 100%;" placeholder="123456789">
+                            </div>
+                            
+                            <div>
+                                <label for="mistoNarozeni" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Místo narození *
+                                </label>
+                                <input type="text" id="mistoNarozeni" name="mistoNarozeni" required style="width: 100%;">
+                            </div>
+                            
+                            <div>
+                                <label for="telefonniCislo" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Telefonní číslo
+                                </label>
+                                <input type="tel" id="telefonniCislo" name="telefonniCislo" style="width: 100%;" placeholder="+420 123 456 789">
+                            </div>
+                            
+                            <div style="grid-column: 1 / -1;">
+                                <label for="poznamky" style="display: block; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem;">
+                                    Poznámky
+                                </label>
+                                <textarea id="poznamky" name="poznamky" style="width: 100%; min-height: 80px; resize: vertical;" placeholder="Další poznámky k výkupu..."></textarea>
+                            </div>
+                        </div>
+                        
+                        <!-- Tlačítka -->
+                        <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem;">
+                            <button type="button" id="cancelFormBtn" style="background: var(--text-secondary); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; cursor: pointer;">
+                                Zrušit
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9,11 12,14 22,4"></polyline>
+                                    <path d="M21,12v7a2,2 0,0 1,-2,2H5a2,2 0,0 1,-2,-2V5a2,2 0,0 1,2,-2h11"></path>
+                                </svg>
+                                Dokončit
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div id="formMessage" class="message" style="display: none; margin: 1rem 2rem;"></div>
+                </div>
+
+                <div id="bazarDataContainer">
+                    <!-- Bazarová data budou načtena zde -->
+                </div>
             </div>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        <div class="container">
+            <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        </div>
     </footer>
 
-    <div class="version-info">v2.1.0</div>
+    <div class="version-info">v2.3.0</div>
 
+    <script src="access-control.js"></script>
+    <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
+    <script src="bazar-storage.js"></script>
     <script src="bazar-data-loader.js"></script>
     <script>
-        // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
-        if (!localStorage.getItem('isLoggedIn')) {
-            // Okamžité přesměrování bez možnosti zobrazení obsahu
-            window.location.replace('login.html');
-        } else {
-            // Uživatel je přihlášen, zobrazit obsah
-            document.body.classList.add('authenticated');
+        // Inicializace bazarového data loaderu pouze po úspěšné autentifikaci
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Bazar.html inicializace dokončena');
             
-            // Inicializace bazarového data loaderu
-            window.bazarLoader = new BazarDataLoader('bazarDataContainer');
-            window.bazarLoader.loadBazarData();
-        }
-        
-        // Dodatečná kontrola při každém načtení stránky
-        window.addEventListener('focus', function() {
-            if (!localStorage.getItem('isLoggedIn')) {
-                window.location.replace('login.html');
-            }
+            // Kontrola přístupů se provádí automaticky v access-control.js
+            // Pokud má uživatel přístup, inicializujeme data loader
+            setTimeout(() => {
+                if (document.body.classList.contains('authenticated')) {
+                    // Inicializace bazarového data loaderu
+                    window.bazarLoader = new BazarDataLoader('bazarDataContainer');
+                    window.bazarLoader.loadBazarData();
+                    console.log('Bazar data loader inicializován');
+                    
+                    // Inicializace formuláře pro nový bazar
+                    initBazarForm();
+                }
+                
+                // Wait for theme manager to be ready
+                if (window.themeManager) {
+                    window.themeManager.updateAllToggleButtons();
+                    console.log('Theme toggle buttons aktualizovány na bazar.html');
+                }
+            }, 200);
         });
         
-        // Kontrola při změně localStorage (např. odhlášení v jiném tabu)
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'isLoggedIn' && !e.newValue) {
-                window.location.replace('login.html');
+        // Funkce pro inicializaci formuláře
+        function initBazarForm() {
+            const newBazarBtn = document.getElementById('newBazarBtn');
+            const newBazarForm = document.getElementById('newBazarForm');
+            const closeFormBtn = document.getElementById('closeFormBtn');
+            const cancelFormBtn = document.getElementById('cancelFormBtn');
+            const bazarForm = document.getElementById('bazarForm');
+            const formMessage = document.getElementById('formMessage');
+            
+            // Zobrazení formuláře
+            newBazarBtn.addEventListener('click', function() {
+                newBazarForm.style.display = 'block';
+                newBazarBtn.style.display = 'none';
+                // Scroll k formuláři
+                newBazarForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+            
+            // Skrytí formuláře
+            function hideForm() {
+                newBazarForm.style.display = 'none';
+                newBazarBtn.style.display = 'block';
+                bazarForm.reset();
+                hideMessage();
             }
+            
+            closeFormBtn.addEventListener('click', hideForm);
+            cancelFormBtn.addEventListener('click', hideForm);
+            
+            // Odeslání formuláře
+            bazarForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validace formuláře
+                const validationResult = validateForm();
+                if (!validationResult.isValid) {
+                    showErrorAnimation(validationResult.errors);
+                    showMessage(validationResult.errors.join(', '), 'error');
+                    return;
+                }
+                
+                // Sběr dat z formuláře
+                const formData = new FormData(bazarForm);
+                const bazarData = {
+                    datum: new Date().toISOString().split('T')[0], // Současné datum
+                    cas: new Date().toLocaleTimeString('cs-CZ'),
+                    vykupka: formData.get('vykupka'),
+                    typTelefonu: formData.get('typTelefonu'),
+                    imei: formData.get('imei'),
+                    jakSeONasDozvedelKlient: formData.get('jakSeONasDozvedelKlient'),
+                    cena: parseInt(formData.get('cena')),
+                    nabijjecka: formData.get('nabijjecka'),
+                    krabicka: formData.get('krabicka'),
+                    zarucniList: formData.get('zarucniList'),
+                    zarukaDo: convertDateFormat(formData.get('zarukaDo')),
+                    pouziteDily: parseInt(formData.get('pouziteDily')) || 0,
+                    vykoupil: formData.get('vykoupil'),
+                    jmenoKlienta: formData.get('jmenoKlienta'),
+                    prijmeniKlienta: formData.get('prijmeniKlienta'),
+                    adresaKlienta: formData.get('adresaKlienta'),
+                    rodneCislo: formData.get('rodneCislo'),
+                    rodinnyStav: formData.get('rodinnyStav'),
+                    mistoVydaniDokladu: formData.get('mistoVydaniDokladu'),
+                    datumVydaniDokladu: convertDateFormat(formData.get('datumVydaniDokladu')),
+                    platnostDo: convertDateFormat(formData.get('platnostDo')),
+                    datumNarozeni: convertDateFormat(formData.get('datumNarozeni')),
+                    pohlavi: formData.get('pohlavi'),
+                    cisloOP: formData.get('cisloOP'),
+                    mistoNarozeni: formData.get('mistoNarozeni'),
+                    telefonniCislo: formData.get('telefonniCislo'),
+                    poznamky: formData.get('poznamky')
+                };
+                
+                // Uložení dat
+                saveBazarData(bazarData);
+            });
+            
+            // Zobrazení/skrytí zprávy
+            function showMessage(text, type) {
+                formMessage.textContent = text;
+                formMessage.className = `message ${type}`;
+                formMessage.style.display = 'block';
+                formMessage.style.animation = 'fadeIn 0.3s ease-in-out';
+            }
+            
+            function hideMessage() {
+                formMessage.style.display = 'none';
+                formMessage.style.animation = '';
+            }
+            
+            // Konverze DD.MM.YYYY na YYYY-MM-DD nebo zachování prázdné hodnoty
+            function convertDateFormat(dateString) {
+                if (!dateString || dateString.trim() === '') {
+                    return '';
+                }
+                
+                const parts = dateString.split('.');
+                if (parts.length === 3) {
+                    const day = parts[0].padStart(2, '0');
+                    const month = parts[1].padStart(2, '0');
+                    const year = parts[2];
+                    return `${year}-${month}-${day}`;
+                }
+                
+                return dateString; // Vrátit původní pokud není ve správném formátu
+            }
+            
+            // Funkce pro uložení dat do lokální tabulky
+            async function saveBazarData(data) {
+                try {
+                    // Použití nového BazarStorage
+                    const success = await window.bazarStorage.addRecord(data);
+                    
+                    if (success) {
+                        // Spuštění úspěšné animace
+                        showSuccessAnimation();
+                        
+                        // Úspěšná zpráva
+                        showMessage('🎉 Záznam byl úspěšně uložen!', 'success');
+                        
+                        // Přidání glow efektu k formuláři
+                        newBazarForm.classList.add('form-success-glow');
+                        
+                        // Reset formuláře po 3 sekundách
+                        setTimeout(() => {
+                            hideForm();
+                            newBazarForm.classList.remove('form-success-glow');
+                            // Obnovení dat v tabulce
+                            if (window.bazarLoader && window.bazarLoader.loadBazarData) {
+                                window.bazarLoader.loadBazarData();
+                            }
+                        }, 3000);
+                        
+                        console.log('Nový bazar záznam uložen:', data);
+                    } else {
+                        throw new Error('Uložení se nezdařilo');
+                    }
+                    
+                } catch (error) {
+                    console.error('Chyba při ukládání bazaru:', error);
+                    showErrorAnimation(['Chyba při ukládání záznamu']);
+                    showMessage('😞 Chyba při ukládání záznamu. Zkuste to znovu.', 'error');
+                    
+                    // Přidání shake efektu k formuláři
+                    newBazarForm.classList.add('form-error-shake');
+                    setTimeout(() => {
+                        newBazarForm.classList.remove('form-error-shake');
+                    }, 3000);
+                }
+            }
+            
+            // Přidání export tlačítek po načtení
+            setTimeout(() => {
+                addExportButtons();
+                initializeDateInputs();
+            }, 1000);
+        }
+        
+        // Inicializace date inputů s rolovátky
+        function initializeDateInputs() {
+            const currentYear = new Date().getFullYear();
+            
+            // Inicializace všech date selectů
+            document.querySelectorAll('.year-select').forEach(select => {
+                // Přidání roků od současného roku do budoucna (10 let) a pak do minulosti
+                for (let year = currentYear; year <= currentYear + 10; year++) {
+                    const option = document.createElement('option');
+                    option.value = year.toString().padStart(4, '0');
+                    option.textContent = year;
+                    select.appendChild(option);
+                }
+                // Pak roky do minulosti
+                for (let year = currentYear - 1; year >= 1920; year--) {
+                    const option = document.createElement('option');
+                    option.value = year.toString().padStart(4, '0');
+                    option.textContent = year;
+                    select.appendChild(option);
+                }
+            });
+            
+            // Inicializace dnů (1-31)
+            document.querySelectorAll('.day-select').forEach(select => {
+                for (let day = 1; day <= 31; day++) {
+                    const option = document.createElement('option');
+                    option.value = day.toString().padStart(2, '0');
+                    option.textContent = day;
+                    select.appendChild(option);
+                }
+            });
+            
+            // Event listenery pro synchronizaci selectů s text inputy
+            document.querySelectorAll('.date-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    updateDateInputFromSelects(this.dataset.field);
+                });
+            });
+            
+            // Event listenery pro text inputy - validace formátu
+            document.querySelectorAll('.date-input-container input[type="text"]').forEach(input => {
+                input.addEventListener('input', function() {
+                    validateDateInput(this);
+                });
+                
+                input.addEventListener('blur', function() {
+                    if (this.value) {
+                        formatDateInput(this);
+                    }
+                });
+            });
+        }
+        
+        // Přepínání mezi text inputem a rolovátky
+        function toggleDateInput(fieldName) {
+            const textInput = document.getElementById(fieldName);
+            const selectsContainer = document.getElementById(fieldName + '_selects');
+            const toggleBtn = textInput.parentNode.querySelector('.date-toggle-btn');
+            
+            if (selectsContainer.style.display === 'none') {
+                // Zobrazit rolovátka a schovat tlačítko
+                selectsContainer.style.display = 'grid';
+                toggleBtn.style.display = 'none'; // Schovat tlačítko úplně
+                
+                // Synchronizovat hodnoty pokud je něco zadáno
+                if (textInput.value) {
+                    populateSelectsFromInput(fieldName, textInput.value);
+                }
+            } else {
+                // Skrýt rolovátka a zobrazit tlačítko
+                selectsContainer.style.display = 'none';
+                toggleBtn.style.display = 'flex'; // Zobrazit tlačítko zpět
+            }
+        }
+        
+        // Naplnění selectů z text inputu
+        function populateSelectsFromInput(fieldName, dateValue) {
+            const parts = dateValue.split('.');
+            if (parts.length === 3) {
+                const daySelect = document.querySelector(`[data-field="${fieldName}"].day-select`);
+                const monthSelect = document.querySelector(`[data-field="${fieldName}"].month-select`);
+                const yearSelect = document.querySelector(`[data-field="${fieldName}"].year-select`);
+                
+                if (daySelect) daySelect.value = parts[0];
+                if (monthSelect) monthSelect.value = parts[1];
+                if (yearSelect) yearSelect.value = parts[2];
+            }
+        }
+        
+        // Aktualizace text inputu z selectů
+        function updateDateInputFromSelects(fieldName) {
+            const daySelect = document.querySelector(`[data-field="${fieldName}"].day-select`);
+            const monthSelect = document.querySelector(`[data-field="${fieldName}"].month-select`);
+            const yearSelect = document.querySelector(`[data-field="${fieldName}"].year-select`);
+            const textInput = document.getElementById(fieldName);
+            
+            if (daySelect.value && monthSelect.value && yearSelect.value) {
+                const dateString = `${daySelect.value}.${monthSelect.value}.${yearSelect.value}`;
+                textInput.value = dateString;
+                validateDateInput(textInput);
+            }
+        }
+        
+        // Validace date inputu
+        function validateDateInput(input) {
+            const pattern = /^([0-2][0-9]|3[0-1])\.(0[1-9]|1[0-2])\.([0-9]{4})$/;
+            
+            if (input.value && !pattern.test(input.value)) {
+                input.style.borderColor = '#ef4444';
+                input.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+            } else {
+                input.style.borderColor = '';
+                input.style.boxShadow = '';
+            }
+        }
+        
+        // Formátování date inputu
+        function formatDateInput(input) {
+            let value = input.value.replace(/[^\d]/g, '');
+            
+            if (value.length >= 2) {
+                value = value.substring(0, 2) + '.' + value.substring(2);
+            }
+            if (value.length >= 5) {
+                value = value.substring(0, 5) + '.' + value.substring(5, 9);
+            }
+            
+            input.value = value;
+            validateDateInput(input);
+        }
+        
+        // Validace celého formuláře
+        function validateForm() {
+            const errors = [];
+            
+            // Povinná pole
+            const requiredFields = [
+                { id: 'vykupka', name: 'Číslo výkupky' },
+                { id: 'typTelefonu', name: 'Typ telefonu' },
+                { id: 'imei', name: 'IMEI' },
+                { id: 'cena', name: 'Cena' },
+                { id: 'vykoupil', name: 'Kdo vykoupil' },
+                { id: 'jmenoKlienta', name: 'Jméno klienta' },
+                { id: 'prijmeniKlienta', name: 'Příjmení klienta' },
+                { id: 'adresaKlienta', name: 'Adresa klienta' },
+                { id: 'rodneCislo', name: 'Rodné číslo' },
+                { id: 'mistoVydaniDokladu', name: 'Místo vydání dokladu' },
+                { id: 'datumVydaniDokladu', name: 'Datum vydání dokladu' },
+                { id: 'platnostDo', name: 'Platnost do' },
+                { id: 'datumNarozeni', name: 'Datum narození' }
+            ];
+            
+            requiredFields.forEach(field => {
+                const element = document.getElementById(field.id);
+                if (!element.value.trim()) {
+                    errors.push(`${field.name} je povinné pole`);
+                    element.style.borderColor = '#ef4444';
+                    element.style.boxShadow = '0 0 0 3px rgba(239, 68, 68, 0.1)';
+                } else {
+                    element.style.borderColor = '';
+                    element.style.boxShadow = '';
+                }
+            });
+            
+            // Validace IMEI (pouze číslice, libovolný počet)
+            const imei = document.getElementById('imei').value.trim();
+            if (imei && !/^\d+$/.test(imei)) {
+                errors.push('IMEI může obsahovat pouze číslice');
+            }
+            
+            // Validace ceny (musí být číslo větší než 0)
+            const cena = document.getElementById('cena').value.trim();
+            if (cena && (isNaN(cena) || parseInt(cena) <= 0)) {
+                errors.push('Cena musí být kladné číslo');
+            }
+            
+            // Validace rodného čísla (základní kontrola - pouze číslice a případné lomítko)
+            const rodneCislo = document.getElementById('rodneCislo').value.trim();
+            if (rodneCislo && !/^[\d\/]+$/.test(rodneCislo)) {
+                errors.push('Rodné číslo může obsahovat pouze číslice a lomítko');
+            }
+            
+            // Validace telefonního čísla (pokud je vyplněno)
+            const telefon = document.getElementById('telefonniCislo').value.trim();
+            if (telefon && !/^(\+420)?\s?\d{3}\s?\d{3}\s?\d{3}$/.test(telefon)) {
+                errors.push('Telefonní číslo musí být ve správném formátu');
+            }
+            
+            return {
+                isValid: errors.length === 0,
+                errors: errors
+            };
+        }
+        
+        // Animace pro úspěch
+        function showSuccessAnimation() {
+            // Vytvoření konfet
+            createConfetti();
+            
+            // Přidání emoji a textu
+            const successEmoji = document.createElement('div');
+            successEmoji.className = 'success-emoji';
+            successEmoji.innerHTML = '👍';
+            successEmoji.style.top = '30%';
+            successEmoji.style.left = '50%';
+            successEmoji.style.transform = 'translateX(-50%)';
+            document.body.appendChild(successEmoji);
+            
+            const celebrationText = document.createElement('div');
+            celebrationText.className = 'celebration-text';
+            celebrationText.innerHTML = '🎉 Úspěšně uloženo! 🎉';
+            document.body.appendChild(celebrationText);
+            
+            // Přidání sparkle efektů
+            createSparkles();
+            
+            // Odstranění po 4 sekundách
+            setTimeout(() => {
+                successEmoji.remove();
+                celebrationText.remove();
+            }, 4000);
+        }
+        
+        // Animace pro chybu
+        function showErrorAnimation(errors) {
+            const errorEmoji = document.createElement('div');
+            errorEmoji.className = 'error-emoji';
+            errorEmoji.innerHTML = '😞';
+            errorEmoji.style.top = '30%';
+            errorEmoji.style.left = '50%';
+            errorEmoji.style.transform = 'translateX(-50%)';
+            document.body.appendChild(errorEmoji);
+            
+            const errorText = document.createElement('div');
+            errorText.className = 'error-text';
+            errorText.innerHTML = '😞 Něco se nepovedlo';
+            document.body.appendChild(errorText);
+            
+            // Odstranění po 3 sekundách
+            setTimeout(() => {
+                errorEmoji.remove();
+                errorText.remove();
+            }, 3000);
+        }
+        
+        // Vytvoření konfet
+        function createConfetti() {
+            const animationOverlay = document.createElement('div');
+            animationOverlay.className = 'animation-overlay';
+            document.body.appendChild(animationOverlay);
+            
+            // Vytvoření 50 konfet
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti-piece';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                animationOverlay.appendChild(confetti);
+            }
+            
+            // Odstranění overlay po 5 sekundách
+            setTimeout(() => {
+                animationOverlay.remove();
+            }, 5000);
+        }
+        
+        // Vytvoření sparkle efektů
+        function createSparkles() {
+            const sparkleContainer = document.createElement('div');
+            sparkleContainer.style.position = 'fixed';
+            sparkleContainer.style.top = '0';
+            sparkleContainer.style.left = '0';
+            sparkleContainer.style.width = '100vw';
+            sparkleContainer.style.height = '100vh';
+            sparkleContainer.style.pointerEvents = 'none';
+            sparkleContainer.style.zIndex = '9998';
+            document.body.appendChild(sparkleContainer);
+            
+            // Vytvoření 20 sparkles
+            for (let i = 0; i < 20; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.innerHTML = '✨';
+                sparkle.style.left = Math.random() * 100 + 'vw';
+                sparkle.style.top = Math.random() * 100 + 'vh';
+                sparkle.style.animationDelay = Math.random() * 2 + 's';
+                sparkleContainer.appendChild(sparkle);
+            }
+            
+            // Odstranění po 3 sekundách
+            setTimeout(() => {
+                sparkleContainer.remove();
+            }, 3000);
+        }
+        
+        // Funkce pro skrytí obsahu podle role uživatele
+        function setupRoleBasedAccess() {
+            const userRole = localStorage.getItem('role');
+            console.log('Kontrola role pro bazar:', userRole);
+            
+            if (userRole === 'Prodejce') {
+                console.log('Uživatel je Prodejce - skrývám statistiky a zobrazuji pouze formulář');
+                
+                // Skrytí všech sekcí kromě formuláře
+                const sectionsToHide = [
+                    'hero', // hero sekce s nadpisem
+                    'dataCont', // kontejner s daty
+                    'retro' // retro tabulka
+                ];
+                
+                sectionsToHide.forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.style.display = 'none';
+                    }
+                });
+                
+                // Skrytí všech div elementů s tabulkami a statistikami
+                document.querySelectorAll('.data-container:not(#newBazarForm)').forEach(container => {
+                    container.style.display = 'none';
+                });
+                
+                // Změna nadpisu stránky
+                document.title = 'Přidat výkup - Mobil Maják';
+                
+                // Úprava hero sekce jen pro formulář
+                const heroSection = document.querySelector('.hero');
+                if (heroSection) {
+                    heroSection.innerHTML = `
+                        <div class="container">
+                            <h1>Přidat nový výkup</h1>
+                            <p>Formulář pro registraci výkupu mobilního telefonu</p>
+                        </div>
+                    `;
+                    heroSection.style.display = 'block';
+                }
+                
+                                 // Automatické otevření formuláře pro prodejce
+                 setTimeout(() => {
+                     const newBazarBtn = document.getElementById('newBazarBtn');
+                     const newBazarForm = document.getElementById('newBazarForm');
+                     
+                     if (newBazarBtn && newBazarForm) {
+                         newBazarForm.style.display = 'block';
+                         newBazarBtn.style.display = 'none';
+                         console.log('Formulář automaticky otevřen pro prodejce');
+                         
+                         // Scroll k formuláři
+                         newBazarForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                     }
+                 }, 100);
+                 
+                 // Úprava close buttonu pro prodejce - přesměrování na prodejny
+                 setTimeout(() => {
+                     const closeBtn = document.getElementById('closeFormBtn');
+                     if (closeBtn) {
+                         closeBtn.addEventListener('click', function() {
+                             window.location.href = 'prodejny.html';
+                         });
+                     }
+                 }, 200);
+            } else {
+                console.log('Uživatel je Administrátor - zobrazuji plný obsah');
+            }
+        }
+        
+        // Volání při načtení stránky
+        document.addEventListener('DOMContentLoaded', function() {
+            setupRoleBasedAccess();
         });
     </script>
 </body>

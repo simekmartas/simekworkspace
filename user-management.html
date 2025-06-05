@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Správa uživatelů - Mobil Maják</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .management-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .user-table-container {
+            background: var(--terminal-bg);
+            border: 2px solid var(--terminal-green);
+            padding: 20px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+        }
+        
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .user-table th,
+        .user-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+        }
+        
+        .user-table th {
+            color: var(--terminal-green);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+        
+        .user-table td {
+            color: var(--terminal-green);
+            font-size: 14px;
+        }
+        
+        .user-table tr:hover {
+            background: rgba(0, 255, 65, 0.05);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-edit, .btn-delete, .btn-add {
+            background: transparent;
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green);
+            padding: 6px 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-edit:hover {
+            background: var(--terminal-green);
+            color: #000;
+        }
+        
+        .btn-delete {
+            border-color: #ff0040;
+            color: #ff0040;
+        }
+        
+        .btn-delete:hover {
+            background: #ff0040;
+            color: #000;
+        }
+        
+        .btn-add {
+            background: var(--terminal-green);
+            color: #000;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        .btn-add:hover {
+            background: #fff;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        
+        .modal-content {
+            background-color: var(--terminal-bg);
+            margin: 10% auto;
+            padding: 30px;
+            border: 2px solid var(--terminal-green);
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+        }
+        
+        .modal-header {
+            color: var(--terminal-green);
+            font-size: 20px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            color: var(--terminal-green);
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            background: #000;
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 30px;
+        }
+        
+        .btn-save, .btn-cancel {
+            padding: 10px 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-save {
+            background: var(--terminal-green);
+            color: #000;
+            border: none;
+            font-weight: 700;
+        }
+        
+        .btn-save:hover {
+            background: #fff;
+        }
+        
+        .btn-cancel {
+            background: transparent;
+            color: var(--terminal-green);
+            border: 1px solid var(--terminal-green);
+        }
+        
+        .btn-cancel:hover {
+            background: rgba(0, 255, 65, 0.1);
+        }
+        
+        .info-panel {
+            background: var(--terminal-bg);
+            border: 2px solid var(--terminal-green);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .info-title {
+            color: var(--terminal-green);
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        
+        .info-text {
+            color: var(--terminal-green);
+            font-size: 14px;
+            opacity: 0.7;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body class="protected-page">
+    <header>
+        <nav>
+            <ul id="navigation-menu">
+                <!-- Navigace bude vložena JavaScriptem -->
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <h1>&gt; SPRÁVA UŽIVATELŮ_</h1>
+            <p>Administrace prodejců a jejich přístupů</p>
+        </section>
+
+        <div class="management-container">
+            <div class="info-panel">
+                <div class="info-title">// Informace</div>
+                <div class="info-text">
+                    Zde můžete spravovat uživatelské účty prodejců. Každý prodejce má přiřazenou prodejnu a přihlašovací údaje.
+                    Po přihlášení vidí prodejce pouze své statistiky. Admin může přepínat mezi všemi prodejci.
+                </div>
+            </div>
+
+            <button class="btn-add" onclick="userManager.showAddModal()">+ Přidat nového prodejce</button>
+
+            <div class="user-table-container">
+                <table class="user-table" id="userTable">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Jméno</th>
+                            <th>Uživatelské jméno</th>
+                            <th>Prodejna</th>
+                            <th>Role</th>
+                            <th>Akce</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody">
+                        <!-- Data budou načtena JavaScriptem -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal pro přidání/editaci uživatele -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <h2 class="modal-header" id="modalTitle">// Přidat prodejce</h2>
+            <form id="userForm">
+                <input type="hidden" id="userId" value="">
+                
+                <div class="form-group">
+                    <label class="form-label" for="name">Celé jméno</label>
+                    <input type="text" id="name" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="username">Uživatelské jméno</label>
+                    <input type="text" id="username" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="password">Heslo</label>
+                    <input type="password" id="password" class="form-input">
+                    <small style="color: var(--terminal-green); opacity: 0.6; font-size: 12px;">
+                        Při editaci nechte prázdné pro zachování stávajícího hesla
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="prodejna">Prodejna</label>
+                    <input type="text" id="prodejna" class="form-input" required>
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" onclick="userManager.closeModal()">Zrušit</button>
+                    <button type="submit" class="btn-save">Uložit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+    </footer>
+
+    <div class="version-info">v2.2.0</div>
+
+    <script src="navigation.js"></script>
+    <script src="auth-new.js"></script>
+    <script src="user-management.js"></script>
+</body>
+</html> 

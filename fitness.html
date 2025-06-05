@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Kalorie Tracker | Simek.work</title>
+    <link rel="stylesheet" href="fitness.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1><i class="fas fa-dumbbell"></i> Fitness Tracker</h1>
+            <div class="header-actions">
+                <div class="date-display" id="currentDate"></div>
+                <button class="logout-btn" id="logoutBtn" title="Odhlásit se">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Daily Summary Card -->
+            <div class="summary-card">
+                <div class="calories-display">
+                    <div class="calories-consumed">
+                        <span class="number" id="caloriesConsumed">0</span>
+                        <span class="label">Spotřebováno</span>
+                    </div>
+                    <div class="calories-remaining">
+                        <span class="number" id="caloriesRemaining">2000</span>
+                        <span class="label">Zbývá</span>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="daily-goal">
+                    <span>Denní cíl: <span id="dailyGoal">2000</span> kcal</span>
+                </div>
+            </div>
+
+            <!-- Camera Section -->
+            <div class="camera-section">
+                <div class="camera-container" id="cameraContainer">
+                    <video id="camera" autoplay playsinline></video>
+                    <canvas id="canvas" style="display: none;"></canvas>
+                    <div class="camera-overlay">
+                        <div class="camera-frame"></div>
+                        <p class="camera-instruction">Namiřte kameru na jídlo</p>
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button class="btn-camera" id="startCamera">
+                        <i class="fas fa-camera"></i>
+                        Spustit kameru
+                    </button>
+                    <button class="btn-capture" id="capturePhoto" style="display: none;">
+                        <i class="fas fa-circle"></i>
+                        Vyfotit jídlo
+                    </button>
+                    <button class="btn-upload" id="uploadPhoto">
+                        <i class="fas fa-upload"></i>
+                        Nahrát foto
+                    </button>
+                    <button class="btn-gallery" id="galleryPhoto">
+                        <i class="fas fa-images"></i>
+                        Galerie
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" capture="environment" multiple="false" style="display: none;">
+                    <input type="file" id="galleryInput" accept="image/*" multiple="false" style="display: none;">
+                </div>
+            </div>
+
+            <!-- Processing Status -->
+            <div class="processing-status" id="processingStatus" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzujem jídlo pomocí AI...</p>
+            </div>
+
+            <!-- Quick Add Section -->
+            <div class="quick-add-section">
+                <h3><i class="fas fa-plus-circle"></i> Rychlé přidání</h3>
+                <div class="quick-add-form">
+                    <input type="text" id="foodName" placeholder="Název jídla">
+                    <input type="number" id="calories" placeholder="Kalorie">
+                    <button class="btn-add" id="addManual">
+                        <i class="fas fa-plus"></i>
+                        Přidat
+                    </button>
+                </div>
+            </div>
+
+            <!-- Today's Meals -->
+            <div class="meals-section">
+                <h3><i class="fas fa-utensils"></i> Dnešní jídla</h3>
+                <div class="meals-list" id="mealsList">
+                    <!-- Meals will be dynamically added here -->
+                </div>
+            </div>
+
+            <!-- Statistics Section -->
+            <div class="stats-section" id="statsSection" style="display: none;">
+                <h3><i class="fas fa-chart-line"></i> Statistiky</h3>
+                
+                <!-- Period Selector -->
+                <div class="period-selector">
+                    <button class="period-btn active" data-period="week">Týden</button>
+                    <button class="period-btn" data-period="month">Měsíc</button>
+                    <button class="period-btn" data-period="year">Rok</button>
+                </div>
+
+                <!-- Stats Cards -->
+                <div class="stats-cards">
+                    <div class="stat-card">
+                        <div class="stat-number" id="avgCalories">0</div>
+                        <div class="stat-label">Průměr/den</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalCalories">0</div>
+                        <div class="stat-label">Celkem</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="goalDays">0</div>
+                        <div class="stat-label">Dní v cíli</div>
+                    </div>
+                </div>
+
+                <!-- Chart Container -->
+                <div class="chart-container">
+                    <canvas id="caloriesChart" width="400" height="200"></canvas>
+                </div>
+
+                <!-- Export/Import -->
+                <div class="data-management">
+                    <button class="btn-export" id="exportData">
+                        <i class="fas fa-download"></i>
+                        Export dat
+                    </button>
+                    <button class="btn-import" id="importData">
+                        <i class="fas fa-upload"></i>
+                        Import dat
+                    </button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;">
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="history-section" id="historySection" style="display: none;">
+                <h3><i class="fas fa-history"></i> Historie jídel</h3>
+                
+                <!-- Date Filter -->
+                <div class="date-filter">
+                    <input type="date" id="dateFilter" class="date-input">
+                    <button class="btn-filter" id="filterHistory">
+                        <i class="fas fa-filter"></i>
+                        Filtrovat
+                    </button>
+                    <button class="btn-clear-filter" id="clearFilter">
+                        <i class="fas fa-times"></i>
+                        Vše
+                    </button>
+                </div>
+
+                <!-- History List -->
+                <div class="history-list" id="historyList">
+                    <!-- History items will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="settings-section" id="settingsSection">
+                <h3><i class="fas fa-cog"></i> Nastavení</h3>
+                
+                <!-- Goals Settings -->
+                <div class="settings-group">
+                    <h4>Cíle</h4>
+                    <div class="setting-item">
+                        <label for="goalInput">Denní cíl kalorií:</label>
+                        <input type="number" id="goalInput" value="2000" min="1000" max="5000">
+                    </div>
+                    <div class="setting-item">
+                        <label for="weeklyGoalInput">Týdenní cíl kalorií:</label>
+                        <input type="number" id="weeklyGoalInput" value="14000" min="7000" max="35000">
+                    </div>
+                </div>
+
+                <!-- Notifications Settings -->
+                <div class="settings-group">
+                    <h4>Notifikace</h4>
+                    <div class="setting-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="goalNotifications" checked>
+                            <span class="checkmark"></span>
+                            Upozornění při dosažení cíle
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="reminderNotifications">
+                            <span class="checkmark"></span>
+                            Připomínky k zapisování jídel
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Data Management -->
+                <div class="settings-group">
+                    <h4>Data</h4>
+                    <div class="setting-item">
+                        <button class="btn-danger" id="clearAllData">
+                            <i class="fas fa-trash"></i>
+                            Vymazat všechna data
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-save" id="saveSettings">
+                    <i class="fas fa-save"></i>
+                    Uložit nastavení
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" data-section="today">
+            <i class="fas fa-home"></i>
+            <span>Dnes</span>
+        </button>
+        <button class="nav-item" data-section="history">
+            <i class="fas fa-history"></i>
+            <span>Historie</span>
+        </button>
+        <button class="nav-item" data-section="stats">
+            <i class="fas fa-chart-line"></i>
+            <span>Statistiky</span>
+        </button>
+        <button class="nav-item" data-section="profile">
+            <i class="fas fa-user"></i>
+            <span>Profil</span>
+        </button>
+    </nav>
+
+    <!-- Modal for photo preview -->
+    <div class="modal" id="photoModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Náhled fotky</h3>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <img id="photoPreview" src="" alt="Náhled jídla">
+                <div class="photo-actions">
+                    <button class="btn-analyze" id="analyzePhoto">
+                        <i class="fas fa-brain"></i>
+                        Analyzovat AI
+                    </button>
+                    <button class="btn-retake" id="retakePhoto">
+                        <i class="fas fa-redo"></i>
+                        Nová fotka
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Kontrola přihlášení před načtením aplikace
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM načten, kontroluji přihlášení...');
+            
+            const isLoggedIn = localStorage.getItem('fitnessLoggedIn');
+            console.log('Stav přihlášení:', isLoggedIn);
+            
+            if (!isLoggedIn || isLoggedIn !== 'true') {
+                console.log('Uživatel není přihlášený, přesměrovávám...');
+                // Přesměruj na přihlašovací stránku
+                window.location.href = 'fitness-login.html';
+                return;
+            }
+            
+            console.log('Uživatel je přihlášený, načítám aplikaci...');
+            
+            // Pokud je přihlášený, načti hlavní aplikaci
+            const script = document.createElement('script');
+            script.src = 'fitness.js';
+            script.onload = function() {
+                console.log('fitness.js úspěšně načten');
+            };
+            script.onerror = function() {
+                console.error('Chyba při načítání fitness.js');
+                alert('Chyba při načítání aplikace. Zkontrolujte, že soubor fitness.js existuje.');
+            };
+            document.body.appendChild(script);
+        });
+    </script>
+</body>
+</html> 

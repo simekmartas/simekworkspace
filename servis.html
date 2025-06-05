@@ -7,64 +7,72 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#ff1493">
 </head>
 <body class="protected-page">
     <header>
-        <nav>
-            <ul>
-                <!-- Navigace bude vložena JavaScriptem -->
-            </ul>
-        </nav>
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude vložena JavaScriptem -->
+                </ul>
+            </nav>
+            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
+        </div>
     </header>
 
     <main>
         <section class="hero">
-            <h1>&gt; SERVIS_</h1>
-            <p>Statistiky servisních služeb</p>
+            <div class="container">
+                <h1>Servis</h1>
+                <p>Statistiky servisních služeb</p>
+            </div>
         </section>
 
         <section>
-            <div id="servisDataContainer">
-                <!-- Servisní data budou načtena zde -->
+            <div class="container">
+                <div id="servisDataContainer">
+                    <!-- Servisní data budou načtena zde -->
+                </div>
             </div>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        <div class="container">
+            <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        </div>
     </footer>
 
-    <div class="version-info">v2.1.0</div>
+    <div class="version-info">v2.3.0</div>
 
+    <script src="access-control.js"></script>
+    <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
     <script src="servis-data-loader.js"></script>
     <script>
-        // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
-        if (!localStorage.getItem('isLoggedIn')) {
-            // Okamžité přesměrování bez možnosti zobrazení obsahu
-            window.location.replace('login.html');
-        } else {
-            // Uživatel je přihlášen, zobrazit obsah
-            document.body.classList.add('authenticated');
+        // Inicializace servisního data loaderu pouze po úspěšné autentifikaci
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Servis.html inicializace dokončena');
             
-            // Inicializace servisního data loaderu
-            window.servisLoader = new ServisDataLoader('servisDataContainer');
-            window.servisLoader.loadServisData();
-        }
-        
-        // Dodatečná kontrola při každém načtení stránky
-        window.addEventListener('focus', function() {
-            if (!localStorage.getItem('isLoggedIn')) {
-                window.location.replace('login.html');
-            }
-        });
-        
-        // Kontrola při změně localStorage (např. odhlášení v jiném tabu)
-        window.addEventListener('storage', function(e) {
-            if (e.key === 'isLoggedIn' && !e.newValue) {
-                window.location.replace('login.html');
-            }
+            // Kontrola přístupů se provádí automaticky v access-control.js
+            // Pokud má uživatel přístup, inicializujeme data loader
+            setTimeout(() => {
+                if (document.body.classList.contains('authenticated')) {
+                    // Inicializace servisního data loaderu
+                    window.servisLoader = new ServisDataLoader('servisDataContainer');
+                    window.servisLoader.loadServisData();
+                    console.log('Servis data loader inicializován');
+                }
+                
+                // Wait for theme manager to be ready
+                if (window.themeManager) {
+                    window.themeManager.updateAllToggleButtons();
+                    console.log('Theme toggle buttons aktualizovány na servis.html');
+                }
+            }, 200);
         });
     </script>
 </body>

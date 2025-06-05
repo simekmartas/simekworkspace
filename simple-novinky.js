@@ -35,7 +35,7 @@ function savePosts() {
         localStorage.setItem('simple_posts', JSON.stringify(posts));
     } catch (error) {
         if (error.name === 'QuotaExceededError') {
-            alert('Nedostatek místa v localStorage. Kontaktujte administrátora pro vyčištění cache.');
+            alert('Chyba při ukládání: Nedostatek místa v localStorage. Kontaktujte administrátora pro vyčištění cache.');
             console.error('localStorage QuotaExceededError - nutno vyčistit cache');
         } else {
             console.error('Chyba při ukládání:', error);
@@ -451,7 +451,7 @@ async function applyCrop() {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // 4K kvalita pro server upload
+    // Nastav canvas na jednotnou velikost (1:1 poměr - čtverec) - 4K kvalita
     canvas.width = 3840;
     canvas.height = 3840;
     
@@ -478,8 +478,8 @@ async function applyCrop() {
         const croppedImage = canvas.toDataURL('image/jpeg', 0.8);
         
         try {
-            // Pošli fotku na Node.js server
-            const response = await fetch('/upload-image', {
+            // Pošli fotku na server
+            const response = await fetch('upload.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -537,7 +537,7 @@ function triggerFileUpload() {
     document.getElementById('fileInput').click();
 }
 
-async function handleFileUpload(event) {
+function handleFileUpload(event) {
     const file = event.target.files[0];
     if (file) {
         // Limit velikosti souboru (max 50MB)
@@ -546,39 +546,23 @@ async function handleFileUpload(event) {
             return;
         }
         
-        try {
-            // Pošli soubor na Node.js server
-            const formData = new FormData();
-            formData.append('file', file);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            selectedFile = {
+                name: file.name,
+                size: formatFileSize(file.size),
+                data: e.target.result,
+                type: file.type
+            };
             
-            const response = await fetch('/upload-file', {
-                method: 'POST',
-                body: formData
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                selectedFile = {
-                    name: result.originalName,
-                    size: formatFileSize(result.size),
-                    url: result.url,
-                    type: file.type
-                };
-                
-                document.getElementById('fileName').textContent = selectedFile.name;
-                document.getElementById('fileSize').textContent = selectedFile.size;
-                const preview = document.getElementById('filePreview');
-                preview.classList.remove('hidden');
-                preview.style.display = 'flex';
-                updateShareButton();
-            } else {
-                throw new Error(result.error || 'Chyba při uploadu');
-            }
-        } catch (error) {
-            console.error('Chyba při uploadu souboru:', error);
-            alert('Chyba při ukládání souboru: ' + error.message);
-        }
+            document.getElementById('fileName').textContent = selectedFile.name;
+            document.getElementById('fileSize').textContent = selectedFile.size;
+            const preview = document.getElementById('filePreview');
+            preview.classList.remove('hidden');
+            preview.style.display = 'flex';
+            updateShareButton();
+        };
+        reader.readAsDataURL(file);
     }
 }
 
@@ -750,7 +734,7 @@ function createPostHTML(post) {
                              <div class="file-name">${post.file.name}</div>
                              <div class="file-size">${post.file.size}</div>
                          </div>
-                         <button class="file-download" onclick="downloadFile('${post.file.url || post.file.data}', '${post.file.name}')">
+                         <button class="file-download" onclick="downloadFile('${post.file.data}', '${post.file.name}')">
                              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                                  <polyline points="7,10 12,15 17,10"/>
@@ -1015,11 +999,10 @@ function openImageModal(imageSrc) {
     document.body.appendChild(modal);
 }
 
-function downloadFile(fileUrl, fileName) {
+function downloadFile(dataUrl, fileName) {
     const link = document.createElement('a');
     link.download = fileName;
-    link.href = fileUrl;
-    link.target = '_blank';
+    link.href = dataUrl;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

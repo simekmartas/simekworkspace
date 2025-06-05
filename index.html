@@ -5,34 +5,152 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mobil Maják</title>
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#ff1493">
+    <meta name="description" content="Mobil Maják - Moderní systém pro správu prodejních dat">
 </head>
 <body>
     <header>
         <div class="header-content">
-            <a href="index.html" class="logo">MOBIL MAJÁK</a>
+            <a href="index.html" class="logo">Mobil Maják</a>
             <nav>
                 <ul>
                     <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
                 </ul>
             </nav>
+            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
         </div>
     </header>
 
     <main>
-        <section id="domu" class="hero">
-            <h1>&gt; VÍTEJTE V MOBIL MAJÁKU_</h1>
-            <p>// Pro zobrazení dat je nutné se přihlásit</p>
+        <section class="hero">
+            <div class="container">
+                <h1>Vítejte v Mobil Majáku</h1>
+                <p>Moderní systém pro správu prodejních dat a statistik. Pro zobrazení dat je nutné se přihlásit.</p>
+            </div>
+        </section>
+
+        <section id="o-nas">
+            <div class="container" style="padding: 5rem 0; text-align: center;">
+                <h2 style="font-size: 2.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 2rem;">O nás</h2>
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <p style="font-size: 1.125rem; color: var(--text-secondary); line-height: 1.8; margin-bottom: 2rem;">
+                        Mobil Maják je moderní systém pro správu a analýzu prodejních dat. Náš systém poskytuje 
+                        přehledné statistiky, detailní reporty a pokročilé nástroje pro optimalizaci obchodních procesů.
+                    </p>
+                    <div class="stats-grid" style="margin-top: 3rem;">
+                        <div class="stat-card">
+                            <div class="stat-label">Prodejny</div>
+                            <div class="stat-value">5+</div>
+                            <div class="stat-subvalue">Po celé České republice</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Služby</div>
+                            <div class="stat-value">10+</div>
+                            <div class="stat-subvalue">Různé typy služeb</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Analytika</div>
+                            <div class="stat-value">24/7</div>
+                            <div class="stat-subvalue">Nepřetržité monitorování</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="kontakt" style="background: var(--bg-secondary); border-top: 1px solid var(--border-light);">
+            <div class="container" style="padding: 5rem 0;">
+                <h2 style="font-size: 2.5rem; font-weight: 800; color: var(--text-primary); margin-bottom: 3rem; text-align: center;">Kontakt</h2>
+                <div style="max-width: 600px; margin: 0 auto;">
+                    <form id="contact-form" style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                            <input type="text" id="name" placeholder="Vaše jméno" required>
+                            <input type="email" id="email" placeholder="Váš email" required>
+                        </div>
+                        <input type="text" id="subject" placeholder="Předmět zprávy" required>
+                        <textarea id="message" placeholder="Vaše zpráva" rows="6" required></textarea>
+                        <button type="submit" class="btn btn-primary" style="align-self: center;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22,2 15,22 11,13 2,9 22,2"></polygon>
+                            </svg>
+                            Odeslat zprávu
+                        </button>
+                    </form>
+                    <div id="contact-message" class="message" style="display: none; margin-top: 1.5rem;"></div>
+                </div>
+            </div>
         </section>
     </main>
 
     <footer>
-        <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        <div class="container">
+            <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        </div>
     </footer>
 
-    <div class="version-info">&lt; v1.0 &gt;</div>
+    <div class="version-info">v2.0</div>
 
+    <!-- Správné pořadí načítání scriptů -->
+    <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
     <script src="script.js"></script>
+    <script>
+        // Ensure proper initialization order
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Index.html inicializace dokončena');
+            
+            // Wait for theme manager to be ready
+            setTimeout(() => {
+                if (window.themeManager) {
+                    window.themeManager.updateAllToggleButtons();
+                    console.log('Theme toggle buttons aktualizovány na index.html');
+                }
+            }, 200);
+        });
+
+        // Contact form handling
+        document.getElementById('contact-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const messageEl = document.getElementById('contact-message');
+            const formData = new FormData(this);
+            
+            // Simulate form submission
+            messageEl.className = 'message success';
+            messageEl.style.display = 'block';
+            messageEl.textContent = 'Zpráva byla úspěšně odeslána. Děkujeme za váš zájem!';
+            
+            // Reset form
+            this.reset();
+            
+            // Hide message after 5 seconds
+            setTimeout(() => {
+                messageEl.style.display = 'none';
+            }, 5000);
+        });
+
+        // Smooth scrolling for navigation links
+        document.addEventListener('click', function(e) {
+            if (e.target.matches('a[href^="#"]')) {
+                e.preventDefault();
+                const targetId = e.target.getAttribute('href').substring(1);
+                const targetEl = document.getElementById(targetId);
+                
+                if (targetEl) {
+                    const headerHeight = 64; // Header height
+                    const targetPosition = targetEl.offsetTop - headerHeight;
+                    
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                }
+            }
+        });
+    </script>
 </body>
 </html> 
