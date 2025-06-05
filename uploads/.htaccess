@@ -1,0 +1,11 @@
+# Zakáže spouštění PHP souborů v uploads složce
+<Files "*.php">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Povolí pouze obrázky
+<FilesMatch "\.(jpg|jpeg|png|gif|webp)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch> 

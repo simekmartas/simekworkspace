@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novinky - MOBIL MAJAK</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="protected-page">
+
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo">MOBIL MAJAK</a>
+                <nav>
+                    <ul>
+                        <li><a href="index.html">Domů</a></li>
+                        <li><a href="o-nas.html">O nás</a></li>
+                        <li><a href="kontakt.html">Kontakt</a></li>
+                        <li><a href="mobil-majak.html">Mobil Majak</a></li>
+                        <li><a href="novinky.html" class="active">📢 Novinky</a></li>
+                        <li><a href="databaze.html">Databáze</a></li>
+                    </ul>
+                </nav>
+                <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+                <div class="hamburger" onclick="toggleNav()">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="app"></div>
+    </main>
+
+    <script src="access-control.js"></script>
+    <script src="navigation.js"></script>
+    <script src="theme-toggle.js"></script>
+    <script src="simple-novinky.js"></script>
+
+</body>
+</html> 

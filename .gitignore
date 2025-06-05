@@ -30,4 +30,15 @@ dist/
 # Dočasné soubory
 *~
 *.bak
-*.tmp 
+*.tmp
+
+# Ignoruj nahrané soubory od uživatelů
+uploads/*.jpg
+uploads/*.jpeg
+uploads/*.png
+uploads/*.gif
+uploads/*.webp
+
+# Ale zachovej strukturu složky
+!uploads/.gitkeep
+!uploads/.htaccess 
