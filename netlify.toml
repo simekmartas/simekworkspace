@@ -1,0 +1,74 @@
+[build]
+  publish = "."
+  functions = "api"
+
+# Nastavení HTTPS a HTTP hlaviček
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = '''
+      default-src 'self' https:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval' https:;
+      style-src 'self' 'unsafe-inline' https:;
+      img-src 'self' data: https:;
+      font-src 'self' https:;
+      connect-src 'self' https: wss:;
+      frame-src 'none';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    '''
+
+# Přesměrování HTTP na HTTPS
+[[redirects]]
+  from = "http://*"
+  to = "https://:splat"
+  status = 301
+  force = true
+
+# Zajistí, že cesty jako /majak správně zobrazí majak.html
+[[redirects]]
+  from = "/majak"
+  to = "/majak.html"
+  status = 200
+  
+[[redirects]]
+  from = "/calculator"
+  to = "/calculator.html"
+  status = 200
+  
+[[redirects]]
+  from = "/members"
+  to = "/members.html"
+  status = 200
+  
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+# Fallback - pro SPA aplikace
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Redirects for Netlify functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# API proxy for Google Sheets
+[[redirects]]
+  from = "/api/sheets/*"
+  to = "/.netlify/functions/sheets"
+  status = 200
+
+[functions]
+  directory = "api" 

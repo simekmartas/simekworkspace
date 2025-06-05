@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Filtrování Bazarových Statistik</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 8px;
+        }
+        .test-header {
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 20px;
+        }
+        .debug-info {
+            background: #2a2a2a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            color: #00ff00;
+            white-space: pre-wrap;
+        }
+        .test-buttons {
+            margin: 20px 0;
+        }
+        .test-btn {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        .test-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1 class="test-header">🧪 TEST FILTROVÁNÍ BAZAROVÝCH STATISTIK</h1>
+        
+        <div class="test-buttons">
+            <button class="test-btn" onclick="testJanuaryFilter()">Test LEDEN 2025</button>
+            <button class="test-btn" onclick="testCustomDateRange()">Test Vlastní Rozsah</button>
+            <button class="test-btn" onclick="testShowAll()">Test Zobrazit Vše</button>
+            <button class="test-btn" onclick="clearDebug()">Vymazat Debug</button>
+        </div>
+        
+        <div id="debugInfo" class="debug-info">
+=== DEBUG INFORMACE ===
+Čekám na inicializaci...
+        </div>
+        
+        <!-- Kontejner pro bazarová data -->
+        <div id="bazarDataContainer"></div>
+    </div>
+
+    <script src="bazar-data-loader.js"></script>
+    <script>
+        let bazarLoader;
+        let debugElement;
+
+        function log(message) {
+            if (!debugElement) {
+                debugElement = document.getElementById('debugInfo');
+            }
+            const timestamp = new Date().toLocaleTimeString();
+            debugElement.textContent += `\n[${timestamp}] ${message}`;
+            debugElement.scrollTop = debugElement.scrollHeight;
+            console.log(message);
+        }
+
+        function clearDebug() {
+            if (debugElement) {
+                debugElement.textContent = '=== DEBUG INFORMACE ===\nDebug vymazán...\n';
+            }
+        }
+
+        function testJanuaryFilter() {
+            log('🧪 TESTOVÁNÍ FILTRU LEDEN 2025');
+            
+            if (!bazarLoader) {
+                log('❌ BazarLoader není inicializován');
+                return;
+            }
+            
+            // Nastavit leden 2025
+            const dateFromInput = document.getElementById('dateFrom');
+            const dateToInput = document.getElementById('dateTo');
+            
+            if (dateFromInput && dateToInput) {
+                dateFromInput.value = '1.1.2025';
+                dateToInput.value = '31.1.2025';
+                
+                log('✅ Nastaveny datumy: 1.1.2025 - 31.1.2025');
+                
+                // Spustit filtrování
+                bazarLoader.filterTable();
+                
+                // Zkontrolovat výsledky
+                setTimeout(() => {
+                    const prodanoElement = document.querySelector('.stat-box .stat-value');
+                    const prodanoZaElement = document.querySelectorAll('.stat-box-small .stat-value-small')[1];
+                    
+                    if (prodanoElement && prodanoZaElement) {
+                        log(`📊 PRODÁNO: ${prodanoElement.textContent}`);
+                        log(`📊 PRODÁNO ZA: ${prodanoZaElement.textContent}`);
+                        log(`📊 Filtrovaná statistická data: ${bazarLoader.filteredStatisticsData ? bazarLoader.filteredStatisticsData.length : 'N/A'}`);
+                        log(`📊 Celková statistická data: ${bazarLoader.statisticsData ? bazarLoader.statisticsData.length : 'N/A'}`);
+                    } else {
+                        log('❌ Nepodařilo se najít statistické elementy');
+                    }
+                }, 500);
+            } else {
+                log('❌ Nepodařilo se najít datové inputy');
+            }
+        }
+
+        function testCustomDateRange() {
+            log('🧪 TESTOVÁNÍ VLASTNÍHO ROZSAHU');
+            
+            if (!bazarLoader) {
+                log('❌ BazarLoader není inicializován');
+                return;
+            }
+            
+            // Nastavit rozsah 15.1.2025 - 20.1.2025
+            const dateFromInput = document.getElementById('dateFrom');
+            const dateToInput = document.getElementById('dateTo');
+            
+            if (dateFromInput && dateToInput) {
+                dateFromInput.value = '15.1.2025';
+                dateToInput.value = '20.1.2025';
+                
+                log('✅ Nastaveny datumy: 15.1.2025 - 20.1.2025');
+                
+                // Spustit filtrování
+                bazarLoader.filterTable();
+                
+                // Zkontrolovat výsledky
+                setTimeout(() => {
+                    const prodanoElement = document.querySelector('.stat-box .stat-value');
+                    const prodanoZaElement = document.querySelectorAll('.stat-box-small .stat-value-small')[1];
+                    
+                    if (prodanoElement && prodanoZaElement) {
+                        log(`📊 PRODÁNO: ${prodanoElement.textContent}`);
+                        log(`📊 PRODÁNO ZA: ${prodanoZaElement.textContent}`);
+                        log(`📊 Filtrovaná statistická data: ${bazarLoader.filteredStatisticsData ? bazarLoader.filteredStatisticsData.length : 'N/A'}`);
+                    } else {
+                        log('❌ Nepodařilo se najít statistické elementy');
+                    }
+                }, 500);
+            } else {
+                log('❌ Nepodařilo se najít datové inputy');
+            }
+        }
+
+        function testShowAll() {
+            log('🧪 TESTOVÁNÍ ZOBRAZIT VŠE');
+            
+            if (!bazarLoader) {
+                log('❌ BazarLoader není inicializován');
+                return;
+            }
+            
+            // Vymazat filtry
+            bazarLoader.showAllRecords();
+            
+            // Zkontrolovat výsledky
+            setTimeout(() => {
+                const prodanoElement = document.querySelector('.stat-box .stat-value');
+                const prodanoZaElement = document.querySelectorAll('.stat-box-small .stat-value-small')[1];
+                
+                if (prodanoElement && prodanoZaElement) {
+                    log(`📊 PRODÁNO (vše): ${prodanoElement.textContent}`);
+                    log(`📊 PRODÁNO ZA (vše): ${prodanoZaElement.textContent}`);
+                    log(`📊 Filtrovaná statistická data: ${bazarLoader.filteredStatisticsData ? bazarLoader.filteredStatisticsData.length : 'N/A'}`);
+                } else {
+                    log('❌ Nepodařilo se najít statistické elementy');
+                }
+            }, 500);
+        }
+
+        // Inicializace při načtení stránky
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Inicializuji BazarDataLoader...');
+            
+            try {
+                bazarLoader = new BazarDataLoader('bazarDataContainer');
+                
+                // Přepsat console.log pro zachycení debug zpráv
+                const originalLog = console.log;
+                console.log = function(...args) {
+                    originalLog.apply(console, args);
+                    if (args.length > 0 && typeof args[0] === 'string') {
+                        const message = args.join(' ');
+                        if (message.includes('📊') || message.includes('🔍') || message.includes('Filtrovan')) {
+                            log(`[LOADER] ${message}`);
+                        }
+                    }
+                };
+                
+                bazarLoader.loadBazarData();
+                log('✅ BazarDataLoader inicializován');
+                
+            } catch (error) {
+                log(`❌ Chyba při inicializaci: ${error.message}`);
+            }
+        });
+    </script>
+</body>
+</html> 

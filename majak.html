@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobil Maják</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+            <h1>&gt; Mobil Maják_</h1>
+            <div style="text-align:center; margin:2rem 0; color:#888888;">
+                <p>Data se zobrazují v sekci "Aktuální statistiky prodejů" níže</p>
+            </div>
+        </section>
+        
+        <section class="hero">
+            <h2>&gt; Aktuální statistiky prodejů_</h2>
+            <div class="table-container" style="max-width:1200px; margin:2rem auto; overflow-x:auto;">
+                <!-- Nový retro data container -->
+                <div id="data-container"></div>
+            </div>
+            <div class="retro-info-panel">
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Data jsou automaticky aktualizována každou hodinu pomocí Apify aktoru</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Webová stránka se automaticky obnovuje každou hodinu</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Pro manuální obnovení použijte tlačítko [OBNOVIT]</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text retro-success">System status: ONLINE</span>
+                    <span class="retro-blink-small">●</span>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>// &copy; 2024 RETRO WEB</p>
+    </footer>
+
+    <div class="version-info">&lt; v1.0 &gt;</div>
+
+    <script src="navigation.js"></script>
+    <script src="new-data-loader.js"></script>
+    <script>
+    // Ochrana stránky pro členy
+    if (!localStorage.getItem('isLoggedIn')) {
+        document.querySelector('main').innerHTML = `
+            <section class="hero">
+                <h1>&gt; Mobil Maják_</h1>
+                <div class="message" style="font-size:1.3rem;color:#E40B4D;margin-top:2rem;text-shadow: 0 0 10px rgba(228, 11, 77, 0.6);">Tato sekce je pouze pro přihlášené členy.</div>
+                <form id="login-form" class="login-form" style="margin-top:2rem;">
+                    <input type="text" id="username" placeholder="// Uživatelské jméno" required>
+                    <input type="password" id="password" placeholder="// Heslo" required>
+                    <button type="submit">[ PŘIHLÁSIT ]</button>
+                </form>
+                <p id="login-message" class="message"></p>
+            </section>`;
+        
+        // Přidání přihlašovací logiky
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageElement = document.getElementById('login-message');
+            
+            if (username === 'admin' && password === 'Admin123') {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', username);
+                localStorage.setItem('role', 'Administrátor');
+                window.location.reload();
+            } else {
+                messageElement.textContent = '// Chybné přihlašovací údaje';
+                messageElement.style.color = '#E40B4D';
+                messageElement.style.textShadow = '0 0 10px rgba(228, 11, 77, 0.6)';
+            }
+        });
+    } else {
+        // Načtení dat pomocí nového data loaderu
+        const dataLoader = new NewDataLoader('data-container');
+        window.newDataLoader = dataLoader; // Pro globální přístup
+        dataLoader.loadData(false); // false = aktuální data (ne měsíční)
+        
+        // Globální funkce pro manuální obnovení
+        window.manualRefresh = function() {
+            console.log('Manuální obnovení dat...');
+            dataLoader.loadData(false); // Znovu načte aktuální data
+        };
+        
+        // Debug funkce pro testování
+        window.debugLoadData = function() {
+            console.log('=== DEBUG: Načítání dat ===');
+            dataLoader.loadData(false);
+        };
+        
+        // Přidáme debug tlačítko do konzole
+        console.log('Pro debug načtení dat použij: debugLoadData()');
+        console.log('Pro manuální obnovení použij: manualRefresh()');
+        console.log('Aktuální dataLoader:', dataLoader);
+        
+        // Rozšířené debug funkce
+        window.testUrl = function() {
+            const timestamp = new Date().getTime();
+            const testUrl = `https://docs.google.com/spreadsheets/d/1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE/export?format=csv&gid=0&cachebust=${timestamp}`;
+            console.log('=== TEST URL ===');
+            console.log('Test URL:', testUrl);
+            console.log('Zkopíruj tuto URL do nového tabu a podívej se, jestli vrací CSV data');
+            
+            // Otestujeme i proxy URL
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(testUrl)}`;
+            console.log('Proxy URL:', proxyUrl);
+            console.log('Zkopíruj i tuto proxy URL do nového tabu');
+            
+            return { testUrl, proxyUrl };
+        };
+        
+        // Funkce pro test načtení dat
+        window.testFetch = async function() {
+            const timestamp = new Date().getTime();
+            const testUrl = `https://docs.google.com/spreadsheets/d/1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE/export?format=csv&gid=0&cachebust=${timestamp}`;
+            
+            console.log('=== TEST FETCH ===');
+            console.log('Testuji načtení dat...');
+            
+            try {
+                // Test přímého přístupu
+                console.log('Test 1: Přímý přístup');
+                const directResponse = await fetch(testUrl, { mode: 'cors', cache: 'no-cache' });
+                console.log('Přímý přístup - status:', directResponse.status, 'ok:', directResponse.ok);
+                
+                if (directResponse.ok) {
+                    const directData = await directResponse.text();
+                    console.log('Přímý přístup - délka dat:', directData.length);
+                    console.log('Přímý přístup - první 200 znaků:', directData.substring(0, 200));
+                }
+            } catch (error) {
+                console.log('Přímý přístup selhal:', error.message);
+            }
+            
+            try {
+                // Test proxy přístupu
+                console.log('Test 2: Proxy přístup');
+                const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(testUrl)}`;
+                const proxyResponse = await fetch(proxyUrl, { cache: 'no-cache' });
+                console.log('Proxy přístup - status:', proxyResponse.status, 'ok:', proxyResponse.ok);
+                
+                if (proxyResponse.ok) {
+                    const proxyData = await proxyResponse.json();
+                    console.log('Proxy přístup - status:', proxyData.status);
+                    console.log('Proxy přístup - délka dat:', proxyData.contents ? proxyData.contents.length : 'null');
+                    if (proxyData.contents) {
+                        console.log('Proxy přístup - první 200 znaků:', proxyData.contents.substring(0, 200));
+                    }
+                }
+            } catch (error) {
+                console.log('Proxy přístup selhal:', error.message);
+            }
+        };
+        
+        console.log('=== DEBUG FUNKCE ===');
+        console.log('Pro debug načtení dat použij: debugLoadData()');
+        console.log('Pro manuální obnovení použij: manualRefresh()');
+        console.log('Pro test URL použij: testUrl()');
+        console.log('Pro test fetch použij: testFetch()');
+        console.log('Aktuální dataLoader:', dataLoader);
+        
+        // Automaticky otestujeme URL
+        const autoTestResult = window.testUrl();
+        console.log('Automatický test URL výsledek:', autoTestResult);
+    }
+    </script>
+
+</body>
+</html> 

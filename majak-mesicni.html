@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobil Maják - Měsíční</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section class="hero">
+            <h1>&gt; Mobil Maják - Měsíční_</h1>
+            <div style="text-align:center; margin:2rem 0; color:#888888;">
+                <p>Data od začátku měsíce se zobrazují v sekci "Měsíční statistiky prodejů" níže</p>
+            </div>
+        </section>
+        
+        <section class="hero">
+            <h2>&gt; Měsíční statistiky prodejů_</h2>
+            <div class="table-container" style="max-width:1200px; margin:2rem auto; overflow-x:auto;">
+                <!-- Nový retro data container -->
+                <div id="monthly-data-container"></div>
+            </div>
+            <div class="retro-info-panel">
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Data jsou automaticky aktualizována každou hodinu pomocí Apify aktoru</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Webová stránka se automaticky obnovuje každou hodinu</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Pro manuální obnovení použijte tlačítko [OBNOVIT]</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text">Zobrazuje data od začátku aktuálního měsíce</span>
+                </div>
+                <div class="retro-info-line">
+                    <span class="retro-prompt">&gt;</span>
+                    <span class="retro-text retro-success">System status: ONLINE</span>
+                    <span class="retro-blink-small">●</span>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <p>// &copy; 2024 RETRO WEB</p>
+    </footer>
+
+    <div class="version-info">&lt; v1.0 &gt;</div>
+
+    <script src="navigation.js"></script>
+    <script src="simple-data-loader.js"></script>
+    <script>
+    // Ochrana stránky pro členy
+    if (!localStorage.getItem('isLoggedIn')) {
+        document.querySelector('main').innerHTML = `
+            <section class="hero">
+                <h1>&gt; Mobil Maják - Měsíční_</h1>
+                <div class="message" style="font-size:1.3rem;color:#E40B4D;margin-top:2rem;text-shadow: 0 0 10px rgba(228, 11, 77, 0.6);">Tato sekce je pouze pro přihlášené členy.</div>
+                <form id="login-form" class="login-form" style="margin-top:2rem;">
+                    <input type="text" id="username" placeholder="// Uživatelské jméno" required>
+                    <input type="password" id="password" placeholder="// Heslo" required>
+                    <button type="submit">[ PŘIHLÁSIT ]</button>
+                </form>
+                <p id="login-message" class="message"></p>
+            </section>`;
+        
+        // Přidání přihlašovací logiky
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageElement = document.getElementById('login-message');
+            
+            if (username === 'admin' && password === 'Admin123') {
+                localStorage.setItem('isLoggedIn', 'true');
+                localStorage.setItem('username', username);
+                localStorage.setItem('role', 'Administrátor');
+                window.location.reload();
+            } else {
+                messageElement.textContent = '// Chybné přihlašovací údaje';
+                messageElement.style.color = '#E40B4D';
+                messageElement.style.textShadow = '0 0 10px rgba(228, 11, 77, 0.6)';
+            }
+        });
+    } else {
+        // Načtení měsíčních dat pomocí nového jednoduchého data loaderu
+        const dataLoader = new SimpleRetroDataLoader('monthly-data-container');
+        dataLoader.loadData(true); // true = měsíční data
+        
+        // Globální funkce pro manuální obnovení
+        window.manualRefresh = function() {
+            console.log('Manuální obnovení měsíčních dat...');
+            dataLoader.refreshData();
+        };
+    }
+    </script>
+
+</body>
+</html> 
