@@ -15,6 +15,14 @@ class RealTimeUpdates {
     }
 
     init() {
+        // Neaktivuj real-time updates na index.html
+        if (window.location.pathname.endsWith('index.html') || 
+            window.location.pathname === '/' || 
+            window.location.pathname.endsWith('/')) {
+            console.log('🚫 Real-time Updates zakázány na úvodní stránce');
+            return;
+        }
+        
         this.connect();
         this.setupEventListeners();
         this.setupVisibilityHandling();

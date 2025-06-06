@@ -12,6 +12,14 @@ class ImageUploadManager {
     }
 
     init() {
+        // Neaktivuj upload manager na index.html
+        if (window.location.pathname.endsWith('index.html') || 
+            window.location.pathname === '/' || 
+            window.location.pathname.endsWith('/')) {
+            console.log('🚫 Image Upload Manager zakázán na úvodní stránce');
+            return;
+        }
+        
         this.createUploadAreas();
         this.setupGlobalDragDrop();
         this.setupPasteHandler();

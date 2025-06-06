@@ -19,6 +19,14 @@ class EnhancedComments {
   }
 
   async init() {
+    // Neaktivuj komentáře na index.html
+    if (window.location.pathname.endsWith('index.html') || 
+        window.location.pathname === '/' || 
+        window.location.pathname.endsWith('/')) {
+      console.log('🚫 Enhanced Comments zakázány na úvodní stránce');
+      return;
+    }
+    
     await this.setupOfflineDB();
     this.setupEventListeners();
     this.setupRealTimeUpdates();
