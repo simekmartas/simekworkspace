@@ -393,6 +393,7 @@ class ImageUploadManager {
                 height: 120px;
                 object-fit: cover;
                 display: block;
+                cursor: pointer;
             ">
             <div class="preview-overlay" style="
                 position: absolute;
@@ -406,41 +407,90 @@ class ImageUploadManager {
             ">
                 ${this.formatFileSize(image.size)}
             </div>
-            <button class="preview-delete" style="
+            <div class="preview-actions" style="
                 position: absolute;
-                top: 4px;
-                left: 4px;
-                background: rgba(255,255,255,0.9);
-                border: none;
-                border-radius: 50%;
-                width: 24px;
-                height: 24px;
-                cursor: pointer;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(transparent, rgba(0,0,0,0.8));
+                padding: 8px 4px 4px;
                 display: flex;
-                align-items: center;
+                gap: 4px;
                 justify-content: center;
-                font-size: 14px;
-                transition: all 0.2s ease;
-            " title="Odstranit">×</button>
+                opacity: 0;
+                transition: opacity 0.2s ease;
+            ">
+                <button class="preview-crop" style="
+                    background: var(--accent-color);
+                    border: none;
+                    border-radius: 4px;
+                    color: white;
+                    padding: 4px 8px;
+                    font-size: 11px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                " title="Oříznout">✂️</button>
+                <button class="preview-edit" style="
+                    background: var(--success-color);
+                    border: none;
+                    border-radius: 4px;
+                    color: white;
+                    padding: 4px 8px;
+                    font-size: 11px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                " title="Upravit">✏️</button>
+                <button class="preview-delete" style="
+                    background: var(--danger-color);
+                    border: none;
+                    border-radius: 4px;
+                    color: white;
+                    padding: 4px 8px;
+                    font-size: 11px;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                " title="Odstranit">🗑️</button>
+            </div>
         `;
         
-        // Delete handler
+        // Action handlers
+        const cropBtn = preview.querySelector('.preview-crop');
+        const editBtn = preview.querySelector('.preview-edit');
         const deleteBtn = preview.querySelector('.preview-delete');
-        deleteBtn.addEventListener('click', () => {
+        const actionsDiv = preview.querySelector('.preview-actions');
+        
+        // Crop handler
+        cropBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.openImageCropper(image, preview);
+        });
+        
+        // Edit handler
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.openImageEditor(image, preview);
+        });
+        
+        // Delete handler
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             preview.style.animation = 'fadeOut 0.3s ease';
             setTimeout(() => preview.remove(), 300);
         });
         
-        // Hover efekty
-        const deleteButton = preview.querySelector('.preview-delete');
+        // Show/hide actions on hover
         preview.addEventListener('mouseenter', () => {
-            deleteButton.style.background = '#ef4444';
-            deleteButton.style.color = 'white';
+            actionsDiv.style.opacity = '1';
         });
         
         preview.addEventListener('mouseleave', () => {
-            deleteButton.style.background = 'rgba(255,255,255,0.9)';
-            deleteButton.style.color = 'black';
+            actionsDiv.style.opacity = '0';
+        });
+        
+        // Click to view full size
+        const img = preview.querySelector('img');
+        img.addEventListener('click', () => {
+            this.openFullScreenViewer(image);
         });
         
         return preview;
@@ -661,6 +711,411 @@ class ImageUploadManager {
             notification.style.animation = 'toastSlideIn 0.3s ease reverse';
             setTimeout(() => notification.remove(), 300);
         }, duration);
+    }
+
+    // === IMAGE EDITING FUNCTIONS ===
+    openImageCropper(image, previewElement) {
+        const cropDialog = document.createElement('div');
+        cropDialog.className = 'crop-dialog';
+        cropDialog.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 10002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        `;
+        
+        cropDialog.innerHTML = `
+            <div class="crop-container" style="
+                position: relative;
+                max-width: 90vw;
+                max-height: 90vh;
+                background: var(--bg-primary);
+                border-radius: 12px;
+                overflow: hidden;
+                box-shadow: var(--shadow-lg);
+            ">
+                <div class="crop-header" style="
+                    padding: 1rem;
+                    background: var(--bg-secondary);
+                    border-bottom: 1px solid var(--border-color);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <h3 style="color: var(--text-primary); margin: 0;">Oříznout obrázek</h3>
+                    <button class="crop-close" style="
+                        background: none;
+                        border: none;
+                        font-size: 1.5rem;
+                        cursor: pointer;
+                        color: var(--text-secondary);
+                        padding: 0;
+                        width: 30px;
+                        height: 30px;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.2s ease;
+                    ">×</button>
+                </div>
+                <div class="crop-workspace" style="
+                    position: relative;
+                    background: #000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 400px;
+                    max-height: 60vh;
+                    overflow: hidden;
+                ">
+                    <canvas class="crop-canvas" style="
+                        max-width: 100%;
+                        max-height: 100%;
+                        cursor: crosshair;
+                    "></canvas>
+                    <div class="crop-overlay" style="
+                        position: absolute;
+                        border: 2px dashed #fff;
+                        background: rgba(0,0,0,0.5);
+                        pointer-events: none;
+                        display: none;
+                    "></div>
+                </div>
+                <div class="crop-controls" style="
+                    padding: 1rem;
+                    background: var(--bg-secondary);
+                    display: flex;
+                    gap: 1rem;
+                    justify-content: space-between;
+                    align-items: center;
+                ">
+                    <div class="crop-presets" style="display: flex; gap: 0.5rem;">
+                        <button class="preset-btn" data-ratio="1:1" style="
+                            padding: 0.5rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--bg-primary);
+                            color: var(--text-primary);
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.8rem;
+                        ">1:1</button>
+                        <button class="preset-btn" data-ratio="4:3" style="
+                            padding: 0.5rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--bg-primary);
+                            color: var(--text-primary);
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.8rem;
+                        ">4:3</button>
+                        <button class="preset-btn" data-ratio="16:9" style="
+                            padding: 0.5rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--bg-primary);
+                            color: var(--text-primary);
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.8rem;
+                        ">16:9</button>
+                        <button class="preset-btn" data-ratio="free" style="
+                            padding: 0.5rem;
+                            border: 1px solid var(--border-color);
+                            background: var(--bg-primary);
+                            color: var(--text-primary);
+                            border-radius: 4px;
+                            cursor: pointer;
+                            font-size: 0.8rem;
+                        ">Volný</button>
+                    </div>
+                    <div class="crop-actions" style="display: flex; gap: 0.5rem;">
+                        <button class="crop-cancel" style="
+                            padding: 0.5rem 1rem;
+                            border: 1px solid var(--border-color);
+                            background: transparent;
+                            color: var(--text-secondary);
+                            border-radius: 6px;
+                            cursor: pointer;
+                        ">Zrušit</button>
+                        <button class="crop-apply" style="
+                            padding: 0.5rem 1rem;
+                            border: none;
+                            background: var(--accent-color);
+                            color: white;
+                            border-radius: 6px;
+                            cursor: pointer;
+                        ">Použít ořez</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(cropDialog);
+        
+        // Initialize cropper
+        this.initializeCropper(cropDialog, image, previewElement);
+    }
+    
+    initializeCropper(dialog, image, previewElement) {
+        const canvas = dialog.querySelector('.crop-canvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = dialog.querySelector('.crop-overlay');
+        const workspace = dialog.querySelector('.crop-workspace');
+        
+        const img = new Image();
+        img.onload = () => {
+            // Set canvas size
+            const maxWidth = 600;
+            const maxHeight = 400;
+            let { width, height } = img;
+            
+            if (width > maxWidth || height > maxHeight) {
+                const ratio = Math.min(maxWidth / width, maxHeight / height);
+                width *= ratio;
+                height *= ratio;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Crop selection state
+            let cropData = {
+                startX: 0, startY: 0,
+                width: width * 0.8, height: height * 0.8,
+                isSelecting: false,
+                aspectRatio: null
+            };
+            
+            // Center initial crop
+            cropData.startX = (width - cropData.width) / 2;
+            cropData.startY = (height - cropData.height) / 2;
+            
+            this.updateCropOverlay(overlay, cropData);
+            
+            // Mouse events for crop selection
+            let mouseDown = false;
+            let startX, startY;
+            
+            canvas.addEventListener('mousedown', (e) => {
+                mouseDown = true;
+                const rect = canvas.getBoundingClientRect();
+                startX = e.clientX - rect.left;
+                startY = e.clientY - rect.top;
+                cropData.isSelecting = true;
+            });
+            
+            canvas.addEventListener('mousemove', (e) => {
+                if (!mouseDown || !cropData.isSelecting) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                const currentX = e.clientX - rect.left;
+                const currentY = e.clientY - rect.top;
+                
+                cropData.startX = Math.min(startX, currentX);
+                cropData.startY = Math.min(startY, currentY);
+                cropData.width = Math.abs(currentX - startX);
+                cropData.height = Math.abs(currentY - startY);
+                
+                // Apply aspect ratio if set
+                if (cropData.aspectRatio) {
+                    const targetHeight = cropData.width / cropData.aspectRatio;
+                    if (targetHeight <= height - cropData.startY) {
+                        cropData.height = targetHeight;
+                    } else {
+                        cropData.height = height - cropData.startY;
+                        cropData.width = cropData.height * cropData.aspectRatio;
+                    }
+                }
+                
+                this.updateCropOverlay(overlay, cropData);
+            });
+            
+            canvas.addEventListener('mouseup', () => {
+                mouseDown = false;
+                cropData.isSelecting = false;
+            });
+            
+            // Preset buttons
+            dialog.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const ratio = btn.dataset.ratio;
+                    
+                    // Remove active class from all buttons
+                    dialog.querySelectorAll('.preset-btn').forEach(b => 
+                        b.style.background = 'var(--bg-primary)');
+                    
+                    // Add active class to current button
+                    btn.style.background = 'var(--accent-color)';
+                    btn.style.color = 'white';
+                    
+                    if (ratio === 'free') {
+                        cropData.aspectRatio = null;
+                    } else {
+                        const [w, h] = ratio.split(':').map(Number);
+                        cropData.aspectRatio = w / h;
+                        
+                        // Adjust current crop to ratio
+                        const newHeight = cropData.width / cropData.aspectRatio;
+                        if (newHeight <= height - cropData.startY) {
+                            cropData.height = newHeight;
+                        } else {
+                            cropData.height = height - cropData.startY;
+                            cropData.width = cropData.height * cropData.aspectRatio;
+                        }
+                        
+                        this.updateCropOverlay(overlay, cropData);
+                    }
+                });
+            });
+            
+            // Action buttons
+            dialog.querySelector('.crop-cancel').addEventListener('click', () => {
+                this.closeCropDialog(dialog);
+            });
+            
+            dialog.querySelector('.crop-close').addEventListener('click', () => {
+                this.closeCropDialog(dialog);
+            });
+            
+            dialog.querySelector('.crop-apply').addEventListener('click', () => {
+                this.applyCrop(image, cropData, canvas, previewElement);
+                this.closeCropDialog(dialog);
+            });
+            
+            dialog.addEventListener('click', (e) => {
+                if (e.target === dialog) {
+                    this.closeCropDialog(dialog);
+                }
+            });
+        };
+        
+        img.src = image.url;
+    }
+    
+    updateCropOverlay(overlay, cropData) {
+        overlay.style.display = 'block';
+        overlay.style.left = cropData.startX + 'px';
+        overlay.style.top = cropData.startY + 'px';
+        overlay.style.width = cropData.width + 'px';
+        overlay.style.height = cropData.height + 'px';
+    }
+    
+    applyCrop(originalImage, cropData, canvas, previewElement) {
+        const cropCanvas = document.createElement('canvas');
+        const cropCtx = cropCanvas.getContext('2d');
+        
+        // Set crop canvas size
+        cropCanvas.width = cropData.width;
+        cropCanvas.height = cropData.height;
+        
+        // Draw cropped portion
+        const img = new Image();
+        img.onload = () => {
+            const scaleX = img.width / canvas.width;
+            const scaleY = img.height / canvas.height;
+            
+            cropCtx.drawImage(
+                img,
+                cropData.startX * scaleX,
+                cropData.startY * scaleY,
+                cropData.width * scaleX,
+                cropData.height * scaleY,
+                0, 0,
+                cropData.width,
+                cropData.height
+            );
+            
+            // Convert to blob and update preview
+            cropCanvas.toBlob((blob) => {
+                const croppedUrl = URL.createObjectURL(blob);
+                
+                // Update preview image
+                const previewImg = previewElement.querySelector('img');
+                previewImg.src = croppedUrl;
+                
+                // Update image data
+                originalImage.url = croppedUrl;
+                originalImage.size = blob.size;
+                
+                // Update size overlay
+                const sizeOverlay = previewElement.querySelector('.preview-overlay');
+                sizeOverlay.textContent = this.formatFileSize(blob.size);
+                
+                this.showNotification('✂️ Obrázek byl úspěšně oříznut!', 'success');
+            }, 'image/jpeg', 0.9);
+        };
+        
+        img.src = originalImage.url;
+    }
+    
+    closeCropDialog(dialog) {
+        dialog.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => dialog.remove(), 300);
+    }
+    
+    openImageEditor(image, previewElement) {
+        // TODO: Implement image editor with filters, brightness, etc.
+        this.showNotification('🎨 Editor obrázků bude brzy dostupný!', 'info');
+    }
+    
+    openFullScreenViewer(image) {
+        const viewer = document.createElement('div');
+        viewer.className = 'fullscreen-viewer';
+        viewer.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 10003;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+            cursor: zoom-out;
+        `;
+        
+        viewer.innerHTML = `
+            <img src="${image.url}" alt="${image.name}" style="
+                max-width: 95%;
+                max-height: 95%;
+                object-fit: contain;
+                border-radius: 8px;
+                box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            ">
+            <button style="
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                background: rgba(0,0,0,0.7);
+                border: none;
+                color: white;
+                font-size: 2rem;
+                width: 50px;
+                height: 50px;
+                border-radius: 50%;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            ">×</button>
+        `;
+        
+        document.body.appendChild(viewer);
+        
+        viewer.addEventListener('click', () => {
+            viewer.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => viewer.remove(), 300);
+        });
     }
 
     // === PUBLIC API ===
