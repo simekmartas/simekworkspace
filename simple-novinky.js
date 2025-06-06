@@ -101,10 +101,17 @@ async function loadPosts() {
         }
     }
     
-    // Přidej kategorii do starých příspěvků pokud ji nemají
+    // Přidej kategorii do starých příspěvků pokud ji nemají a migrace likes systému
     posts.forEach(post => {
         if (!post.category) {
             post.category = 'Novinky';
+        }
+        
+        // Migrace starého likes systému na nový (pole uživatelů)
+        if (typeof post.likes === 'number') {
+            post.likes = []; // Resetuj na prázdné pole - starý like systém byl nekonzistentní
+        } else if (!Array.isArray(post.likes)) {
+            post.likes = [];
         }
     });
 }
@@ -829,8 +836,7 @@ async function createPost() {
             file: selectedFile || null,
             category: selectedCategory || 'Novinky',
             timestamp: Date.now(),
-            likes: 0,
-            liked: false,
+            likes: [], // Pole uživatelů, kteří dali like
             comments: []
         };
         
@@ -924,7 +930,10 @@ function renderPosts() {
 }
 
 function createPostHTML(post) {
-    const isLiked = post.liked || false;
+    // Kontrola, jestli aktuální uživatel dal like
+    const currentUserName = currentUser.fullName || currentUser.username;
+    const isLiked = Array.isArray(post.likes) ? post.likes.includes(currentUserName) : false;
+    const likesCount = Array.isArray(post.likes) ? post.likes.length : (post.likes || 0);
     const canDelete = currentUser.role === 'Administrator' || post.author === (currentUser.fullName || currentUser.username);
     
     return `
@@ -994,7 +1003,7 @@ function createPostHTML(post) {
                      <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                      </svg>
-                     ${post.likes > 0 ? post.likes : ''}
+                     ${likesCount > 0 ? likesCount : ''}
                  </button>
                  
                  <button class="post-action" onclick="toggleComments('${post.id}')">
@@ -1088,12 +1097,26 @@ async function toggleLike(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    const wasLiked = post.liked || false;
+    const currentUserName = currentUser.fullName || currentUser.username;
+    
+    // Zajisti, že likes je pole
+    if (!Array.isArray(post.likes)) {
+        post.likes = [];
+    }
+    
+    const wasLiked = post.likes.includes(currentUserName);
     
     // Optimisticky aktualizuj UI
-    post.liked = !wasLiked;
-    post.likes = (post.likes || 0) + (post.liked ? 1 : -1);
-    if (post.likes < 0) post.likes = 0;
+    if (wasLiked) {
+        // Odstraň like
+        const index = post.likes.indexOf(currentUserName);
+        if (index > -1) {
+            post.likes.splice(index, 1);
+        }
+    } else {
+        // Přidej like
+        post.likes.push(currentUserName);
+    }
 
     // Znovu vykresli
     document.getElementById('postsFeed').innerHTML = renderPosts();
@@ -1107,7 +1130,6 @@ async function toggleLike(postId) {
             },
             body: JSON.stringify({
                 id: postId,
-                liked: post.liked,
                 likes: post.likes
             })
         });
@@ -1125,9 +1147,16 @@ async function toggleLike(postId) {
         console.error('❌ Chyba při ukládání like:', error);
         
         // Rollback při chybě
-        post.liked = wasLiked;
-        post.likes = (post.likes || 0) + (wasLiked ? 1 : -1);
-        if (post.likes < 0) post.likes = 0;
+        if (wasLiked) {
+            // Přidej zpět like
+            post.likes.push(currentUserName);
+        } else {
+            // Odstraň like
+            const index = post.likes.indexOf(currentUserName);
+            if (index > -1) {
+                post.likes.splice(index, 1);
+            }
+        }
         
         document.getElementById('postsFeed').innerHTML = renderPosts();
         
