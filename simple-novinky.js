@@ -60,9 +60,22 @@ function loadCurrentUser() {
 }
 
 async function loadPosts() {
+    // Nejdřív načti z localStorage (spolehlivé)
     try {
-        console.log('📡 Načítám příspěvky ze SERVERU...');
-        
+        const savedPosts = localStorage.getItem('simple_posts');
+        if (savedPosts) {
+            posts = JSON.parse(savedPosts);
+            console.log('📦 Načteno ' + posts.length + ' příspěvků z localStorage');
+        } else {
+            posts = [];
+        }
+    } catch (error) {
+        console.error('❌ Chyba při načítání z localStorage:', error);
+        posts = [];
+    }
+    
+    // Zkus načíst ze serveru na pozadí (ale nespoléhej na to)
+    try {
         const response = await fetch('/api/posts-github', {
             method: 'GET',
             headers: {
@@ -70,35 +83,22 @@ async function loadPosts() {
             }
         });
         
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        if (data.success) {
-            posts = data.posts || [];
-            console.log('✅ Načteno ' + posts.length + ' příspěvků ze SERVERU');
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && Array.isArray(data.posts)) {
+                // Pokud server má novější data, použij je
+                if (data.posts.length > 0) {
+                    posts = data.posts;
+                    localStorage.setItem('simple_posts', JSON.stringify(posts));
+                    console.log('✅ Synchronizováno ' + posts.length + ' příspěvků ze serveru');
+                }
+            }
         } else {
-            throw new Error(data.error || 'Server nevrátil validní data');
+            console.warn('⚠️ Server nedostupný, používám místní data');
         }
         
     } catch (error) {
-        console.error('❌ CHYBA při načítání ze serveru:', error);
-        
-        // Fallback na localStorage jako záložní řešení
-        console.log('🔄 Zkouším localStorage jako záložní...');
-        try {
-            const savedPosts = localStorage.getItem('simple_posts');
-            if (savedPosts) {
-                posts = JSON.parse(savedPosts);
-                console.log('📦 Načteno ' + posts.length + ' příspěvků z localStorage (záložní)');
-            } else {
-                posts = [];
-            }
-        } catch (fallbackError) {
-            console.error('❌ I localStorage selhal:', fallbackError);
-            posts = [];
-        }
+        console.warn('⚠️ Server nedostupný, používám místní data:', error.message);
     }
     
     // Přidej kategorii do starých příspěvků pokud ji nemají a migrace likes systému
@@ -826,92 +826,74 @@ async function createPost() {
     shareBtn.textContent = 'Ukládám na server...';
     shareBtn.disabled = true;
     
+    // Vytvoř příspěvek lokálně (spolehlivé)
+    const newPost = {
+        id: 'post_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        text: text,
+        author: `${currentUser.role}:${currentUser.username}`,
+        photo: selectedPhoto || null,
+        file: selectedFile || null,
+        category: selectedCategory || 'Novinky',
+        timestamp: Date.now(),
+        likes: [], // Pole uživatelů, kteří dali like
+        comments: []
+    };
+    
+    // Okamžitě přidej do UI a localStorage
+    posts.unshift(newPost);
+    localStorage.setItem('simple_posts', JSON.stringify(posts));
+    
+    // Vyčisti formulář
+    document.getElementById('postText').value = '';
+    removePhoto();
+    removeFile();
+    removeCategory();
+    updateShareButton();
+    
+    // Znovu vykresli příspěvky
+    document.getElementById('postsFeed').innerHTML = renderPosts();
+    
+    console.log('✅ Příspěvek úspěšně vytvořen lokálně');
+    
+    // Zkus uložit na server na pozadí (ale nespoléhej na to)
     try {
-        console.log('💾 UKLÁDÁM příspěvek na SERVER...');
-        
-        const postData = {
-            text: text,
-            author: `${currentUser.role}:${currentUser.username}`,
-            photo: selectedPhoto || null,
-            file: selectedFile || null,
-            category: selectedCategory || 'Novinky',
-            timestamp: Date.now(),
-            likes: [], // Pole uživatelů, kteří dali like
-            comments: []
-        };
-        
-        console.log('📤 Odesílám data na server:', postData);
+        shareBtn.textContent = 'Synchronizuji...';
         
         const response = await fetch('/api/posts-github', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(postData)
+            body: JSON.stringify(newPost)
         });
         
-        if (!response.ok) {
-            throw new Error(`Server error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log('✅ Příspěvek ÚSPĚŠNĚ uložen na server!');
-            
-            // Přidej nový příspěvek na začátek seznamu
-            posts.unshift(data.post);
-            
-            // Backup do localStorage
-            localStorage.setItem('simple_posts', JSON.stringify(posts));
-            
-            // Vyčisti formulář
-            document.getElementById('postText').value = '';
-            removePhoto();
-            removeFile();
-            removeCategory();
-            updateShareButton();
-            
-            // Znovu vykresli příspěvky
-            document.getElementById('postsFeed').innerHTML = renderPosts();
-            
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                // Aktualizuj ID z serveru
+                const postIndex = posts.findIndex(p => p.id === newPost.id);
+                if (postIndex !== -1) {
+                    posts[postIndex].id = data.post.id;
+                    localStorage.setItem('simple_posts', JSON.stringify(posts));
+                }
+                console.log('✅ Příspěvek synchronizován se serverem');
+                shareBtn.textContent = 'Synchronizováno ✓';
+            }
         } else {
-            throw new Error(data.error || 'Server nevrátil validní odpověď');
+            console.warn('⚠️ Server nedostupný, příspěvek uložen pouze lokálně');
+            shareBtn.textContent = 'Uloženo lokálně ⚠️';
         }
         
     } catch (error) {
-        console.error('❌ CHYBA při ukládání na server:', error);
-        alert('Chyba při ukládání příspěvku: ' + error.message);
-        
-        // ZÁLOŽNÍ uložení do localStorage
-        console.log('🔄 Záložní uložení do localStorage...');
-        const fallbackPost = {
-            id: 'fallback_' + Date.now(),
-            text: text,
-            author: currentUser.fullName || currentUser.username,
-            photo: selectedPhoto,
-            file: selectedFile,
-            category: selectedCategory || 'Novinky',
-            timestamp: Date.now(),
-            likes: 0,
-            liked: false,
-            comments: []
-        };
-        
-        posts.unshift(fallbackPost);
-        localStorage.setItem('simple_posts', JSON.stringify(posts));
-        
-        document.getElementById('postText').value = '';
-        removePhoto();
-        removeFile();
-        removeCategory();
-        updateShareButton();
-        document.getElementById('postsFeed').innerHTML = renderPosts();
-        
+        console.warn('⚠️ Server nedostupný, příspěvek uložen pouze lokálně:', error.message);
+        shareBtn.textContent = 'Uloženo lokálně ⚠️';
     } finally {
-        shareBtn.textContent = originalText;
-        shareBtn.disabled = false;
-        updateShareButton();
+        // Reset tlačítka po 2 sekundách
+        setTimeout(() => {
+            shareBtn.textContent = originalText;
+            shareBtn.disabled = false;
+            updateShareButton();
+        }, 2000);
     }
 }
 
@@ -930,14 +912,17 @@ function renderPosts() {
 }
 
 function createPostHTML(post) {
-    // Debug - ukáž identifikaci uživatele
+    // Jednoduchý a spolehlivý like systém
     const currentUserIdentifier = `${currentUser.role}:${currentUser.username}`;
-    console.log('🔍 DEBUG createPostHTML - Aktuální uživatel:', currentUserIdentifier);
-    console.log('🔍 DEBUG createPostHTML - Post likes:', post.likes);
+    
+    // Zajisti, že likes je vždy pole
+    if (!Array.isArray(post.likes)) {
+        post.likes = [];
+    }
     
     // Kontrola, jestli aktuální uživatel dal like
-    const isLiked = Array.isArray(post.likes) ? post.likes.includes(currentUserIdentifier) : false;
-    const likesCount = Array.isArray(post.likes) ? post.likes.length : (post.likes || 0);
+    const isLiked = post.likes.includes(currentUserIdentifier);
+    const likesCount = post.likes.length;
     const canDelete = currentUser.role === 'Administrator' || post.author === currentUserIdentifier;
     
     return `
@@ -1121,8 +1106,6 @@ async function toggleLike(postId) {
     if (!post) return;
 
     const currentUserIdentifier = `${currentUser.role}:${currentUser.username}`;
-    console.log('🔍 DEBUG toggleLike - Uživatel:', currentUserIdentifier);
-    console.log('🔍 DEBUG toggleLike - Stávající likes:', post.likes);
     
     // Zajisti, že likes je pole
     if (!Array.isArray(post.likes)) {
@@ -1130,29 +1113,29 @@ async function toggleLike(postId) {
     }
     
     const wasLiked = post.likes.includes(currentUserIdentifier);
-    console.log('🔍 DEBUG toggleLike - Měl like:', wasLiked);
     
-    // Optimisticky aktualizuj UI
+    // Okamžitě aktualizuj UI (optimistic update)
     if (wasLiked) {
         // Odstraň like
         const index = post.likes.indexOf(currentUserIdentifier);
         if (index > -1) {
             post.likes.splice(index, 1);
         }
-        console.log('🔍 DEBUG toggleLike - Like odebrán');
     } else {
-        // Přidej like
-        post.likes.push(currentUserIdentifier);
-        console.log('🔍 DEBUG toggleLike - Like přidán');
+        // Přidej like (pouze pokud tam ještě není)
+        if (!post.likes.includes(currentUserIdentifier)) {
+            post.likes.push(currentUserIdentifier);
+        }
     }
-    
-    console.log('🔍 DEBUG toggleLike - Nové likes:', post.likes);
 
     // Znovu vykresli
     document.getElementById('postsFeed').innerHTML = renderPosts();
 
+    // Okamžitě ulož do localStorage (spolehlivý backup)
+    savePosts();
+    
+    // Zkus uložit na server (ale nespoléhej na to)
     try {
-        // Pošli na server
         const response = await fetch('/api/posts-github', {
             method: 'PUT',
             headers: {
@@ -1164,34 +1147,15 @@ async function toggleLike(postId) {
             })
         });
 
-        if (!response.ok) {
-            throw new Error('Chyba při ukládání like na server');
+        if (response.ok) {
+            console.log('✅ Like uložen na server');
+        } else {
+            console.warn('⚠️ Server nedostupný, like uložen pouze lokálně');
         }
-
-        console.log('✅ Like uložen na server');
-        
-        // Backup do localStorage
-        savePosts();
         
     } catch (error) {
-        console.error('❌ Chyba při ukládání like:', error);
-        
-        // Rollback při chybě
-        if (wasLiked) {
-            // Přidej zpět like
-            post.likes.push(currentUserIdentifier);
-        } else {
-            // Odstraň like
-            const index = post.likes.indexOf(currentUserIdentifier);
-            if (index > -1) {
-                post.likes.splice(index, 1);
-            }
-        }
-        
-        document.getElementById('postsFeed').innerHTML = renderPosts();
-        
-        // Backup do localStorage
-        savePosts();
+        console.warn('⚠️ Server nedostupný, like uložen pouze lokálně:', error.message);
+        // Nekraj aplikaci - localStorage backup už je uložen
     }
 }
 
