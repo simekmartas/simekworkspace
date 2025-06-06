@@ -127,24 +127,34 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
                 </div>
                 <div class="chatbot-controls" style="display: flex; gap: 0.5rem;">
                     <button class="minimize-btn" style="
-                        background: rgba(255,255,255,0.2);
-                        border: none;
+                        background: rgba(255,255,255,0.15);
+                        border: 1px solid rgba(255,255,255,0.2);
                         color: white;
-                        width: 24px;
-                        height: 24px;
-                        border-radius: 4px;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 6px;
                         cursor: pointer;
-                        font-size: 12px;
+                        font-size: 14px;
+                        font-weight: bold;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.2s ease;
                     ">−</button>
                     <button class="close-btn" style="
-                        background: rgba(255,255,255,0.2);
-                        border: none;
+                        background: rgba(255,255,255,0.15);
+                        border: 1px solid rgba(255,255,255,0.2);
                         color: white;
-                        width: 24px;
-                        height: 24px;
-                        border-radius: 4px;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 6px;
                         cursor: pointer;
-                        font-size: 12px;
+                        font-size: 14px;
+                        font-weight: bold;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.2s ease;
                     ">×</button>
                 </div>
             </div>
@@ -295,6 +305,16 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
                 .chatbot-window.open {
                     transform: scale(1) !important;
                     opacity: 1 !important;
+                }
+                
+                .minimize-btn:hover,
+                .close-btn:hover {
+                    background: rgba(255,255,255,0.3) !important;
+                    transform: scale(1.1) !important;
+                }
+                
+                .close-btn:hover {
+                    background: rgba(220, 53, 69, 0.8) !important;
                 }
             `;
             document.head.appendChild(animationStyle);
@@ -688,26 +708,36 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
 
     // === MESSAGE HANDLING ===
     async sendMessage() {
+        console.log('🤖 SendMessage called');
         const message = this.messageInput.value.trim();
-        if (!message || this.isTyping) return;
+        console.log('🤖 Message:', message);
+        
+        if (!message || this.isTyping) {
+            console.log('🤖 No message or already typing');
+            return;
+        }
 
         // Add user message
+        console.log('🤖 Adding user message to UI');
         this.addMessage(message, 'user');
         this.messageInput.value = '';
         this.handleInputChange();
 
         // Show typing indicator
+        console.log('🤖 Showing typing indicator');
         this.showTypingIndicator();
 
         try {
             // Send to OpenAI
+            console.log('🤖 Calling OpenAI API...');
             const response = await this.callOpenAI(message);
+            console.log('🤖 Got response:', response);
             this.hideTypingIndicator();
             this.addMessage(response, 'bot');
         } catch (error) {
+            console.error('🤖 API Error:', error);
             this.hideTypingIndicator();
-            this.addMessage('Omlouvám se, nastala chyba při zpracování vaší zprávy. Zkuste to prosím znovu.', 'bot', true);
-            console.error('Chatbot error:', error);
+            this.addMessage('Omlouvám se, nastala chyba při zpracování vaší zprávy. Zkuste to prosím znovu. Error: ' + error.message, 'bot', true);
         }
     }
 

@@ -316,31 +316,51 @@ img {
 
 .crop-cancel,
 .crop-confirm {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
+  padding: 0.875rem 2rem;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .crop-cancel {
-  background: var(--bg-secondary, #f8f9fa);
-  color: var(--text-primary, #333);
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
 }
 
 .crop-cancel:hover {
-  background: var(--bg-tertiary, #e9ecef);
+  background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
 .crop-confirm {
-  background: var(--accent-color, #007bff);
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
 }
 
 .crop-confirm:hover {
-  background: var(--accent-dark, #0056b3);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #0056b3 0%, #003d82 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.crop-cancel:active,
+.crop-confirm:active {
+  transform: translateY(0);
+  transition: transform 0.1s ease;
 }
 
 /* Responsive cropper pro mobily */

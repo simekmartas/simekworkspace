@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  functions = "api"
+  functions = "netlify/functions"
 
 # Nastavení HTTPS a HTTP hlaviček
 [[headers]]
@@ -71,4 +71,12 @@
   status = 200
 
 [functions]
-  directory = "api" 
+  directory = "api"
+  node_bundler = "esbuild"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS" 
