@@ -26,31 +26,14 @@ function updateNavigation() {
         }
     }
     
-    // Přidání theme toggle buttonu pokud neexistuje
-    if (headerContent && !headerContent.querySelector('.theme-toggle')) {
-        const themeToggle = document.createElement('button');
-        themeToggle.className = 'theme-toggle';
-        themeToggle.setAttribute('aria-label', 'Přepnout téma');
-        themeToggle.setAttribute('title', 'Přepnout téma');
-        themeToggle.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-            </svg>
-        `;
-        
-        // Přidat na konec headeru
-        headerContent.appendChild(themeToggle);
-        
-        console.log('Theme toggle button přidán do navigace');
-        
-        // Notify theme manager about new button
-        setTimeout(() => {
-            if (window.themeManager) {
-                window.themeManager.updateAllToggleButtons();
-                console.log('Theme manager notifikován o novém buttonu');
-            }
-        }, 100);
-    }
+    // Theme toggle button bude vytvořen theme-toggle.js
+    // Pouze zkontrolujeme, že theme manager existuje
+    setTimeout(() => {
+        if (window.themeManager) {
+            window.themeManager.updateAllToggleButtons();
+            console.log('Theme manager aktualizován v navigation.js');
+        }
+    }, 100);
     
     // Základní položky menu pro všechny uživatele
     const baseItems = `

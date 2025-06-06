@@ -21,21 +21,18 @@ class ThemeToggle {
     }
 
     createToggleButton() {
-        // Najdi existující tlačítko nebo vytvoř nové
-        let toggleButton = document.querySelector('#theme-toggle');
+        // Najdi existující tlačítko (může být vytvořené navigation.js)
+        let toggleButton = document.querySelector('.theme-toggle');
         
         if (!toggleButton) {
             toggleButton = document.createElement('button');
-            toggleButton.id = 'theme-toggle';
             toggleButton.className = 'theme-toggle';
             toggleButton.setAttribute('aria-label', 'Přepnout téma');
             
-            // Přidat do navigace
-            const nav = document.querySelector('nav ul');
-            if (nav) {
-                const li = document.createElement('li');
-                li.appendChild(toggleButton);
-                nav.appendChild(li);
+            // Přidat do header-content
+            const headerContent = document.querySelector('.header-content');
+            if (headerContent) {
+                headerContent.appendChild(toggleButton);
             } else {
                 document.body.appendChild(toggleButton);
             }
@@ -43,7 +40,11 @@ class ThemeToggle {
 
         this.updateToggleButton();
         
-        toggleButton.addEventListener('click', () => {
+        // Odstranit staré event listenery a přidat nový
+        const newButton = toggleButton.cloneNode(true);
+        toggleButton.parentNode.replaceChild(newButton, toggleButton);
+        
+        newButton.addEventListener('click', () => {
             this.toggleTheme();
         });
     }
@@ -54,7 +55,7 @@ class ThemeToggle {
     }
 
     updateToggleButton() {
-        const toggleButton = document.querySelector('#theme-toggle');
+        const toggleButton = document.querySelector('.theme-toggle');
         if (toggleButton) {
             toggleButton.innerHTML = this.currentTheme === 'light' ? '🌙' : '☀️';
             toggleButton.setAttribute('aria-label', 
