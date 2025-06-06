@@ -1,13 +1,4 @@
-// === DEBUG: SLEDOVÁNÍ FETCH REQUESTŮ ===
-const originalFetch = window.fetch;
-window.fetch = function(...args) {
-    console.log('🌐 FETCH REQUEST:', args[0], args[1]);
-    if (args[0] && args[0].includes('upload')) {
-        console.error('❌ POZOR: Pokus o upload na server!', args);
-        throw new Error('Server upload je zakázán!');
-    }
-    return originalFetch.apply(this, args);
-};
+// Upload systém je nyní aktivní a funkcní
 
 // Jednoduché novinky podle náčrtu
 let posts = [];
@@ -366,6 +357,8 @@ function resizeAndCompressImage(dataUrl, callback) {
 }
 
 function showImageCropper(imageDataUrl) {
+    console.log('🖼️ showImageCropper spuštěno');
+    
     const cropperContainer = document.getElementById('imageCropper');
     if (!cropperContainer) {
         // Vytvoř cropper kontejner
@@ -397,146 +390,142 @@ function showImageCropper(imageDataUrl) {
     initializeCropper();
 }
 
-let cropData = { x: 0, y: 0, width: 400, height: 400 };
+let isDraggingCrop = false;
+let cropStartX, cropStartY;
 
 function initializeCropper() {
     const cropImage = document.getElementById('cropImage');
-    const cropSelector = document.getElementById('cropSelector');
+    const selector = document.getElementById('cropSelector');
     
-    cropImage.onload = function() {
-        // Nastav výchozí crop na střed s fixním poměrem 1:1 (čtverec)
-        const imgRect = cropImage.getBoundingClientRect();
-        const aspectRatio = 1; // Poměr 1:1 (čtverec)
-        
-        // Vypočti maximální velikost zachovávající poměr stran
-        let maxWidth = imgRect.width * 0.8;
-        let maxHeight = imgRect.height * 0.8;
-        
-        if (maxWidth / maxHeight > aspectRatio) {
-            // Omez podle výšky
-            cropData.height = maxHeight;
-            cropData.width = cropData.height * aspectRatio;
-        } else {
-            // Omez podle šířky
-            cropData.width = maxWidth;
-            cropData.height = cropData.width / aspectRatio;
-        }
-        
-        cropData.x = (imgRect.width - cropData.width) / 2;
-        cropData.y = (imgRect.height - cropData.height) / 2;
-        
-        updateCropSelector();
-    };
+    if (!cropImage || !selector) return;
     
-    // Drag pro crop selector s fixním poměrem stran
-    let isDragging = false;
-    let startX = 0, startY = 0;
-    let startCropX = 0, startCropY = 0;
+    // Nastav defaultní velikost crop selectoru
+    selector.style.width = '200px';
+    selector.style.height = '200px';
+    selector.style.left = '20px';
+    selector.style.top = '20px';
     
-    cropSelector.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        startCropX = cropData.x;
-        startCropY = cropData.y;
-        e.preventDefault();
-        e.stopPropagation();
-    });
-    
-    document.addEventListener('mousemove', (e) => {
-        if (isDragging) {
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            
-            const newX = startCropX + deltaX;
-            const newY = startCropY + deltaY;
-            
-            const imgRect = cropImage.getBoundingClientRect();
-            
-            cropData.x = Math.max(0, Math.min(newX, imgRect.width - cropData.width));
-            cropData.y = Math.max(0, Math.min(newY, imgRect.height - cropData.height));
-            updateCropSelector();
-        }
-    });
-    
-    document.addEventListener('mouseup', () => {
-        isDragging = false;
-    });
+    // Přidej event listenery pro dragging
+    selector.addEventListener('mousedown', startDragCrop);
+    document.addEventListener('mousemove', dragCrop);
+    document.addEventListener('mouseup', stopDragCrop);
 }
 
-function updateCropSelector() {
-    const cropSelector = document.getElementById('cropSelector');
-    cropSelector.style.left = cropData.x + 'px';
-    cropSelector.style.top = cropData.y + 'px';
-    cropSelector.style.width = cropData.width + 'px';
-    cropSelector.style.height = cropData.height + 'px';
+function startDragCrop(e) {
+    isDraggingCrop = true;
+    cropStartX = e.clientX;
+    cropStartY = e.clientY;
+    e.preventDefault();
+}
+
+function dragCrop(e) {
+    if (!isDraggingCrop) return;
+    
+    const selector = document.getElementById('cropSelector');
+    const deltaX = e.clientX - cropStartX;
+    const deltaY = e.clientY - cropStartY;
+    
+    const currentLeft = parseInt(selector.style.left) || 0;
+    const currentTop = parseInt(selector.style.top) || 0;
+    
+    selector.style.left = (currentLeft + deltaX) + 'px';
+    selector.style.top = (currentTop + deltaY) + 'px';
+    
+    cropStartX = e.clientX;
+    cropStartY = e.clientY;
+}
+
+function stopDragCrop() {
+    isDraggingCrop = false;
 }
 
 async function applyCrop() {
-    console.log('✂️ applyCrop spuštěno');
+    console.log('✂️ applyCrop spuštěno - upload na server');
     
-    const cropImage = document.getElementById('cropImage');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
+    const cropImage = document.getElementById('cropImage');
+    const selector = document.getElementById('cropSelector');
     
-    // Nastav canvas na jednotnou velikost (1:1 poměr - čtverec) - 4K kvalita
-    canvas.width = 3840;
-    canvas.height = 3840;
+    if (!cropImage || !selector) {
+        console.error('❌ Chybí crop prvky');
+        return;
+    }
     
-    console.log('🖼️ Canvas nastaven na', canvas.width, 'x', canvas.height);
+    const rect = selector.getBoundingClientRect();
+    const imgRect = cropImage.getBoundingClientRect();
     
-    // Vypočti poměr mezi obrázkem a jeho zobrazenou velikostí
-    const img = new Image();
-    img.onload = async function() {
-        console.log('🖼️ Obrázek načten pro crop');
-        const displayedRect = cropImage.getBoundingClientRect();
-        const scaleX = img.width / displayedRect.width;
-        const scaleY = img.height / displayedRect.height;
+    // Výpočet crop oblastí
+    const scaleX = cropImage.naturalWidth / imgRect.width;
+    const scaleY = cropImage.naturalHeight / imgRect.height;
+    
+    const cropX = Math.max(0, (rect.left - imgRect.left) * scaleX);
+    const cropY = Math.max(0, (rect.top - imgRect.top) * scaleY);
+    const cropWidth = Math.min(rect.width * scaleX, cropImage.naturalWidth - cropX);
+    const cropHeight = Math.min(rect.height * scaleY, cropImage.naturalHeight - cropY);
+    
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+    
+    ctx.drawImage(
+        cropImage,
+        cropX, cropY, cropWidth, cropHeight,
+        0, 0, cropWidth, cropHeight
+    );
+    
+    const croppedImageData = canvas.toDataURL('image/jpeg', 0.8);
+    
+    // Upload na server
+    try {
+        console.log('🚀 Nahrávám fotku na server...');
         
-        // Aplikuj crop
-        ctx.drawImage(
-            img,
-            cropData.x * scaleX,
-            cropData.y * scaleY,
-            cropData.width * scaleX,
-            cropData.height * scaleY,
-            0, 0,
-            canvas.width,
-            canvas.height
-        );
+        const response = await fetch('upload.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                image: croppedImageData
+            })
+        });
         
-        // Převeď na base64
-        const croppedImage = canvas.toDataURL('image/jpeg', 0.8);
+        const result = await response.json();
+        console.log('📤 Server odpověď:', result);
         
-        try {
-            console.log('✂️ Aplikuji crop, velikost:', croppedImage.length, 'znaků');
-            
-            // Ulož fotku lokálně jako base64 (bez serveru)
-            selectedPhoto = croppedImage;
-            
-            console.log('💾 Fotka uložena do selectedPhoto');
+        if (result.success) {
+            selectedPhoto = result.url; // Použij URL ze serveru
+            console.log('✅ Fotka úspěšně nahrána:', selectedPhoto);
             
             // Zobraz náhled
             document.getElementById('previewImage').src = selectedPhoto;
             document.getElementById('photoPreview').classList.remove('hidden');
-            updateShareButton();
-            closeCropper();
             
-            console.log('✅ Fotka úspěšně oříznutá a uložena lokálně');
-            alert('✅ Fotka úspěšně uložena!');
-        } catch (error) {
-            console.error('❌ Chyba při zpracování fotky:', error);
-            alert('❌ Chyba při zpracování fotky: ' + error.message);
+            // Zavři cropper
             closeCropper();
+            updateShareButton();
+            
+            alert('✅ Fotka úspěšně nahrána na server!');
+        } else {
+            throw new Error(result.error || 'Neznámá chyba');
         }
-    };
-    img.src = cropImage.src;
+        
+    } catch (error) {
+        console.error('❌ Chyba při nahrávání:', error);
+        alert('❌ Chyba při nahrávání fotky: ' + error.message);
+        
+        // Fallback - ulož lokálně
+        selectedPhoto = croppedImageData;
+        document.getElementById('previewImage').src = selectedPhoto;
+        document.getElementById('photoPreview').classList.remove('hidden');
+        closeCropper();
+        updateShareButton();
+    }
 }
 
 function closeCropper() {
     const cropper = document.getElementById('imageCropper');
     if (cropper) {
-        cropper.remove();
+        cropper.classList.add('hidden');
     }
 }
 

@@ -43,14 +43,15 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
     }
 
     checkAuthentication() {
-        // Kontrola zda je uživatel přihlášen
-        this.isAuthenticated = document.body.classList.contains('authenticated') || 
-                              localStorage.getItem('isLoggedIn') === 'true' ||
-                              document.body.classList.contains('protected-page');
+        // Chatbot je dostupný pro všechny uživatele
+        this.isAuthenticated = true;
     }
 
     // === UI VYTVOŘENÍ ===
     createChatbotUI() {
+        // Přidej styly nejdříve
+        this.addChatbotStyles();
+        
         // Floating chatbot button
         const chatButton = document.createElement('div');
         chatButton.className = 'chatbot-button';
@@ -59,13 +60,13 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
         
         chatButton.style.cssText = `
             position: fixed;
-            bottom: 20px;
-            right: 20px;
+            bottom: 30px;
+            right: 30px;
             width: 60px;
             height: 60px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 50%;
-            display: flex;
+            display: flex !important;
             align-items: center;
             justify-content: center;
             font-size: 24px;
@@ -73,7 +74,7 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
             box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
             z-index: 1000;
             transition: all 0.3s ease;
-            animation: pulse 2s infinite;
+            animation: chatbot-pulse 2s infinite;
         `;
 
         // Chatbot window
@@ -275,6 +276,24 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
     }
 
     addChatbotStyles() {
+        // Přidej CSS animace
+        if (!document.getElementById('chatbot-animations')) {
+            const animationStyle = document.createElement('style');
+            animationStyle.id = 'chatbot-animations';
+            animationStyle.textContent = `
+                @keyframes chatbot-pulse {
+                    0% { transform: scale(1); box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4); }
+                    50% { transform: scale(1.05); box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6); }
+                    100% { transform: scale(1); box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4); }
+                }
+                
+                .chatbot-button:hover {
+                    transform: scale(1.1) !important;
+                    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.8) !important;
+                }
+            `;
+            document.head.appendChild(animationStyle);
+        }
         const styles = `
             @keyframes pulse {
                 0%, 100% { transform: scale(1); }
@@ -788,17 +807,18 @@ let aiChatbot = null;
 
 // Inicializace po načtení DOM
 document.addEventListener('DOMContentLoaded', () => {
-    // Malé zpoždění aby se načetly ostatní skripty
-    setTimeout(() => {
+    console.log('🤖 Inicializuji AI Chatbot...');
+    
+    try {
         aiChatbot = new AIChatbot();
         
         // Přidej do globálního kontextu
         window.aiChatbot = aiChatbot;
         
-        if (aiChatbot.isAuthenticated) {
-            console.log('🤖 AI Chatbot je aktivní pro přihlášené uživatele');
-        }
-    }, 1000);
+        console.log('🤖 AI Chatbot úspěšně inicializován a je viditelný!');
+    } catch (error) {
+        console.error('❌ Chyba při inicializaci chatbota:', error);
+    }
 });
 
 // Export pro ES6 moduly

@@ -218,4 +218,155 @@ img {
   a[href^="javascript:"]:after {
     content: "";
   }
+}
+
+/* Image Cropper Styles */
+.image-cropper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cropper-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center; 
+  justify-content: center;
+}
+
+.cropper-content {
+  background: var(--bg-primary, #fff);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 90vw;
+  max-height: 85vh;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.cropper-content h3 {
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+  color: var(--text-primary, #333);
+}
+
+.crop-container {
+  position: relative;
+  max-width: 500px;
+  max-height: 300px;
+  margin: 0 auto 1rem;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.crop-frame {
+  position: relative;
+  display: inline-block;
+}
+
+.crop-frame img {
+  max-width: 100%;
+  max-height: 280px;
+  display: block;
+  object-fit: contain;
+}
+
+.crop-selector {
+  position: absolute;
+  border: 2px solid var(--accent-color, #007bff);
+  background: rgba(0, 123, 255, 0.1);
+  cursor: move;
+  user-select: none;
+}
+
+.crop-selector::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: var(--accent-color, #007bff);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.cropper-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.crop-cancel,
+.crop-confirm {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.crop-cancel {
+  background: var(--bg-secondary, #f8f9fa);
+  color: var(--text-primary, #333);
+}
+
+.crop-cancel:hover {
+  background: var(--bg-tertiary, #e9ecef);
+}
+
+.crop-confirm {
+  background: var(--accent-color, #007bff);
+  color: white;
+}
+
+.crop-confirm:hover {
+  background: var(--accent-dark, #0056b3);
+  transform: translateY(-1px);
+}
+
+/* Responsive cropper pro mobily */
+@media (max-width: 768px) {
+  .cropper-content {
+    margin: 1rem;
+    padding: 1rem;
+    max-height: 80vh;
+  }
+  
+  .crop-container {
+    max-height: 250px;
+  }
+  
+  .crop-frame img {
+    max-height: 220px;
+  }
+  
+  .cropper-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .crop-cancel,
+  .crop-confirm {
+    width: 100%;
+    padding: 1rem;
+  }
 } 
