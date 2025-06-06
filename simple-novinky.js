@@ -63,7 +63,7 @@ async function loadPosts() {
     try {
         console.log('📡 Načítám příspěvky ze SERVERU...');
         
-        const response = await fetch('/api/posts', {
+        const response = await fetch('/api/posts-github', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -831,7 +831,7 @@ async function createPost() {
         
         const postData = {
             text: text,
-            author: currentUser.fullName || currentUser.username,
+            author: `${currentUser.role}:${currentUser.username}`,
             photo: selectedPhoto || null,
             file: selectedFile || null,
             category: selectedCategory || 'Novinky',
@@ -842,7 +842,7 @@ async function createPost() {
         
         console.log('📤 Odesílám data na server:', postData);
         
-        const response = await fetch('/api/posts', {
+        const response = await fetch('/api/posts-github', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -930,11 +930,15 @@ function renderPosts() {
 }
 
 function createPostHTML(post) {
+    // Debug - ukáž identifikaci uživatele
+    const currentUserIdentifier = `${currentUser.role}:${currentUser.username}`;
+    console.log('🔍 DEBUG createPostHTML - Aktuální uživatel:', currentUserIdentifier);
+    console.log('🔍 DEBUG createPostHTML - Post likes:', post.likes);
+    
     // Kontrola, jestli aktuální uživatel dal like
-    const currentUserName = currentUser.fullName || currentUser.username;
-    const isLiked = Array.isArray(post.likes) ? post.likes.includes(currentUserName) : false;
+    const isLiked = Array.isArray(post.likes) ? post.likes.includes(currentUserIdentifier) : false;
     const likesCount = Array.isArray(post.likes) ? post.likes.length : (post.likes || 0);
-    const canDelete = currentUser.role === 'Administrator' || post.author === (currentUser.fullName || currentUser.username);
+    const canDelete = currentUser.role === 'Administrator' || post.author === currentUserIdentifier;
     
     return `
         <div class="post">
@@ -942,7 +946,7 @@ function createPostHTML(post) {
                 <div class="post-author">
                     <div class="author-avatar">${getInitials(post.author)}</div>
                     <div class="author-info">
-                        <h4>${post.author}</h4>
+                        <h4>${formatDisplayName(post.author)}</h4>
                         <span>${formatTime(post.timestamp)}</span>
                     </div>
                 </div>
@@ -1017,7 +1021,7 @@ function createPostHTML(post) {
              <div class="comments-section" id="comments-${post.id}">
                  <div class="comment-form">
                      <div class="comment-avatar">
-                         ${getInitials(currentUser.fullName || currentUser.username)}
+                         ${getInitials(currentUser.role)}
                      </div>
                      <div class="comment-input-wrapper">
                          <input 
@@ -1050,7 +1054,7 @@ function createPostHTML(post) {
                                  ${getInitials(comment.author)}
                              </div>
                              <div class="comment-content">
-                                 <div class="comment-author">${comment.author}</div>
+                                 <div class="comment-author">${formatDisplayName(comment.author)}</div>
                                  <div class="comment-text">${comment.text || comment.content}</div>
                                  <div class="comment-time">${formatTime(comment.timestamp)}</div>
                              </div>
@@ -1071,6 +1075,25 @@ function createPostHTML(post) {
 
 function getInitials(name) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function formatDisplayName(authorIdentifier) {
+    // Pokud je to starý formát (bez dvojtečky), vrať jak je
+    if (!authorIdentifier.includes(':')) {
+        return authorIdentifier;
+    }
+    
+    // Nový formát "role:username" - zobraz jen roli
+    const [role, username] = authorIdentifier.split(':');
+    
+    // Mapování rolí na hezká jména
+    const roleNames = {
+        'Administrator': 'Admin',
+        'Prodejce': 'Prodejce',
+        'Servis': 'Servis'
+    };
+    
+    return roleNames[role] || role;
 }
 
 function getCategoryClass(category) {
@@ -1097,33 +1120,40 @@ async function toggleLike(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    const currentUserName = currentUser.fullName || currentUser.username;
+    const currentUserIdentifier = `${currentUser.role}:${currentUser.username}`;
+    console.log('🔍 DEBUG toggleLike - Uživatel:', currentUserIdentifier);
+    console.log('🔍 DEBUG toggleLike - Stávající likes:', post.likes);
     
     // Zajisti, že likes je pole
     if (!Array.isArray(post.likes)) {
         post.likes = [];
     }
     
-    const wasLiked = post.likes.includes(currentUserName);
+    const wasLiked = post.likes.includes(currentUserIdentifier);
+    console.log('🔍 DEBUG toggleLike - Měl like:', wasLiked);
     
     // Optimisticky aktualizuj UI
     if (wasLiked) {
         // Odstraň like
-        const index = post.likes.indexOf(currentUserName);
+        const index = post.likes.indexOf(currentUserIdentifier);
         if (index > -1) {
             post.likes.splice(index, 1);
         }
+        console.log('🔍 DEBUG toggleLike - Like odebrán');
     } else {
         // Přidej like
-        post.likes.push(currentUserName);
+        post.likes.push(currentUserIdentifier);
+        console.log('🔍 DEBUG toggleLike - Like přidán');
     }
+    
+    console.log('🔍 DEBUG toggleLike - Nové likes:', post.likes);
 
     // Znovu vykresli
     document.getElementById('postsFeed').innerHTML = renderPosts();
 
     try {
         // Pošli na server
-        const response = await fetch('/api/posts', {
+        const response = await fetch('/api/posts-github', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1149,10 +1179,10 @@ async function toggleLike(postId) {
         // Rollback při chybě
         if (wasLiked) {
             // Přidej zpět like
-            post.likes.push(currentUserName);
+            post.likes.push(currentUserIdentifier);
         } else {
             // Odstraň like
-            const index = post.likes.indexOf(currentUserName);
+            const index = post.likes.indexOf(currentUserIdentifier);
             if (index > -1) {
                 post.likes.splice(index, 1);
             }
@@ -1220,7 +1250,7 @@ async function saveEdit(postId) {
 
     try {
         // Pošli na server
-        const response = await fetch('/api/posts', {
+        const response = await fetch('/api/posts-github', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1284,7 +1314,7 @@ async function deletePost(postId) {
 
     try {
         // Pošli na server
-        const response = await fetch(`/api/posts?id=${postId}`, {
+        const response = await fetch(`/api/posts-github?id=${postId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -1324,7 +1354,7 @@ async function addComment(postId, content) {
 
     const comment = {
         id: Date.now().toString(),
-        author: currentUser.fullName || currentUser.username,
+        author: `${currentUser.role}:${currentUser.username}`,
         text: content.trim(),
         timestamp: Date.now()
     };
@@ -1345,7 +1375,7 @@ async function addComment(postId, content) {
 
     try {
         // Pošli na server
-        const response = await fetch('/api/posts', {
+        const response = await fetch('/api/posts-github', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1422,7 +1452,7 @@ async function deleteComment(postId, commentId) {
 
     try {
         // Pošli na server
-        const response = await fetch('/api/posts', {
+        const response = await fetch('/api/posts-github', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
