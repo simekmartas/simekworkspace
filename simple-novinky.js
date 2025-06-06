@@ -20,11 +20,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     filterPosts('all'); // Zobraz všechny příspěvky po načtení
     
     // Sleduj změny v localStorage (při odhlášení/přihlášení v jiném tabu)
-    window.addEventListener('storage', function(e) {
+    window.addEventListener('storage', async function(e) {
         if (e.key === 'username' || e.key === 'role' || e.key === 'isLoggedIn') {
             console.log('Změna přihlášení detekována, znovu načítám...');
             loadCurrentUser();
-            renderPosts(); // Znovu vykresli příspěvky s novým uživatelem
+            await loadPosts(); // Znovu načti příspěvky ze serveru
+            
+            // Vykresli celou aplikaci znovu
+            const appContainer = document.getElementById('app');
+            if (appContainer) {
+                renderApp();
+                filterPosts('all');
+            }
         }
     });
 });
@@ -54,24 +61,41 @@ function loadCurrentUser() {
 
 async function loadPosts() {
     try {
-        console.log('Načítám příspěvky ze serveru...');
-        const response = await fetch('/api/posts');
-        const data = await response.json();
+        console.log('📡 Načítám příspěvky ze SERVERU...');
         
+        const response = await fetch('posts-database.php', {
+            method: 'GET'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
+        
+        const data = await response.json();
         if (data.success) {
             posts = data.posts || [];
-            console.log(`Načteno ${posts.length} příspěvků ze serveru`);
+            console.log('✅ Načteno ' + posts.length + ' příspěvků ze SERVERU');
         } else {
-            console.error('Chyba při načítání ze serveru:', data.error);
-            // Fallback na localStorage
-            const savedPosts = localStorage.getItem('simple_posts');
-            posts = savedPosts ? JSON.parse(savedPosts) : [];
+            throw new Error(data.error || 'Server nevrátil validní data');
         }
+        
     } catch (error) {
-        console.error('Síťová chyba při načítání příspěvků:', error);
-        // Fallback na localStorage
-        const savedPosts = localStorage.getItem('simple_posts');
-        posts = savedPosts ? JSON.parse(savedPosts) : [];
+        console.error('❌ CHYBA při načítání ze serveru:', error);
+        
+        // Fallback na localStorage jako záložní řešení
+        console.log('🔄 Zkouším localStorage jako záložní...');
+        try {
+            const savedPosts = localStorage.getItem('simple_posts');
+            if (savedPosts) {
+                posts = JSON.parse(savedPosts);
+                console.log('📦 Načteno ' + posts.length + ' příspěvků z localStorage (záložní)');
+            } else {
+                posts = [];
+            }
+        } catch (fallbackError) {
+            console.error('❌ I localStorage selhal:', fallbackError);
+            posts = [];
+        }
     }
     
     // Přidej kategorii do starých příspěvků pokud ji nemají
@@ -704,60 +728,44 @@ async function createPost() {
 
     const shareBtn = document.getElementById('shareBtn');
     const originalText = shareBtn.textContent;
-    shareBtn.textContent = 'Ukládám...';
+    shareBtn.textContent = 'Ukládám na server...';
     shareBtn.disabled = true;
     
     try {
-        let imageUrl = null;
+        console.log('💾 UKLÁDÁM příspěvek na SERVER...');
         
-        // Pokud je obrázek, nahraj ho na server
-        if (selectedPhoto) {
-            console.log('Nahrávám obrázek na server...');
-            const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    image: selectedPhoto,
-                    filename: `post_${Date.now()}.jpg`
-                })
-            });
-            
-            const uploadData = await uploadResponse.json();
-            
-            if (uploadData.success) {
-                imageUrl = uploadData.url;
-                console.log('Obrázek úspěšně nahrán:', imageUrl);
-            } else {
-                throw new Error('Chyba při nahrávání obrázku: ' + uploadData.error);
-            }
-        }
-        
-        const newPost = {
+        const postData = {
+            text: text,
             author: currentUser.fullName || currentUser.username,
-            content: text,
-            image: imageUrl || null,
-            file: selectedFile,
+            photo: selectedPhoto || null,
+            file: selectedFile || null,
             category: selectedCategory || 'Novinky'
         };
         
-        // Ulož příspěvek na server
-        console.log('Ukládám příspěvek na server...');
-        const response = await fetch('/api/posts', {
+        console.log('📤 Odesílám data na server:', postData);
+        
+        const response = await fetch('posts-database.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(newPost)
+            body: JSON.stringify(postData)
         });
+        
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.status}`);
+        }
         
         const data = await response.json();
         
         if (data.success) {
-            // Přidej příspěvek do lokálního pole
+            console.log('✅ Příspěvek ÚSPĚŠNĚ uložen na server!');
+            
+            // Přidej nový příspěvek na začátek seznamu
             posts.unshift(data.post);
-            await savePosts(); // Backup do localStorage
+            
+            // Backup do localStorage
+            localStorage.setItem('simple_posts', JSON.stringify(posts));
             
             // Vyčisti formulář
             document.getElementById('postText').value = '';
@@ -765,31 +773,36 @@ async function createPost() {
             removeFile();
             removeCategory();
             updateShareButton();
+            
+            // Znovu vykresli příspěvky
             document.getElementById('postsFeed').innerHTML = renderPosts();
             
-            console.log('Příspěvek úspěšně uložen na server');
         } else {
-            throw new Error('Chyba při ukládání na server: ' + data.error);
+            throw new Error(data.error || 'Server nevrátil validní odpověď');
         }
         
     } catch (error) {
-        console.error('Chyba při vytváření příspěvku:', error);
+        console.error('❌ CHYBA při ukládání na server:', error);
         alert('Chyba při ukládání příspěvku: ' + error.message);
         
-        // V případě chyby ulož alespoň lokálně
-        posts.unshift({
-            id: Date.now(),
+        // ZÁLOŽNÍ uložení do localStorage
+        console.log('🔄 Záložní uložení do localStorage...');
+        const fallbackPost = {
+            id: 'fallback_' + Date.now(),
+            text: text,
             author: currentUser.fullName || currentUser.username,
-            content: text,
-            image: selectedPhoto,
+            photo: selectedPhoto,
             file: selectedFile,
             category: selectedCategory || 'Novinky',
-            timestamp: new Date().toISOString(),
-            likes: [],
+            timestamp: Date.now(),
+            likes: 0,
+            liked: false,
             comments: []
-        });
+        };
         
-        savePosts();
+        posts.unshift(fallbackPost);
+        localStorage.setItem('simple_posts', JSON.stringify(posts));
+        
         document.getElementById('postText').value = '';
         removePhoto();
         removeFile();

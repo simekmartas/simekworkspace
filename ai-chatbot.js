@@ -4,7 +4,7 @@ class AIChatbot {
     constructor() {
         // ⚠️ VAROVÁNÍ: V produkci NIKDY API klíč do frontend kódu!
         // Vytvořte backend endpoint pro bezpečnost
-        this.apiKey = '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';
+        this.apiKey = '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';
         this.apiUrl = 'https://api.openai.com/v1/chat/completions';
         
         this.isOpen = false;
