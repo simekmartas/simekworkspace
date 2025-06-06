@@ -1,8 +1,8 @@
 const fs = require('fs').promises;
 const path = require('path');
 
-// Cesta k datovému souboru
-const DATA_FILE = path.join(process.cwd(), 'data', 'posts.json');
+// Cesta k datovému souboru - Netlify Functions můžou zapisovat jen do /tmp
+const DATA_FILE = path.join('/tmp', 'posts.json');
 
 // Zajistí, že adresář existuje
 async function ensureDataDir() {

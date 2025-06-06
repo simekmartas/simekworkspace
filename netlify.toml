@@ -1,6 +1,6 @@
 [build]
   publish = "."
-  functions = "netlify/functions"
+  functions = "api"
 
 # Nastavení HTTPS a HTTP hlaviček
 [[headers]]
@@ -31,6 +31,18 @@
   status = 301
   force = true
 
+# Redirects for Netlify functions (MUSÍ BÝT PŘED fallback!)
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# API proxy for Google Sheets
+[[redirects]]
+  from = "/api/sheets/*"
+  to = "/.netlify/functions/sheets"
+  status = 200
+
 # Zajistí, že cesty jako /majak správně zobrazí majak.html
 [[redirects]]
   from = "/majak"
@@ -52,27 +64,13 @@
   to = "/login.html"
   status = 200
 
-# Fallback - pro SPA aplikace
+# Fallback - pro SPA aplikace (MUSÍ BÝT POSLEDNÍ!)
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
 
-# Redirects for Netlify functions
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
 
-# API proxy for Google Sheets
-[[redirects]]
-  from = "/api/sheets/*"
-  to = "/.netlify/functions/sheets"
-  status = 200
-
-[functions]
-  directory = "api"
-  node_bundler = "esbuild"
 
 [[headers]]
   for = "/api/*"
