@@ -9,6 +9,14 @@ class AccessibilityEnhancements {
   }
 
   init() {
+    // Neaktivuj accessibility toolbar na index.html
+    if (window.location.pathname.endsWith('index.html') || 
+        window.location.pathname === '/' || 
+        window.location.pathname.endsWith('/')) {
+      console.log('🚫 Accessibility Enhancements zakázány na úvodní stránce');
+      return;
+    }
+    
     this.setupKeyboardNavigation();
     this.setupSkipLinks();
     this.setupAriaLabels();
