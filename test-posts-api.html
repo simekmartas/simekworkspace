@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Posts API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .loading {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .info {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
+            margin-bottom: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test Posts Database API</h1>
+        
+        <div class="info">
+            <strong>ℹ️ Diagnostika:</strong><br>
+            Tento test ověří funkčnost posts-database.php API pro ukládání příspěvků.
+        </div>
+
+        <h3>📥 Test načítání příspěvků</h3>
+        <button class="test-button" onclick="testLoadPosts()">🔄 Načíst příspěvky</button>
+        
+        <h3>📤 Test vytvoření příspěvku</h3>
+        <input type="text" id="testAuthor" placeholder="Jméno autora" value="Test Uživatel">
+        <textarea id="testText" placeholder="Text příspěvku" rows="3">Testovací příspěvek z diagnostiky</textarea>
+        <select id="testCategory">
+            <option value="Novinky">Novinky</option>
+            <option value="Důležité">Důležité</option>
+            <option value="Ze života">Ze života</option>
+        </select>
+        <button class="test-button" onclick="testCreatePost()">💾 Vytvořit příspěvek</button>
+        
+        <h3>🗑️ Test smazání všech příspěvků</h3>
+        <button class="test-button" onclick="clearDatabase()" style="background: #dc3545;">🗑️ Vymazat databázi</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+
+        async function testLoadPosts() {
+            showResult('🔄 Testuji načítání příspěvků ze serveru...', 'loading');
+
+            try {
+                const response = await fetch('posts-database.php', {
+                    method: 'GET'
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Server odpověď:', data);
+
+                if (data.success) {
+                    showResult(`✅ SUCCESS! Načítání funguje správně.\n\nPočet příspěvků: ${data.posts.length}\n\nData:\n${JSON.stringify(data.posts, null, 2)}`, 'success');
+                } else {
+                    throw new Error(data.error || 'Server nevrátil success=true');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                
+                let errorMessage = `❌ CHYBA: ${error.message}\n\n`;
+                
+                if (error.message.includes('fetch')) {
+                    errorMessage += `🔧 MOŽNÉ PŘÍČINY:
+1. posts-database.php neexistuje nebo má chybu
+2. PHP server neběží
+3. CORS problém
+4. Špatná cesta k souboru`;
+                }
+
+                showResult(errorMessage, 'error');
+            }
+        }
+
+        async function testCreatePost() {
+            const author = document.getElementById('testAuthor').value;
+            const text = document.getElementById('testText').value;
+            const category = document.getElementById('testCategory').value;
+
+            if (!author || !text) {
+                showResult('❌ Vyplňte jméno autora a text příspěvku', 'error');
+                return;
+            }
+
+            showResult('💾 Testuji vytváření příspěvku...', 'loading');
+
+            try {
+                const postData = {
+                    text: text,
+                    author: author,
+                    category: category,
+                    photo: null,
+                    file: null
+                };
+
+                console.log('Odesílám data:', postData);
+
+                const response = await fetch('posts-database.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(postData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                console.log('Server odpověď:', data);
+
+                if (data.success) {
+                    showResult(`✅ SUCCESS! Příspěvek byl vytvořen.\n\nID: ${data.post.id}\nAutor: ${data.post.author}\nText: ${data.post.text}\nKategorie: ${data.post.category}\nTimestamp: ${new Date(data.post.timestamp).toLocaleString('cs-CZ')}\n\n📝 Zkuste teď načíst příspěvky pro ověření.`, 'success');
+                } else {
+                    throw new Error(data.error || 'Server nevrátil success=true');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                showResult(`❌ CHYBA při vytváření příspěvku: ${error.message}`, 'error');
+            }
+        }
+
+        async function clearDatabase() {
+            if (!confirm('Opravdu chcete smazat všechny příspěvky?')) {
+                return;
+            }
+
+            showResult('🗑️ Mažu databázi...', 'loading');
+
+            try {
+                // Načteme všechny příspěvky a smažeme je jeden po druhém
+                const loadResponse = await fetch('posts-database.php', { method: 'GET' });
+                const loadData = await loadResponse.json();
+
+                if (loadData.success && loadData.posts.length > 0) {
+                    for (const post of loadData.posts) {
+                        await fetch('posts-database.php', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ postId: post.id })
+                        });
+                    }
+                }
+
+                showResult(`✅ Databáze byla vyčištěna.\n\nSmazáno příspěvků: ${loadData.posts ? loadData.posts.length : 0}`, 'success');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showResult(`❌ CHYBA při mazání: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto test po načtení stránky
+        window.addEventListener('load', () => {
+            console.log('🧪 Diagnostická stránka načtena');
+            showResult('Připraven k testování. Začněte načtením příspěvků.', 'info');
+        });
+    </script>
+</body>
+</html> 

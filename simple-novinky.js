@@ -63,8 +63,11 @@ async function loadPosts() {
     try {
         console.log('📡 Načítám příspěvky ze SERVERU...');
         
-        const response = await fetch('posts-database.php', {
-            method: 'GET'
+        const response = await fetch('/.netlify/functions/posts', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
         
         if (!response.ok) {
@@ -110,6 +113,7 @@ async function savePosts() {
     try {
         // Ulož také do localStorage jako backup
         localStorage.setItem('simple_posts', JSON.stringify(posts));
+        console.log('📦 Backup uložen do localStorage');
         return true;
     } catch (error) {
         if (error.name === 'QuotaExceededError') {
@@ -440,6 +444,14 @@ function showImageCropper(imageDataUrl) {
                 <div class="cropper-overlay">
                     <div class="cropper-content">
                         <h3>Upravit fotku</h3>
+                        
+                        <div class="crop-presets" style="margin-bottom: 1rem; display: flex; gap: 0.5rem; justify-content: center;">
+                            <button onclick="setCropRatio('square')" style="padding: 0.25rem 0.75rem; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); border-radius: 4px; font-size: 0.8rem;">Čtverec</button>
+                            <button onclick="setCropRatio('original')" style="padding: 0.25rem 0.75rem; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); border-radius: 4px; font-size: 0.8rem;">Celá fotka</button>
+                            <button onclick="setCropRatio('4:3')" style="padding: 0.25rem 0.75rem; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); border-radius: 4px; font-size: 0.8rem;">4:3</button>
+                            <button onclick="setCropRatio('16:9')" style="padding: 0.25rem 0.75rem; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); border-radius: 4px; font-size: 0.8rem;">16:9</button>
+                        </div>
+                        
                         <div class="crop-container">
                             <div class="crop-frame">
                                 <img id="cropImage" src="${imageDataUrl}">
@@ -472,11 +484,17 @@ function initializeCropper() {
     
     if (!cropImage || !selector) return;
     
-    // Nastav defaultní velikost crop selectoru
-    selector.style.width = '200px';
-    selector.style.height = '200px';
-    selector.style.left = '20px';
-    selector.style.top = '20px';
+    // Počkej až se obrázek načte
+    cropImage.onload = function() {
+        // Nastav výchozí crop na CELOU fotku
+        setCropRatio('original');
+        console.log('✂️ Crop nastaven na celou fotku (můžete změnit pomocí tlačítek)');
+    };
+    
+    // Trigger onload pokud je obrázek už načtený
+    if (cropImage.complete) {
+        cropImage.onload();
+    }
     
     // Přidej event listenery pro dragging
     selector.addEventListener('mousedown', startDragCrop);
@@ -510,6 +528,74 @@ function dragCrop(e) {
 
 function stopDragCrop() {
     isDraggingCrop = false;
+}
+
+function setCropRatio(ratio) {
+    const cropImage = document.getElementById('cropImage');
+    const selector = document.getElementById('cropSelector');
+    
+    if (!cropImage || !selector) return;
+    
+    const imageRect = cropImage.getBoundingClientRect();
+    let width, height;
+    
+    switch(ratio) {
+        case 'original':
+            // Celá fotka
+            width = imageRect.width - 4; // -4px pro border
+            height = imageRect.height - 4;
+            selector.style.left = '2px';
+            selector.style.top = '2px';
+            break;
+            
+        case 'square':
+            // Čtverec (default)
+            const minSide = Math.min(imageRect.width, imageRect.height) - 4;
+            width = minSide;
+            height = minSide;
+            selector.style.left = ((imageRect.width - minSide) / 2) + 'px';
+            selector.style.top = ((imageRect.height - minSide) / 2) + 'px';
+            break;
+            
+        case '4:3':
+            // Poměr 4:3
+            if (imageRect.width > imageRect.height) {
+                height = imageRect.height - 4;
+                width = (height * 4 / 3);
+                if (width > imageRect.width - 4) {
+                    width = imageRect.width - 4;
+                    height = (width * 3 / 4);
+                }
+            } else {
+                width = imageRect.width - 4;
+                height = (width * 3 / 4);
+            }
+            selector.style.left = ((imageRect.width - width) / 2) + 'px';
+            selector.style.top = ((imageRect.height - height) / 2) + 'px';
+            break;
+            
+        case '16:9':
+            // Poměr 16:9
+            if (imageRect.width > imageRect.height) {
+                height = imageRect.height - 4;
+                width = (height * 16 / 9);
+                if (width > imageRect.width - 4) {
+                    width = imageRect.width - 4;
+                    height = (width * 9 / 16);
+                }
+            } else {
+                width = imageRect.width - 4;
+                height = (width * 9 / 16);
+            }
+            selector.style.left = ((imageRect.width - width) / 2) + 'px';
+            selector.style.top = ((imageRect.height - height) / 2) + 'px';
+            break;
+    }
+    
+    selector.style.width = width + 'px';
+    selector.style.height = height + 'px';
+    
+    console.log(`✂️ Crop nastaven na ${ratio}: ${Math.round(width)}x${Math.round(height)}px`);
 }
 
 async function applyCrop() {
@@ -716,7 +802,9 @@ function filterPosts(filter) {
     
     // Aktualizuj aktivní tlačítko
     document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.classList.add('active');
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
     
     // Aktualizuj zobrazení příspěvků
     document.getElementById('postsFeed').innerHTML = renderPosts();
@@ -739,12 +827,16 @@ async function createPost() {
             author: currentUser.fullName || currentUser.username,
             photo: selectedPhoto || null,
             file: selectedFile || null,
-            category: selectedCategory || 'Novinky'
+            category: selectedCategory || 'Novinky',
+            timestamp: Date.now(),
+            likes: 0,
+            liked: false,
+            comments: []
         };
         
         console.log('📤 Odesílám data na server:', postData);
         
-        const response = await fetch('posts-database.php', {
+        const response = await fetch('/.netlify/functions/posts', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -832,7 +924,7 @@ function renderPosts() {
 }
 
 function createPostHTML(post) {
-    const isLiked = post.likes.includes(currentUser.fullName || currentUser.username);
+    const isLiked = post.liked || false;
     const canDelete = currentUser.role === 'Administrator' || post.author === (currentUser.fullName || currentUser.username);
     
     return `
@@ -847,20 +939,20 @@ function createPostHTML(post) {
                 </div>
                                  ${canDelete ? `
                      <div class="post-menu" style="position: relative;">
-                         <button class="menu-btn" onclick="togglePostMenu(${post.id})">
+                         <button class="menu-btn" onclick="togglePostMenu('${post.id}')">
                              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
                                  <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
                              </svg>
                          </button>
                          <div class="menu-dropdown hidden" id="postMenu-${post.id}">
-                             <button class="menu-item" onclick="editPost(${post.id})" style="color: var(--text-primary);">Upravit</button>
-                             <button class="menu-item" onclick="deletePost(${post.id})">Smazat</button>
+                             <button class="menu-item" onclick="editPost('${post.id}')" style="color: var(--text-primary);">Upravit</button>
+                             <button class="menu-item" onclick="deletePost('${post.id}')">Smazat</button>
                          </div>
                      </div>
                  ` : ''}
             </div>
                          <div id="editForm-${post.id}" class="edit-form hidden">
-                 <textarea id="editText-${post.id}" class="edit-textarea">${post.content}</textarea>
+                 <textarea id="editText-${post.id}" class="edit-textarea">${post.text || ''}</textarea>
                  <div class="edit-actions">
                      <button class="edit-btn" onclick="saveEdit(${post.id})">Uložit</button>
                      <button class="cancel-btn" onclick="cancelEdit(${post.id})">Zrušit</button>
@@ -872,8 +964,8 @@ function createPostHTML(post) {
                      <span class="category-indicator ${getCategoryClass(post.category)}"></span>
                      ${post.category}
                  </div>` : ''}
-                 ${post.content ? `<div class="post-content">${post.content}</div>` : ''}
-                 ${post.image ? `<img src="${post.image}" class="post-image" onclick="openImageModal('${post.image}')">` : ''}
+                 ${post.text ? `<div class="post-content">${post.text}</div>` : ''}
+                 ${post.photo ? `<img src="${post.photo}" class="post-image" onclick="openImageModal('${post.photo}')">` : ''}
                  ${post.file ? `
                      <div class="post-file">
                          <div class="file-icon">
@@ -898,18 +990,18 @@ function createPostHTML(post) {
              </div>
              
              <div class="post-footer">
-                 <button class="post-action ${isLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                 <button class="post-action ${isLiked ? 'liked' : ''}" onclick="toggleLike('${post.id}')">
                      <svg viewBox="0 0 24 24" fill="${isLiked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2">
                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                      </svg>
-                     ${post.likes.length > 0 ? post.likes.length : ''}
+                     ${post.likes > 0 ? post.likes : ''}
                  </button>
                  
-                 <button class="post-action" onclick="toggleComments(${post.id})">
+                 <button class="post-action" onclick="toggleComments('${post.id}')">
                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                          <path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/>
                      </svg>
-                     ${post.comments.length > 0 ? post.comments.length : ''}
+                     ${post.comments && post.comments.length > 0 ? post.comments.length : ''}
                  </button>
              </div>
              
@@ -924,14 +1016,14 @@ function createPostHTML(post) {
                              id="commentInput-${post.id}"
                              class="comment-input" 
                              placeholder="Napsat komentář..." 
-                             onkeypress="if(event.key==='Enter' && this.value.trim()) { addComment(${post.id}, this.value); this.value=''; }"
-                             oninput="updateCommentSend(${post.id})"
+                             onkeypress="if(event.key==='Enter' && this.value.trim()) { addComment('${post.id}', this.value); this.value=''; }"
+                             oninput="updateCommentSend('${post.id}')"
                          >
                      </div>
                      <button 
                          class="comment-send" 
                          id="commentSend-${post.id}"
-                         onclick="sendComment(${post.id})"
+                         onclick="sendComment('${post.id}')"
                          disabled
                          title="Odeslat komentář"
                      >
@@ -950,11 +1042,11 @@ function createPostHTML(post) {
                              </div>
                              <div class="comment-content">
                                  <div class="comment-author">${comment.author}</div>
-                                 <div class="comment-text">${comment.content}</div>
+                                 <div class="comment-text">${comment.text || comment.content}</div>
                                  <div class="comment-time">${formatTime(comment.timestamp)}</div>
                              </div>
                              ${currentUser.role === 'Administrator' ? `
-                                 <button class="comment-delete" onclick="deleteComment(${post.id}, ${comment.id})" title="Smazat komentář">
+                                 <button class="comment-delete" onclick="deleteComment('${post.id}', '${comment.id}')" title="Smazat komentář">
                                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                                          <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14zM10 11v6M14 11v6"/>
                                      </svg>
@@ -992,21 +1084,56 @@ function formatTime(timestamp) {
     return date.toLocaleDateString('cs-CZ');
 }
 
-function toggleLike(postId) {
+async function toggleLike(postId) {
     const post = posts.find(p => p.id === postId);
     if (!post) return;
 
-    const userIdentifier = currentUser.fullName || currentUser.username;
-    const index = post.likes.indexOf(userIdentifier);
+    const wasLiked = post.liked || false;
     
-    if (index > -1) {
-        post.likes.splice(index, 1);
-    } else {
-        post.likes.push(userIdentifier);
-    }
+    // Optimisticky aktualizuj UI
+    post.liked = !wasLiked;
+    post.likes = (post.likes || 0) + (post.liked ? 1 : -1);
+    if (post.likes < 0) post.likes = 0;
 
-    savePosts();
+    // Znovu vykresli
     document.getElementById('postsFeed').innerHTML = renderPosts();
+
+    try {
+        // Pošli na server
+        const response = await fetch('/.netlify/functions/posts', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: postId,
+                liked: post.liked,
+                likes: post.likes
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Chyba při ukládání like na server');
+        }
+
+        console.log('✅ Like uložen na server');
+        
+        // Backup do localStorage
+        savePosts();
+        
+    } catch (error) {
+        console.error('❌ Chyba při ukládání like:', error);
+        
+        // Rollback při chybě
+        post.liked = wasLiked;
+        post.likes = (post.likes || 0) + (wasLiked ? 1 : -1);
+        if (post.likes < 0) post.likes = 0;
+        
+        document.getElementById('postsFeed').innerHTML = renderPosts();
+        
+        // Backup do localStorage
+        savePosts();
+    }
 }
 
 function togglePostMenu(postId) {
@@ -1047,15 +1174,56 @@ function editPost(postId) {
     document.getElementById(`editText-${postId}`).focus();
 }
 
-function saveEdit(postId) {
-    const newContent = document.getElementById(`editText-${postId}`).value.trim();
-    if (!newContent) return;
+async function saveEdit(postId) {
+    const newText = document.getElementById(`editText-${postId}`).value.trim();
+    if (!newText) return;
     
     const post = posts.find(p => p.id === postId);
-    if (post) {
-        post.content = newContent;
+    if (!post) return;
+    
+    const originalText = post.text;
+    
+    // Optimisticky aktualizuj
+    post.text = newText;
+    post.edited = Date.now();
+    
+    document.getElementById('postsFeed').innerHTML = renderPosts();
+
+    try {
+        // Pošli na server
+        const response = await fetch('/.netlify/functions/posts', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: postId,
+                text: newText,
+                edited: post.edited
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Chyba při ukládání úpravy na server');
+        }
+
+        console.log('✅ Úprava uložena na server');
+        
+        // Backup do localStorage
         savePosts();
+        
+    } catch (error) {
+        console.error('❌ Chyba při ukládání úpravy:', error);
+        
+        // Rollback při chybě
+        post.text = originalText;
+        delete post.edited;
+        
         document.getElementById('postsFeed').innerHTML = renderPosts();
+        alert('Chyba při ukládání úpravy: ' + error.message);
+        
+        // Backup do localStorage
+        savePosts();
     }
 }
 
@@ -1069,15 +1237,51 @@ function cancelEdit(postId) {
     // Resetuj text na původní
     const post = posts.find(p => p.id === postId);
     if (post) {
-        document.getElementById(`editText-${postId}`).value = post.content;
+        document.getElementById(`editText-${postId}`).value = post.text || '';
     }
 }
 
-function deletePost(postId) {
+async function deletePost(postId) {
     if (!confirm('Opravdu chcete smazat tento příspěvek?')) return;
-    posts = posts.filter(p => p.id !== postId);
-    savePosts();
+    
+    const postIndex = posts.findIndex(p => p.id === postId);
+    if (postIndex === -1) return;
+    
+    const deletedPost = posts[postIndex];
+    
+    // Optimisticky odstraň z UI
+    posts.splice(postIndex, 1);
     document.getElementById('postsFeed').innerHTML = renderPosts();
+
+    try {
+        // Pošli na server
+        const response = await fetch(`/.netlify/functions/posts?id=${postId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Chyba při mazání příspěvku na serveru');
+        }
+
+        console.log('✅ Příspěvek smazán na serveru');
+        
+        // Backup do localStorage
+        savePosts();
+        
+    } catch (error) {
+        console.error('❌ Chyba při mazání příspěvku:', error);
+        
+        // Rollback při chybě
+        posts.splice(postIndex, 0, deletedPost);
+        document.getElementById('postsFeed').innerHTML = renderPosts();
+        alert('Chyba při mazání příspěvku: ' + error.message);
+        
+        // Backup do localStorage
+        savePosts();
+    }
 }
 
 function toggleComments(postId) {
@@ -1085,19 +1289,21 @@ function toggleComments(postId) {
     commentsSection.classList.toggle('show');
 }
 
-function addComment(postId, content) {
+async function addComment(postId, content) {
     const post = posts.find(p => p.id === postId);
     if (!post || !content.trim()) return;
 
     const comment = {
-        id: Date.now(),
+        id: Date.now().toString(),
         author: currentUser.fullName || currentUser.username,
-        content: content.trim(),
-        timestamp: new Date().toISOString()
+        text: content.trim(),
+        timestamp: Date.now()
     };
 
+    // Optimisticky přidej komentář
+    if (!post.comments) post.comments = [];
     post.comments.push(comment);
-    savePosts();
+    
     document.getElementById('postsFeed').innerHTML = renderPosts();
     
     // Zobraz komentáře
@@ -1107,6 +1313,44 @@ function addComment(postId, content) {
             commentsSection.classList.add('show');
         }
     }, 100);
+
+    try {
+        // Pošli na server
+        const response = await fetch('/.netlify/functions/posts', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: postId,
+                comments: post.comments
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Chyba při ukládání komentáře na server');
+        }
+
+        console.log('✅ Komentář uložen na server');
+        
+        // Backup do localStorage
+        savePosts();
+        
+    } catch (error) {
+        console.error('❌ Chyba při ukládání komentáře:', error);
+        
+        // Rollback při chybě
+        const commentIndex = post.comments.findIndex(c => c.id === comment.id);
+        if (commentIndex > -1) {
+            post.comments.splice(commentIndex, 1);
+        }
+        
+        document.getElementById('postsFeed').innerHTML = renderPosts();
+        alert('Chyba při ukládání komentáře: ' + error.message);
+        
+        // Backup do localStorage
+        savePosts();
+    }
 }
 
 function sendComment(postId) {
@@ -1126,20 +1370,65 @@ function updateCommentSend(postId) {
     }
 }
 
-function deleteComment(postId, commentId) {
+async function deleteComment(postId, commentId) {
     if (!confirm('Opravdu chcete smazat tento komentář?')) return;
     
     const post = posts.find(p => p.id === postId);
-    if (post) {
-        post.comments = post.comments.filter(c => c.id !== commentId);
+    if (!post || !post.comments) return;
+    
+    const commentIndex = post.comments.findIndex(c => c.id === commentId);
+    if (commentIndex === -1) return;
+    
+    const deletedComment = post.comments[commentIndex];
+    
+    // Optimisticky odstraň z UI
+    post.comments.splice(commentIndex, 1);
+    document.getElementById('postsFeed').innerHTML = renderPosts();
+    
+    // Zobraz komentáře pokud byly vidět
+    setTimeout(() => {
+        const commentsSection = document.getElementById(`comments-${postId}`);
+        commentsSection.classList.add('show');
+    }, 100);
+
+    try {
+        // Pošli na server
+        const response = await fetch('/.netlify/functions/posts', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                id: postId,
+                comments: post.comments
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Chyba při mazání komentáře na serveru');
+        }
+
+        console.log('✅ Komentář smazán na serveru');
+        
+        // Backup do localStorage
         savePosts();
+        
+    } catch (error) {
+        console.error('❌ Chyba při mazání komentáře:', error);
+        
+        // Rollback při chybě
+        post.comments.splice(commentIndex, 0, deletedComment);
         document.getElementById('postsFeed').innerHTML = renderPosts();
         
-        // Zobraz komentáře pokud byly vidět
         setTimeout(() => {
             const commentsSection = document.getElementById(`comments-${postId}`);
             commentsSection.classList.add('show');
         }, 100);
+        
+        alert('Chyba při mazání komentáře: ' + error.message);
+        
+        // Backup do localStorage
+        savePosts();
     }
 }
 
