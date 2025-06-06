@@ -291,10 +291,116 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
                     transform: scale(1.1) !important;
                     box-shadow: 0 8px 30px rgba(102, 126, 234, 0.8) !important;
                 }
+                
+                .chatbot-window.open {
+                    transform: scale(1) !important;
+                    opacity: 1 !important;
+                }
             `;
             document.head.appendChild(animationStyle);
         }
         const styles = `
+            /* Quick Buttons */
+            .quick-btn {
+                background: var(--bg-tertiary, #f0f0f0);
+                border: 1px solid var(--border-color, #ddd);
+                color: var(--text-primary, #333);
+                padding: 0.5rem 0.75rem;
+                border-radius: 16px;
+                font-size: 0.8rem;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                white-space: nowrap;
+            }
+            
+            .quick-btn:hover {
+                background: var(--accent-color, #007bff);
+                color: white;
+                transform: translateY(-1px);
+            }
+            
+            /* Message Styles */
+            .message {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .message-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background: var(--accent-color, #007bff);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.8rem;
+                font-weight: 600;
+                flex-shrink: 0;
+            }
+            
+            .bot-message .message-avatar {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            
+            .message-content {
+                flex: 1;
+                min-width: 0;
+            }
+            
+            .message-text {
+                background: var(--bg-primary, #fff);
+                padding: 0.75rem;
+                border-radius: 12px;
+                border: 1px solid var(--border-color, #ddd);
+                margin-bottom: 0.25rem;
+                word-wrap: break-word;
+            }
+            
+            .user-message .message-text {
+                background: var(--accent-color, #007bff);
+                color: white;
+                border-color: var(--accent-color, #007bff);
+            }
+            
+            .message-time {
+                font-size: 0.7rem;
+                color: var(--text-muted, #999);
+                margin-left: 0.75rem;
+            }
+            
+            .error-message {
+                background: var(--danger-color, #dc3545) !important;
+                color: white !important;
+                border-color: var(--danger-color, #dc3545) !important;
+            }
+            
+            /* Typing Indicator */
+            .typing-indicator {
+                display: flex;
+                gap: 4px;
+                align-items: center;
+                padding: 8px 0;
+            }
+            
+            .typing-dot {
+                width: 6px;
+                height: 6px;
+                background: var(--text-muted, #999);
+                border-radius: 50%;
+                animation: typing-bounce 1.4s infinite ease-in-out both;
+            }
+            
+            .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+            .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+            
+            @keyframes typing-bounce {
+                0%, 80%, 100% { transform: scale(0); }
+                40% { transform: scale(1); }
+            }
+            
             @keyframes pulse {
                 0%, 100% { transform: scale(1); }
                 50% { transform: scale(1.05); }
@@ -483,7 +589,10 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
     // === EVENT LISTENERS ===
     setupEventListeners() {
         // Toggle chatbot
-        this.chatButton.addEventListener('click', () => {
+        this.chatButton.addEventListener('click', (e) => {
+            console.log('🤖 Chatbot button clicked!');
+            e.preventDefault();
+            e.stopPropagation();
             this.toggleChatbot();
         });
 
@@ -532,11 +641,18 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
     // === CHATBOT ACTIONS ===
     toggleChatbot() {
         this.isOpen = !this.isOpen;
+        console.log('🤖 Toggle chatbot, isOpen:', this.isOpen);
         
         if (this.isOpen) {
+            console.log('🤖 Opening chatbot window');
             this.chatWindow.classList.add('open');
-            this.messageInput.focus();
+            setTimeout(() => {
+                if (this.messageInput) {
+                    this.messageInput.focus();
+                }
+            }, 300);
         } else {
+            console.log('🤖 Closing chatbot window');
             this.chatWindow.classList.remove('open');
         }
     }

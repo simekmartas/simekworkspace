@@ -510,15 +510,17 @@ async function applyCrop() {
         }
         
     } catch (error) {
-        console.error('❌ Chyba při nahrávání:', error);
-        alert('❌ Chyba při nahrávání fotky: ' + error.message);
+        console.log('⚠️ Server upload se nezdařil, používám lokální uložení:', error.message);
         
-        // Fallback - ulož lokálně
+        // Fallback - ulož lokálně (funguje pro zobrazení v příspěvku)
         selectedPhoto = croppedImageData;
         document.getElementById('previewImage').src = selectedPhoto;
         document.getElementById('photoPreview').classList.remove('hidden');
         closeCropper();
         updateShareButton();
+        
+        // Tichá notifikace místo alertu
+        console.log('✅ Fotka uložena lokálně a připravena k publikaci');
     }
 }
 
