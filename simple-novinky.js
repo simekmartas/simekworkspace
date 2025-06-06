@@ -63,7 +63,7 @@ async function loadPosts() {
     try {
         console.log('📡 Načítám příspěvky ze SERVERU...');
         
-        const response = await fetch('/.netlify/functions/posts', {
+        const response = await fetch('/api/posts', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
@@ -836,7 +836,7 @@ async function createPost() {
         
         console.log('📤 Odesílám data na server:', postData);
         
-        const response = await fetch('/.netlify/functions/posts', {
+        const response = await fetch('/api/posts', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1100,7 +1100,7 @@ async function toggleLike(postId) {
 
     try {
         // Pošli na server
-        const response = await fetch('/.netlify/functions/posts', {
+        const response = await fetch('/api/posts', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1191,7 +1191,7 @@ async function saveEdit(postId) {
 
     try {
         // Pošli na server
-        const response = await fetch('/.netlify/functions/posts', {
+        const response = await fetch('/api/posts', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1255,7 +1255,7 @@ async function deletePost(postId) {
 
     try {
         // Pošli na server
-        const response = await fetch(`/.netlify/functions/posts?id=${postId}`, {
+        const response = await fetch(`/api/posts?id=${postId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
@@ -1316,7 +1316,7 @@ async function addComment(postId, content) {
 
     try {
         // Pošli na server
-        const response = await fetch('/.netlify/functions/posts', {
+        const response = await fetch('/api/posts', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -1393,7 +1393,7 @@ async function deleteComment(postId, commentId) {
 
     try {
         // Pošli na server
-        const response = await fetch('/.netlify/functions/posts', {
+        const response = await fetch('/api/posts', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
