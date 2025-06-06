@@ -84,9 +84,12 @@
                     console.log('Theme toggle buttons aktualizovány na index.html');
                 }
             }, 200);
+            
+            // Vymazání všech demo příspěvků z localStorage
+            localStorage.removeItem('simple_posts');
+            localStorage.removeItem('novinky_posts'); 
+            console.log('🧹 Vymazány všechny demo příspěvky z localStorage');
         });
-
-
     </script>
 </body>
 </html> 

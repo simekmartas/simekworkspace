@@ -4,6 +4,14 @@ let currentUser = null;
 let selectedPhoto = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Neaktivuj simple-novinky na index.html
+    if (window.location.pathname.endsWith('index.html') || 
+        window.location.pathname === '/' || 
+        window.location.pathname.endsWith('/')) {
+        console.log('🚫 Simple Novinky zakázány na úvodní stránce');
+        return;
+    }
+    
     loadCurrentUser();
     loadPosts();
     renderApp();
@@ -478,35 +486,19 @@ async function applyCrop() {
         const croppedImage = canvas.toDataURL('image/jpeg', 0.8);
         
         try {
-            // Pošli fotku na server
-            const response = await fetch('upload.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    image: croppedImage,
-                    filename: 'cropped_image.jpg'
-                })
-            });
+            // Ulož fotku lokálně jako base64 (bez serveru)
+            selectedPhoto = croppedImage;
             
-            const result = await response.json();
+            // Zobraz náhled
+            document.getElementById('previewImage').src = selectedPhoto;
+            document.getElementById('photoPreview').classList.remove('hidden');
+            updateShareButton();
+            closeCropper();
             
-            if (result.success) {
-                // Ulož URL místo base64
-                selectedPhoto = result.url;
-                
-                // Zobraz náhled s URL
-                document.getElementById('previewImage').src = selectedPhoto;
-                document.getElementById('photoPreview').classList.remove('hidden');
-                updateShareButton();
-                closeCropper();
-            } else {
-                throw new Error(result.error || 'Chyba při uploadu');
-            }
+            console.log('✅ Fotka úspěšně oříznutá a uložena lokálně');
         } catch (error) {
-            console.error('Chyba při uploadu fotky:', error);
-            alert('Chyba při ukládání fotky na server: ' + error.message);
+            console.error('Chyba při zpracování fotky:', error);
+            alert('Chyba při zpracování fotky: ' + error.message);
             closeCropper();
         }
     };
