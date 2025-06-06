@@ -1,3 +1,14 @@
+// === DEBUG: SLEDOVÁNÍ FETCH REQUESTŮ ===
+const originalFetch = window.fetch;
+window.fetch = function(...args) {
+    console.log('🌐 FETCH REQUEST:', args[0], args[1]);
+    if (args[0] && args[0].includes('upload')) {
+        console.error('❌ POZOR: Pokus o upload na server!', args);
+        throw new Error('Server upload je zakázán!');
+    }
+    return originalFetch.apply(this, args);
+};
+
 // Jednoduché novinky podle náčrtu
 let posts = [];
 let currentUser = null;
@@ -292,8 +303,11 @@ function triggerPhotoUpload() {
 }
 
 function handlePhotoUpload(event) {
+    console.log('📸 handlePhotoUpload spuštěno');
     const file = event.target.files[0];
     if (file) {
+        console.log('📸 Soubor vybrán:', file.name, file.size, 'bytes');
+        
         // Omezeí velikosti souboru (max 50MB)
         if (file.size > 50 * 1024 * 1024) {
             alert('Fotka je příliš velká. Maximální velikost je 50MB.');
@@ -302,13 +316,17 @@ function handlePhotoUpload(event) {
         
         const reader = new FileReader();
         reader.onload = function(e) {
+            console.log('📸 Soubor načten, spouštím kompresi...');
             // Komprese a resize obrázku
             resizeAndCompressImage(e.target.result, (compressedImage) => {
+                console.log('📸 Komprese dokončena, zobrazujem cropper...');
                 selectedPhoto = compressedImage;
                 showImageCropper(compressedImage);
             });
         };
         reader.readAsDataURL(file);
+    } else {
+        console.log('📸 Žádný soubor nevybrán');
     }
 }
 
@@ -455,6 +473,8 @@ function updateCropSelector() {
 }
 
 async function applyCrop() {
+    console.log('✂️ applyCrop spuštěno');
+    
     const cropImage = document.getElementById('cropImage');
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
@@ -463,9 +483,12 @@ async function applyCrop() {
     canvas.width = 3840;
     canvas.height = 3840;
     
+    console.log('🖼️ Canvas nastaven na', canvas.width, 'x', canvas.height);
+    
     // Vypočti poměr mezi obrázkem a jeho zobrazenou velikostí
     const img = new Image();
     img.onload = async function() {
+        console.log('🖼️ Obrázek načten pro crop');
         const displayedRect = cropImage.getBoundingClientRect();
         const scaleX = img.width / displayedRect.width;
         const scaleY = img.height / displayedRect.height;
@@ -486,8 +509,12 @@ async function applyCrop() {
         const croppedImage = canvas.toDataURL('image/jpeg', 0.8);
         
         try {
+            console.log('✂️ Aplikuji crop, velikost:', croppedImage.length, 'znaků');
+            
             // Ulož fotku lokálně jako base64 (bez serveru)
             selectedPhoto = croppedImage;
+            
+            console.log('💾 Fotka uložena do selectedPhoto');
             
             // Zobraz náhled
             document.getElementById('previewImage').src = selectedPhoto;
@@ -496,9 +523,10 @@ async function applyCrop() {
             closeCropper();
             
             console.log('✅ Fotka úspěšně oříznutá a uložena lokálně');
+            alert('✅ Fotka úspěšně uložena!');
         } catch (error) {
-            console.error('Chyba při zpracování fotky:', error);
-            alert('Chyba při zpracování fotky: ' + error.message);
+            console.error('❌ Chyba při zpracování fotky:', error);
+            alert('❌ Chyba při zpracování fotky: ' + error.message);
             closeCropper();
         }
     };
@@ -522,8 +550,6 @@ function removePhoto() {
     document.getElementById('photoInput').value = '';
     updateShareButton();
 }
-
-
 
 function triggerFileUpload() {
     document.getElementById('fileInput').click();
