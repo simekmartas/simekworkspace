@@ -76,21 +76,30 @@ class ThemeToggle {
             settingsButton.setAttribute('aria-label', 'Uživatelská nastavení');
             settingsButton.innerHTML = '⚙️';
             
-            // Přidat do header-content vedle theme toggle
+            // Přidat do navigace jako poslední položku
+            const nav = document.querySelector('nav ul');
             const headerContent = document.querySelector('.header-content');
             const themeToggle = document.querySelector('.theme-toggle');
             
-            console.log('🔧 Vytvářím nastavovací tlačítko - headerContent:', !!headerContent, 'themeToggle:', !!themeToggle);
+            console.log('🔧 Vytvářím nastavovací tlačítko - nav:', !!nav, 'headerContent:', !!headerContent, 'themeToggle:', !!themeToggle);
             
-            if (headerContent && themeToggle) {
-                // Vložit hned za theme toggle
+            if (nav) {
+                // Přidat jako poslední položku v navigaci
+                const li = document.createElement('li');
+                li.appendChild(settingsButton);
+                nav.appendChild(li);
+                console.log('✅ Nastavovací tlačítko přidáno do navigace');
+            } else if (headerContent && themeToggle) {
+                // Fallback - vložit hned za theme toggle
                 themeToggle.parentNode.insertBefore(settingsButton, themeToggle.nextSibling);
                 console.log('✅ Nastavovací tlačítko přidáno za theme toggle');
             } else if (headerContent) {
                 headerContent.appendChild(settingsButton);
                 console.log('✅ Nastavovací tlačítko přidáno do headerContent');
             } else {
-                console.warn('⚠️ HeaderContent nebyl nalezen, tlačítko nebude přidáno');
+                // Poslední záložní možnost - přidat na konec body
+                document.body.appendChild(settingsButton);
+                console.warn('⚠️ Nastavovací tlačítko přidáno na konec body jako fallback');
             }
         } else {
             console.log('🔧 Nastavovací tlačítko už existuje');
@@ -195,7 +204,7 @@ class ThemeToggle {
 
 // CSS styly pro přepínač témat a admin nastavení
 const themeStyles = `
-.theme-toggle, .admin-settings-button {
+.theme-toggle {
     background: rgba(255, 255, 255, 0.1);
     border: 2px solid rgba(255, 255, 255, 0.2);
     font-size: 1.5rem;
@@ -213,8 +222,28 @@ const themeStyles = `
     z-index: 10;
 }
 
-.theme-toggle:hover, .admin-settings-button:hover {
+.admin-settings-button {
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+    text-decoration: none;
+}
+
+.admin-settings-button:hover {
     background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
 }
 
@@ -334,8 +363,16 @@ window.debugTheme = function() {
     console.log('- isLoggedIn:', localStorage.getItem('isLoggedIn'));
     console.log('- userRole:', localStorage.getItem('role'));
     console.log('- header-content exists:', !!document.querySelector('.header-content'));
+    console.log('- nav ul exists:', !!document.querySelector('nav ul'));
     console.log('- theme-toggle exists:', !!document.querySelector('.theme-toggle'));
     console.log('- admin-settings-button exists:', !!document.querySelector('.admin-settings-button'));
+    
+    // Zobrazit počet elementů v navigaci
+    const navItems = document.querySelectorAll('nav ul li');
+    console.log('- nav items count:', navItems.length);
+    navItems.forEach((item, index) => {
+        console.log(`  - nav item ${index}:`, item.textContent.trim());
+    });
     
     if (window.themeManager) {
         console.log('🔄 Force update buttons...');
@@ -350,6 +387,17 @@ window.testLogin = function() {
     localStorage.setItem('role', 'Prodejce');
     localStorage.setItem('username', 'Test Uživatel');
     console.log('✅ Test přihlášení nastaveno');
+    if (window.themeManager) {
+        window.themeManager.updateAllToggleButtons();
+    }
+};
+
+// Funkce pro force refresh
+window.forceRefreshUI = function() {
+    console.log('🔄 Force refresh UI...');
+    if (typeof updateNavigation === 'function') {
+        updateNavigation();
+    }
     if (window.themeManager) {
         window.themeManager.updateAllToggleButtons();
     }
