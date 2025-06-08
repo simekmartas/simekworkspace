@@ -10,7 +10,15 @@ class UserManager {
         const userRole = localStorage.getItem('role');
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         
-        if (isLoggedIn !== 'true' || (userRole !== 'Administrator' && userRole !== 'Administrátor')) {
+        console.log('User role:', userRole, 'Logged in:', isLoggedIn);
+        
+        if (isLoggedIn !== 'true') {
+            alert('Musíte se nejdříve přihlásit.');
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        if (userRole !== 'Administrator' && userRole !== 'Administrátor') {
             alert('Přístup zamítnut. Pouze administrátoři mohou spravovat uživatele.');
             window.location.href = 'index.html';
             return;
