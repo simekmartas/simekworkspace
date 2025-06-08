@@ -7,7 +7,7 @@ class ProdejnyDataLoader {
         
         // Google Sheets ID a gid pro hlavní list
         this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
-        this.mainGid = '0'; // hlavní list
+        this.mainGid = '0'; // aktuální list "statistiky aktual"
         this.monthlyGid = '1829845095'; // měsíční list "od 1"
         
         // Publikované URL pro CSV export
@@ -50,9 +50,14 @@ class ProdejnyDataLoader {
         
         try {
             const timestamp = Date.now();
-            const requestUrl = `${scriptUrl}?spreadsheetId=${this.spreadsheetId}&gid=${gid}&t=${timestamp}&action=getData`;
+            // Použij stejné parametry jak funguje v Google Apps Script
+            const requestUrl = `${scriptUrl}?spreadsheetId=${this.spreadsheetId}&sheet=${gid === '0' ? 'statistiky aktual' : 'od 1'}&gid=${gid}&t=${timestamp}`;
             
             console.log('Google Apps Script URL:', requestUrl);
+            
+            // Přidej timeout pro rychlejší fallback
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekund timeout
             
             const response = await fetch(requestUrl, {
                 method: 'GET',
@@ -60,8 +65,11 @@ class ProdejnyDataLoader {
                     'Accept': 'application/json, text/plain, */*',
                     'Cache-Control': 'no-cache, no-store, must-revalidate',
                     'Pragma': 'no-cache'
-                }
+                },
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
             
             console.log('Google Apps Script response status:', response.status);
             
@@ -69,16 +77,25 @@ class ProdejnyDataLoader {
                 const data = await response.json();
                 console.log('✅ Data z Google Apps Script úspěšně načtena:', data);
                 
-                if (data.success && data.data) {
-                    console.log(`📊 Zpracovávám ${data.data.length} řádků dat`);
+                if (data && data.success && data.data) {
+                    // Google Apps Script vrací format {success: true, data: [...], sheetName: "...", lastUpdate: "..."}
+                    let sheetData = data.data;
+                    
+                    console.log(`📊 Zpracovávám ${sheetData.length} řádků dat z listu: ${data.sheetName}`);
+                    console.log('Poslední aktualizace:', data.lastUpdate);
+                    console.log('Prvních 5 řádků:', sheetData.slice(0, 5));
+                    
                     // Konvertuj data z JSON formátu na CSV formát pro kompatibilitu
-                    const csvData = this.convertJsonToCsv(data.data);
+                    const csvData = this.convertJsonToCsv(sheetData);
+                    console.log('CSV data ukázka:', csvData.substring(0, 500));
+                    
                     this.parseAndDisplayData(csvData, isMonthly);
                     console.log('✅ Data úspěšně zobrazena');
                     return;
                 } else {
                     console.warn('⚠️ Google Apps Script nevrátil validní data:', data);
-                    throw new Error(`Google Apps Script vrátil nevalidní data: ${JSON.stringify(data)}`);
+                    const errorMsg = data.error || 'Neznámá chyba';
+                    throw new Error(`Google Apps Script chyba: ${errorMsg}`);
                 }
             } else {
                 console.warn(`⚠️ Google Apps Script nedostupný, HTTP status: ${response.status}`);
@@ -361,15 +378,17 @@ class ProdejnyDataLoader {
             return;
         }
 
-        // Najít řádek s headers (může být první nebo druhý řádek)
+        // Najít řádek s headers - přeskoč aktualizační řádek
         let headerRowIndex = 0;
         let headers = [];
         
-        for (let i = 0; i < Math.min(3, lines.length); i++) {
+        for (let i = 0; i < Math.min(5, lines.length); i++) {
             const testHeaders = this.parseCSVLine(lines[i]);
+            // Přeskoč aktualizační řádek a najdi řádek s prodejna/prodejce
             if (testHeaders.includes('prodejna') || testHeaders.includes('prodejce')) {
                 headers = testHeaders;
                 headerRowIndex = i;
+                console.log('Nalezeny headers na řádku:', i, headers);
                 break;
             }
         }
