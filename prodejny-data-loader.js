@@ -15,8 +15,8 @@ class ProdejnyDataLoader {
         
         this.refreshInterval = null;
         
-        // Google Apps Script URL - nové nasazení
-        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbxraNeqN9xFiKVtCG_Ok0teUV8XNJ1ZMYpsg9ZiN4AtV_Ry9yyB_FoKfgvOtF3mClsU/exec';
+        // Google Apps Script URL - nejnovější nasazení  
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyrD0f_pWkPIaowVclG3zdzgfceYGjyqWin5-2jKKwadFb1e3itg6OMoeZdRxfX0Qk4xg/exec';
         
         // Automaticky načte data po vytvoření instance
         setTimeout(() => {
@@ -51,87 +51,16 @@ class ProdejnyDataLoader {
         // Google Apps Script endpoint - nové nasazení
         const scriptUrl = this.scriptUrl;
         
+        // Použij JSONP jako hlavní metodu kvůli CORS problémům
         try {
-            const timestamp = Date.now();
-            const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
-            
-            // Použij přesně stejné parametry jako má Google Apps Script doGet funkce
-            const requestUrl = `${scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&t=${timestamp}`;
-            
-            console.log('Google Apps Script URL:', requestUrl);
-            
-            // Přidej timeout pro rychlejší fallback
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekund timeout
-            
-            // Google Apps Script doGet() funkcí - používá GET metodu
-            const response = await fetch(requestUrl, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json',
-                    'Cache-Control': 'no-cache'
-                },
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            
-            console.log('Google Apps Script response status:', response.status);
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Data z Google Apps Script úspěšně načtena:', data);
-                
-                if (data && data.success && data.data) {
-                    // Google Apps Script vrací format {success: true, data: [...], sheetName: "...", lastUpdate: "..."}
-                    let sheetData = data.data;
-                    
-                    console.log(`📊 Zpracovávám ${sheetData.length} řádků dat z listu: ${data.sheetName}`);
-                    console.log('Poslední aktualizace:', data.lastUpdate);
-                    console.log('Prvních 5 řádků:', sheetData.slice(0, 5));
-                    
-                    // Konvertuj data z JSON formátu na CSV formát pro kompatibilitu
-                    const csvData = this.convertJsonToCsv(sheetData);
-                    console.log('CSV data ukázka:', csvData.substring(0, 500));
-                    
-                    this.parseAndDisplayData(csvData, isMonthly);
-                    console.log('✅ Data úspěšně zobrazena');
-                    return;
-                } else {
-                    console.warn('⚠️ Google Apps Script nevrátil validní data:', data);
-                    const errorMsg = data.error || 'Neznámá chyba';
-                    throw new Error(`Google Apps Script chyba: ${errorMsg}`);
-                }
-            } else {
-                console.warn(`⚠️ Google Apps Script nedostupný, HTTP status: ${response.status}`);
-                const responseText = await response.text();
-                console.warn('Response text:', responseText);
-                throw new Error(`Google Apps Script nedostupný (HTTP ${response.status})`);
-            }
+            console.log('🔄 Používám JSONP metodu jako hlavní...');
+            await this.loadWithJsonp(gid, isMonthly);
+            return;
             
             
         } catch (error) {
-            console.error('❌ Chyba při komunikaci s Google Apps Script:', error);
-            
-            // Zkus /dev endpoint pro testování
-            try {
-                console.log('🔄 Zkouším /dev endpoint...');
-                await this.loadWithDevEndpoint(gid, isMonthly);
-                return;
-            } catch (devError) {
-                console.error('❌ /dev endpoint také selhal:', devError);
-            }
-            
-            // Pokud selže, zkus iframe metodu
-            try {
-                console.log('🔄 Zkouším iframe metodu...');
-                await this.loadWithIframe(gid, isMonthly);
-                return;
-            } catch (iframeError) {
-                console.error('❌ iframe metoda také selhala:', iframeError);
-            }
-            
-            console.log('🔄 Všechny metody selhaly, používám mock data...');
+            console.error('❌ JSONP metoda selhala:', error);
+            console.log('🔄 Používám fallback mock data...');
             this.showMockData(isMonthly);
         }
     }
@@ -802,8 +731,7 @@ class ProdejnyDataLoader {
             }, 10000);
             
             // Nastav iframe src
-            const iframeUrl = `${this.scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&iframe=true&t=${timestamp}`;
-            iframe.src = iframeUrl;
+            iframe.src = `${this.scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&iframe=true&t=${timestamp}`;
             document.body.appendChild(iframe);
         });
     }
@@ -817,13 +745,26 @@ class ProdejnyDataLoader {
             // Vytvoř JSONP callback
             window[callbackName] = (data) => {
                 console.log('✅ JSONP callback úspěšný:', data);
+                console.log('Data typ:', typeof data, 'Success:', data?.success);
                 
                 if (data && data.success && data.data) {
+                    console.log(`📊 JSONP: Zpracovávám ${data.data.length} řádků z listu: ${data.sheetName}`);
+                    console.log('Poslední aktualizace:', data.lastUpdate);
+                    console.log('Dostupné listy:', data.availableSheets);
+                    console.log('Požadovaný list:', data.requestedSheet);
+                    console.log('Prvních 3 řádky:', data.data.slice(0, 3));
+                    
                     const csvData = this.convertJsonToCsv(data.data);
+                    console.log('CSV data ukázka:', csvData.substring(0, 300));
+                    
                     this.parseAndDisplayData(csvData, isMonthly);
                     resolve();
                 } else {
-                    reject(new Error('JSONP nevrátil validní data'));
+                    console.error('JSONP nevrátil validní data:', data);
+                    console.error('Error details:', data?.details);
+                    console.error('Available sheets:', data?.availableSheets);
+                    const errorMsg = data?.error || 'Nevalidní JSONP response';
+                    reject(new Error(`JSONP chyba: ${errorMsg}`));
                 }
                 
                 // Cleanup
