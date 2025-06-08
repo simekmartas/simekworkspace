@@ -1,22 +1,26 @@
 // Specializovaný data loader pro uživatelské profily s filtrováním podle ID prodejce
+// Používá stejnou logiku jako ProdejnyDataLoader, ale filtruje podle ID prodejce
 class UserProfileDataLoader {
     constructor(containerId, tabType = 'current') {
         this.container = document.getElementById(containerId);
         this.tabType = tabType;
         this.isMonthly = tabType === 'monthly';
         
-        // ID přihlášeného uživatele - získáme z localStorage
+        // ID přihlášeného uživatele - získáme z localStorage (pouze ID, ne data)
         this.userSellerId = this.getCurrentUserSellerId();
         
-        // Google Sheets ID a gid pro hlavní list
+        // Google Sheets ID a gid pro hlavní list - STEJNÉ jako ProdejnyDataLoader
         this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
         this.mainGid = '0'; // aktuální list "statistiky aktual"
         this.monthlyGid = '1829845095'; // měsíční list "od 1"
         
-        // Google Apps Script URL - stejný jako v prodejnách
-        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyrD0f_pWkPIaowVclG3zdzgfceYGjyqWin5-2jKKwadFb1e3itg6OMoeZdRxfX0Qk4xg/exec';
+        // Publikované URL pro CSV export
+        this.basePublishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv`;
         
         this.refreshInterval = null;
+        
+        // Google Apps Script URL - STEJNÝ jako ProdejnyDataLoader
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyrD0f_pWkPIaowVclG3zdzgfceYGjyqWin5-2jKKwadFb1e3itg6OMoeZdRxfX0Qk4xg/exec';
         
         console.log('📊 UserProfileDataLoader vytvořen pro ID prodejce:', this.userSellerId);
         
@@ -27,64 +31,69 @@ class UserProfileDataLoader {
     }
 
     getCurrentUserSellerId() {
-        // Zkus získat ID prodejce z různých zdrojů
+        // Získá pouze ID prodejce pro filtrování - jinak vše z tabulky
         let sellerId = null;
         
-        // 1. Z userData v localStorage
+        // 1. Z userData v localStorage - hledáme sellerId
         try {
             const userData = JSON.parse(localStorage.getItem('userData') || '{}');
             if (userData.sellerId) {
                 sellerId = userData.sellerId;
-                console.log('📊 SellerId nalezeno v userData:', sellerId);
+                console.log('📊 SellerId nalezeno v userData.sellerId:', sellerId);
             }
         } catch (e) {
             console.log('📊 Chyba při parsování userData');
         }
         
-        // 2. Přímo z localStorage
+        // 2. Přímo z localStorage sellerId
         if (!sellerId) {
             sellerId = localStorage.getItem('sellerId');
             if (sellerId) {
-                console.log('📊 SellerId nalezeno v localStorage:', sellerId);
+                console.log('📊 SellerId nalezeno v localStorage sellerId:', sellerId);
             }
         }
         
-        // 3. Z userId jako fallback
+        // 3. Získat sellerId z tabulky uživatelů podle userId
         if (!sellerId) {
-            sellerId = localStorage.getItem('userId');
-            if (sellerId) {
-                console.log('📊 Používám userId jako sellerId:', sellerId);
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                console.log('📊 Hledám sellerId pro userId:', userId);
+                
+                try {
+                    const users = JSON.parse(localStorage.getItem('users') || '[]');
+                    const user = users.find(u => u.id.toString() === userId);
+                    
+                    if (user && user.sellerId) {
+                        sellerId = user.sellerId;
+                        console.log('📊 Nalezen sellerId v tabulce uživatelů:', sellerId, 'pro userId:', userId);
+                        
+                        // Ulož pro budoucí použití
+                        localStorage.setItem('sellerId', sellerId);
+                    } else if (user) {
+                        console.log('📊 Uživatel nalezen ale nemá sellerId:', user);
+                    }
+                } catch (e) {
+                    console.log('📊 Chyba při čtení tabulky uživatelů:', e);
+                }
             }
         }
         
-        // 4. Testovací fallback pro Šimona Gabriela
+        // 4. Testovací fallback pro Šimona Gabriela (ID prodejce = 2)
         if (!sellerId) {
-            sellerId = '2'; // Šimon Gabriel z tabulky
-            console.log('📊 Fallback na testovací ID:', sellerId);
-            
-            // Ulož do localStorage pro budoucí použití
-            localStorage.setItem('sellerId', sellerId);
-            
-            // Aktualizuj userData
-            try {
-                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-                userData.sellerId = sellerId;
-                userData.firstName = 'Šimon';
-                userData.lastName = 'Gabriel';
-                localStorage.setItem('userData', JSON.stringify(userData));
-            } catch (e) {
-                console.log('📊 Chyba při aktualizaci userData');
-            }
+            sellerId = '2'; // Šimon Gabriel má ID prodejce 2
+            console.log('📊 Fallback na testovací ID prodejce Šimona:', sellerId);
         }
         
-        return String(sellerId); // Ujisti se, že je to string
+        console.log('📊 Finální používané ID prodejce:', sellerId);
+        return String(sellerId);
     }
 
+    // STEJNÁ metoda jako ProdejnyDataLoader
     async loadData(isMonthly = false) {
-        console.log('=== NAČÍTÁNÍ DAT PROFILU UŽIVATELE ===');
-        console.log('ID prodejce:', this.userSellerId);
+        console.log('=== NAČÍTÁNÍ PRODEJNÍCH DAT PRO PROFIL ===');
+        console.log('Spreadsheet ID:', this.spreadsheetId);
         console.log('Je měsíční:', isMonthly);
-        console.log('Tab type:', this.tabType);
+        console.log('ID prodejce:', this.userSellerId);
         
         this.isMonthly = isMonthly;
         
@@ -96,27 +105,33 @@ class UserProfileDataLoader {
             await this.loadFromGoogleScript(gid, isMonthly);
             return;
         } catch (error) {
-            console.error('Chyba při načítání dat profilu:', error);
+            console.error('Chyba při načítání dat:', error);
             this.showError(error);
         }
     }
 
+    // STEJNÁ metoda jako ProdejnyDataLoader
     async loadFromGoogleScript(gid, isMonthly) {
-        console.log('=== NAČÍTÁNÍ Z GOOGLE APPS SCRIPT PRO PROFIL ===');
-        console.log('GID:', gid, 'Je měsíční:', isMonthly, 'ID prodejce:', this.userSellerId);
+        console.log('=== NAČÍTÁNÍ Z GOOGLE APPS SCRIPT ===');
+        console.log('GID:', gid, 'Je měsíční:', isMonthly);
         
+        // Google Apps Script endpoint - stejný jako ProdejnyDataLoader
+        const scriptUrl = this.scriptUrl;
+        
+        // Použij JSONP jako hlavní metodu kvůli CORS problémům
         try {
-            console.log('🔄 Používám JSONP metodu pro načítání dat profilu...');
+            console.log('🔄 Používám JSONP metodu jako hlavní...');
             await this.loadWithJsonp(gid, isMonthly);
             return;
             
         } catch (error) {
-            console.error('❌ JSONP metoda selhala pro profil:', error);
-            console.log('🔄 Používám fallback mock data pro profil...');
+            console.error('❌ JSONP metoda selhala:', error);
+            console.log('🔄 Používám fallback mock data...');
             this.showMockData(isMonthly);
         }
     }
 
+    // STEJNÁ metoda jako ProdejnyDataLoader
     async loadWithJsonp(gid, isMonthly) {
         return new Promise((resolve, reject) => {
             const timestamp = Date.now();
@@ -160,7 +175,7 @@ class UserProfileDataLoader {
                 reject(new Error('JSONP request failed'));
             };
             
-            // Timeout po 15 sekundách
+            // Timeout po 10 sekundách
             setTimeout(() => {
                 if (window[callbackName]) {
                     delete window[callbackName];
@@ -169,12 +184,13 @@ class UserProfileDataLoader {
                     }
                     reject(new Error('JSONP request timeout'));
                 }
-            }, 15000);
+            }, 10000);
             
             document.head.appendChild(script);
         });
     }
 
+    // STEJNÁ metoda jako ProdejnyDataLoader
     convertJsonToCsv(jsonData) {
         if (!jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
             return '';
@@ -200,11 +216,12 @@ class UserProfileDataLoader {
         return csvLines.join('\n');
     }
 
+    // UPRAVENÁ metoda z ProdejnyDataLoader - přidáno filtrování podle ID prodejce
     parseAndDisplayData(csvData, isMonthly) {
-        console.log('=== PARSOVÁNÍ DAT PROFILU UŽIVATELE ===');
+        console.log('=== PARSOVÁNÍ PRODEJNÍCH DAT PRO PROFIL ===');
         console.log('Délka CSV dat:', csvData.length);
-        console.log('ID prodejce:', this.userSellerId);
-        console.log('První 500 znaků CSV:', csvData.substring(0, 500));
+        console.log('První 500 znaků:', csvData.substring(0, 500));
+        console.log('ID prodejce pro filtrování:', this.userSellerId);
         
         const lines = csvData.split('\n').filter(line => String(line || '').trim());
         console.log('Počet řádků po filtrování:', lines.length);
@@ -221,10 +238,8 @@ class UserProfileDataLoader {
         
         for (let i = 0; i < Math.min(5, lines.length); i++) {
             const testHeaders = this.parseCSVLine(lines[i]);
-            console.log(`Test headers řádek ${i}:`, testHeaders);
-            
             // Přeskoč aktualizační řádek a najdi řádek s prodejna/prodejce
-            if (testHeaders.includes('prodejna') || testHeaders.includes('prodejce') || testHeaders.includes('id_prodejce')) {
+            if (testHeaders.includes('prodejna') || testHeaders.includes('prodejce')) {
                 headers = testHeaders;
                 headerRowIndex = i;
                 console.log('Nalezeny headers na řádku:', i, headers);
@@ -233,37 +248,22 @@ class UserProfileDataLoader {
         }
         
         console.log('Parsované headers:', headers);
+        console.log('Header řádek index:', headerRowIndex);
         
-        // Najdi index sloupce ID prodejce
-        let sellerIdColumnIndex = 2; // Default sloupec C
-        
-        // Pokus se najít přesný index pro id_prodejce
-        const idProdejceIndex = headers.findIndex(h => 
-            String(h || '').toLowerCase().includes('id_prodejce') || 
-            String(h || '').toLowerCase().includes('id prodejce')
-        );
-        
-        if (idProdejceIndex !== -1) {
-            sellerIdColumnIndex = idProdejceIndex;
-            console.log('Nalezen sloupec id_prodejce na indexu:', sellerIdColumnIndex);
-        }
-        
-        console.log('Používám sloupec pro ID prodejce:', sellerIdColumnIndex);
-        
-        // Zpracuj všechny datové řádky a najdi ty pro našeho prodejce
+        // Získej všechny řádky dat
         const allRows = lines.slice(headerRowIndex + 1)
             .map(line => this.parseCSVLine(line))
-            .filter(row => row && row.some(cell => String(cell || '').trim()));
+            .filter(row => row && row.some(cell => {
+                const cellStr = String(cell || '').trim();
+                return cellStr && cellStr.length > 0;
+            })); // Odfiltrovat prázdné řádky
+
+        console.log(`Načteno ${allRows.length} řádků dat celkem`);
+        console.log('První 3 řádky dat:', allRows.slice(0, 3));
         
-        console.log('Všechny datové řádky:', allRows.length);
-        allRows.forEach((row, index) => {
-            const rowSellerId = String(row[sellerIdColumnIndex] || '').trim();
-            console.log(`Řádek ${index}: ID=${rowSellerId}, Data:`, row.slice(0, 5));
-        });
-        
-        // Filtruj podle ID prodejce
+        // FILTROVÁNÍ podle ID prodejce (sloupec C - index 2)
         const userRows = allRows.filter(row => {
-            const rowSellerId = String(row[sellerIdColumnIndex] || '').trim();
+            const rowSellerId = String(row[2] || '').trim(); // sloupec C = index 2
             const matches = rowSellerId === this.userSellerId;
             
             if (matches) {
@@ -276,26 +276,30 @@ class UserProfileDataLoader {
         console.log(`Po filtrování podle ID prodejce (${this.userSellerId}): ${userRows.length} řádků`);
         
         if (userRows.length === 0) {
-            console.log('❌ Žádné řádky pro tohoto prodejce, zobrazujem prázdný stav');
-            console.log('Dostupná ID prodejců:', allRows.map(row => String(row[sellerIdColumnIndex] || '').trim()));
+            console.log('❌ Žádné řádky pro tohoto prodejce');
+            console.log('Dostupná ID prodejců:', allRows.map(row => String(row[2] || '').trim()));
             this.showEmptyState(isMonthly);
             return;
         }
 
-        // Aktualizovat hlavní metriky
-        this.updateMainMetrics(userRows, isMonthly, headers);
+        // Seřadit podle sloupce polozky_nad_100 (sloupec C - index 2) od největší po nejmenší
+        const sortedRows = this.sortRowsByColumn(userRows, 2);
+        console.log(`Po seřazení: ${sortedRows.length} řádků`);
 
-        // Aktualizovat dodatečné statistiky
-        this.updateAdditionalStats(userRows, isMonthly, headers);
+        // Aktualizovat metriky před zobrazením
+        this.updateUserMetrics(sortedRows, isMonthly);
 
-        this.displayUserProfile(headers, userRows, isMonthly);
+        // Zobrazit tabulku s použitím STEJNÉ logiky jako ProdejnyDataLoader
+        this.displayTable(headers, sortedRows, isMonthly);
     }
 
+    // STEJNÁ metoda jako ProdejnyDataLoader
     parseCSVLine(line) {
         const result = [];
         let current = '';
         let inQuotes = false;
         
+        // Ujisti se, že line je string
         if (typeof line !== 'string') {
             line = String(line || '');
         }
@@ -317,124 +321,70 @@ class UserProfileDataLoader {
         return result;
     }
 
-    updateMainMetrics(rows, isMonthly, headers) {
-        console.log('=== AKTUALIZUJI HLAVNÍ METRIKY ===');
-        console.log('Počet řádků:', rows.length);
-        console.log('Headers:', headers);
-        
-        // Najdi indexy pro položky a služby
-        let itemsIndex = -1;
-        let servicesIndex = -1;
-        
-        if (isMonthly) {
-            // Pro měsíční: hledáme "POLOŽKY" a "SLUŽBY"
-            itemsIndex = headers.findIndex(h => String(h || '').toLowerCase().includes('položky'));
-            servicesIndex = headers.findIndex(h => String(h || '').toLowerCase().includes('služby'));
-        } else {
-            // Pro aktuální: hledáme "polozky_nad_100" a "sluzby_celkem"
-            itemsIndex = headers.findIndex(h => 
-                String(h || '').toLowerCase().includes('polozky_nad_100') ||
-                String(h || '').toLowerCase().includes('položky')
-            );
-            servicesIndex = headers.findIndex(h => 
-                String(h || '').toLowerCase().includes('sluzby_celkem') ||
-                String(h || '').toLowerCase().includes('služby')
-            );
-        }
-        
-        console.log('Items index:', itemsIndex, 'Services index:', servicesIndex);
-        
-        // Pokud nenajdeme indexy, použij defaultní pozice
-        if (itemsIndex === -1) itemsIndex = isMonthly ? 1 : 3; // D sloupec pro aktuální (polozky_nad_100)
-        if (servicesIndex === -1) servicesIndex = isMonthly ? 2 : 4; // E sloupec pro aktuální (sluzby_celkem)
+    // STEJNÁ metoda jako ProdejnyDataLoader
+    sortRowsByColumn(rows, columnIndex) {
+        return rows.sort((a, b) => {
+            const valueA = parseInt(a[columnIndex]) || 0;
+            const valueB = parseInt(b[columnIndex]) || 0;
+            return valueB - valueA; // Od největší po nejmenší
+        });
+    }
+
+    // NOVÁ metoda - aktualizuje metriky pro uživatele
+    updateUserMetrics(rows, isMonthly) {
+        console.log('=== AKTUALIZUJI METRIKY UŽIVATELE ===');
         
         let totalItems = 0;
         let totalServices = 0;
+        let aligatorSales = 0;
 
         rows.forEach(row => {
-            const items = parseInt(row[itemsIndex]) || 0;
-            const services = parseInt(row[servicesIndex]) || 0;
-            
-            totalItems += items;
-            totalServices += services;
-            
-            console.log('Řádek data:', {
-                items: items,
-                services: services,
-                itemsIndex: itemsIndex,
-                servicesIndex: servicesIndex,
-                rowData: row.slice(0, 8)
-            });
+            if (isMonthly) {
+                totalItems += parseInt(row[1]) || 0; // měsíční: položky v indexu 1
+                totalServices += parseInt(row[2]) || 0; // měsíční: služby v indexu 2
+                if (row.length > 4) {
+                    aligatorSales += parseInt(row[4]) || 0;
+                }
+            } else {
+                totalItems += parseInt(row[3]) || 0; // aktuální: položky v indexu 3 (sloupec D)
+                totalServices += parseInt(row[4]) || 0; // aktuální: služby v indexu 4 (sloupec E)
+                if (row.length > 16) {
+                    aligatorSales += parseInt(row[16]) || 0; // ALIGATOR sloupec Q = index 16
+                }
+            }
         });
 
-        console.log('Celkové výsledky:', { totalItems, totalServices });
+        console.log('Celkové metriky:', { totalItems, totalServices, aligatorSales });
 
-        // Aktualizovat UI pouze pro hlavní metriky (zobrazují se vždy)
+        // Aktualizovat hlavní metriky (zobrazují se vždy)
         const totalItemsElement = document.getElementById('totalItemsSold');
         const totalServicesElement = document.getElementById('totalServicesSold');
         
         if (totalItemsElement) {
             totalItemsElement.textContent = totalItems;
-            console.log('✅ Aktualizován totalItemsSold:', totalItems);
         }
         if (totalServicesElement) {
             totalServicesElement.textContent = totalServices;
-            console.log('✅ Aktualizován totalServicesSold:', totalServices);
         }
-    }
 
-    updateAdditionalStats(rows, isMonthly, headers) {
-        console.log('=== AKTUALIZUJI DODATEČNÉ STATISTIKY ===');
-        
-        // Najdi index pro ALIGATOR telefony
-        let aligatorIndex = headers.findIndex(h => 
-            String(h || '').toLowerCase().includes('aligator')
-        );
-        
-        console.log('Aligator index:', aligatorIndex);
-        
-        // Najdi indexy pro celkové hodnoty
-        let itemsIndex = isMonthly ? 1 : 3; // stejné jako v updateMainMetrics
-        
-        let aligatorSales = 0;
-        let totalSales = 0;
-
-        rows.forEach(row => {
-            totalSales += parseInt(row[itemsIndex]) || 0;
-            
-            // ALIGATOR telefony pokud existuje sloupec
-            if (aligatorIndex !== -1) {
-                aligatorSales += parseInt(row[aligatorIndex]) || 0;
-            }
-        });
-
-        console.log('Dodatečné statistiky:', { aligatorSales, totalSales });
-
-        // Aktualizovat pouze příslušné elementy pro aktivní tab
+        // Aktualizovat tab-specifické metriky
         const prefix = isMonthly ? 'monthly' : 'current';
         const aligatorElement = document.getElementById(`${prefix}AligatorSales`);
         const totalElement = document.getElementById(`${prefix}TotalSales`);
         const rankingElement = document.getElementById(`${prefix}Ranking`);
 
-        if (aligatorElement) {
-            aligatorElement.textContent = aligatorSales;
-            console.log(`✅ Aktualizován ${prefix}AligatorSales:`, aligatorSales);
-        }
-        if (totalElement) {
-            totalElement.textContent = totalSales;
-            console.log(`✅ Aktualizován ${prefix}TotalSales:`, totalSales);
-        }
-        if (rankingElement) {
-            rankingElement.textContent = '1'; // Zatím hardcodované, bude vypočítáno později
-            console.log(`✅ Aktualizován ${prefix}Ranking: 1`);
-        }
+        if (aligatorElement) aligatorElement.textContent = aligatorSales;
+        if (totalElement) totalElement.textContent = totalItems;
+        if (rankingElement) rankingElement.textContent = '1'; // Hardcodované zatím
     }
 
-    displayUserProfile(headers, rows, isMonthly) {
-        // Získej jméno prodejce - předpokládá se jméno ve druhém sloupci (index 1)
-        const userName = rows.length > 0 ? (rows[0][1] || 'Neznámý prodejce') : 'Neznámý prodejce';
+    // UPRAVENÁ metoda z ProdejnyDataLoader - zobrazí filtrovaná data
+    displayTable(headers, rows, isMonthly) {
+        // Zpracuj data pro zobrazení - STEJNÁ logika jako ProdejnyDataLoader
+        const processedData = this.processDataForDisplay(rows, isMonthly);
         
-        console.log('Zobrazuji profil pro:', userName);
+        // Získej jméno uživatele z prvního řádku dat
+        const userName = rows.length > 0 ? (rows[0][1] || 'Neznámý prodejce') : 'Neznámý prodejce';
         
         this.container.innerHTML = `
             <div class="retro-data-container">
@@ -447,39 +397,38 @@ class UserProfileDataLoader {
                     </div>
                 </div>
                 <div class="retro-data-content">
-                    <div class="user-info">
-                        <h3>📊 Vaše statistiky - ${isMonthly ? 'Aktuální měsíc' : 'Aktuální den'}</h3>
-                        <p><strong>Prodejce:</strong> ${this.escapeHtml(userName)}</p>
+                    <div class="user-info" style="margin-bottom: 2rem;">
+                        <h3>📊 ${this.escapeHtml(userName)} - ${isMonthly ? 'Aktuální měsíc' : 'Aktuální den'}</h3>
                         <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
                         <p><strong>Pozice v žebříčku:</strong> 🥇 #1</p>
-                        
-                        ${rows.length > 0 ? `
-                            <div class="user-stats-table">
-                                <table class="retro-sales-table">
-                                    <thead>
-                                        <tr>
-                                            ${headers.map(header => `<th>${this.escapeHtml(header)}</th>`).join('')}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${rows.map((row, index) => `
-                                            <tr class="${index % 2 === 0 ? 'even' : 'odd'}">
-                                                ${row.map((cell, cellIndex) => {
-                                                    const isNumeric = cellIndex >= 2; // číselné sloupce od C
-                                                    if (isNumeric && !isNaN(cell) && String(cell || '').trim() !== '') {
-                                                        return `<td class="numeric" data-value="${cell}">${this.escapeHtml(cell)}</td>`;
-                                                    }
-                                                    return `<td>${this.escapeHtml(cell)}</td>`;
-                                                }).join('')}
-                                            </tr>
-                                        `).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        ` : '<p>Zatím žádné prodeje pro tento period.</p>'}
+                    </div>
+
+                    <!-- Tabulka dat - STEJNÝ formát jako ProdejnyDataLoader -->
+                    <div class="table-scroll">
+                        <table class="retro-sales-table" id="userProfileTable">
+                            <thead>
+                                <tr>
+                                    ${processedData.headers.map(header => `<th class="sortable-header" data-column="${this.escapeHtml(header)}">${this.escapeHtml(header)} <span class="sort-indicator">▼</span></th>`).join('')}
+                                </tr>
+                            </thead>
+                           <tbody>
+                               ${processedData.rows.map((row, index) => `
+                                   <tr class="${index % 2 === 0 ? 'even' : 'odd'}">
+                                       ${row.map((cell, cellIndex) => {
+                                           // Pro měsíční: číselné od indexu 1, pro aktuální: číselné od indexu 2
+                                           const isNumeric = isMonthly ? (cellIndex >= 1) : (cellIndex >= 2);
+                                           if (isNumeric && !isNaN(cell) && String(cell || '').trim() !== '') {
+                                               return `<td class="numeric" data-value="${cell}">${this.escapeHtml(cell)}</td>`;
+                                           }
+                                           return `<td>${this.escapeHtml(cell)}</td>`;
+                                       }).join('')}
+                                   </tr>
+                               `).join('')}
+                           </tbody>
+                        </table>
                     </div>
                     
-                    <div class="refresh-controls">
+                    <div class="refresh-controls" style="margin-top: 2rem;">
                         <button class="retro-refresh-btn" onclick="window.reloadUserProfileData && window.reloadUserProfileData()">
                             🔄 OBNOVIT DATA
                         </button>
@@ -491,50 +440,27 @@ class UserProfileDataLoader {
         this.setupEventListeners();
     }
 
-    showEmptyState(isMonthly) {
-        this.container.innerHTML = `
-            <div class="retro-data-container">
-                <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; profil_${isMonthly ? 'monthly' : 'current'}_${this.userSellerId}.csv_</span>
-                    <div class="retro-window-controls">
-                        <span class="control-dot red"></span>
-                        <span class="control-dot yellow"></span>
-                        <span class="control-dot green"></span>
-                    </div>
-                </div>
-                <div class="retro-data-content">
-                    <div class="empty-state">
-                        <h3>📊 Vaše statistiky - ${isMonthly ? 'Aktuální měsíc' : 'Aktuální den'}</h3>
-                        <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
-                        <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                            <div style="font-size: 3rem; margin-bottom: 1rem;">📈</div>
-                            <h4>Žádná data pro ID prodejce ${this.escapeHtml(this.userSellerId)}</h4>
-                            <p>Pro tento ${isMonthly ? 'měsíc' : 'den'} nejsou k dispozici žádné prodeje.</p>
-                            <p><small>Zkuste změnit ID prodejce v localStorage nebo kontaktujte administrátora.</small></p>
-                        </div>
-                        
-                        <div class="refresh-controls">
-                            <button class="retro-refresh-btn" onclick="window.reloadUserProfileData && window.reloadUserProfileData()">
-                                🔄 OBNOVIT DATA
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+    // STEJNÁ metoda jako ProdejnyDataLoader
+    processDataForDisplay(rows, isMonthly) {
+        // Jednoduché zpracování pro uživatelský profil
+        const headers = isMonthly 
+            ? ['Prodejna', 'Prodejce', 'ID', 'Položky', 'Služby', 'ALIGATOR'] 
+            : ['Prodejna', 'Prodejce', 'ID', 'Položky nad 100', 'Služby celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
         
-        // Aktualizovat metriky na nulu
-        this.updateMainMetrics([], isMonthly, []);
-        this.updateAdditionalStats([], isMonthly, []);
+        return {
+            headers: headers,
+            rows: rows,
+            nameColumnIndex: 1 // prodejce je v druhém sloupci
+        };
     }
 
+    // Ostatní metody zůstávají stejné...
     async reloadData() {
         console.log('🔄 Reload dat profilu uživatele...');
         await this.loadData(this.isMonthly);
     }
 
     setupEventListeners() {
-        // Event listenery pro interakce s profilem
         console.log('Nastavuji event listenery pro profil');
     }
 
@@ -552,7 +478,7 @@ class UserProfileDataLoader {
                 <div class="retro-data-content">
                     <div class="loading" style="padding: 3rem; text-align: center;">
                         <div class="loading-spinner"></div>
-                        <p style="margin-top: 1rem;">Načítám vaše data pro ID prodejce ${this.userSellerId}...</p>
+                        <p style="margin-top: 1rem;">Načítám data z tabulky pro ID prodejce ${this.userSellerId}...</p>
                     </div>
                 </div>
             </div>
@@ -560,9 +486,9 @@ class UserProfileDataLoader {
     }
 
     showMockData(isMonthly) {
-        console.log('Zobrazuji mock data pro profil Šimona Gabriela');
+        console.log('Zobrazuji mock data pro profil');
         
-        // Mock data na základě skutečných dat z tabulky pro Šimona (ID=2)
+        // Mock data podle skutečné struktury tabulky
         const mockData = isMonthly ? [
             ['prodejna', 'prodejce', 'id_prodejce', 'polozky', 'sluzby', 'ALIGATOR'],
             ['Globus', 'Šimon Gabriel', '2', '48', '4', '1']
@@ -572,8 +498,42 @@ class UserProfileDataLoader {
         ];
         
         const csvData = this.convertJsonToCsv(mockData);
-        console.log('Mock CSV data:', csvData);
         this.parseAndDisplayData(csvData, isMonthly);
+    }
+
+    showEmptyState(isMonthly) {
+        this.container.innerHTML = `
+            <div class="retro-data-container">
+                <div class="retro-data-header">
+                    <span class="retro-terminal-prompt">&gt; profil_${isMonthly ? 'monthly' : 'current'}_${this.userSellerId}.csv_</span>
+                    <div class="retro-window-controls">
+                        <span class="control-dot red"></span>
+                        <span class="control-dot yellow"></span>
+                        <span class="control-dot green"></span>
+                    </div>
+                </div>
+                <div class="retro-data-content">
+                    <div class="empty-state">
+                        <h3>📊 Žádná data pro ID prodejce ${this.escapeHtml(this.userSellerId)}</h3>
+                        <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📈</div>
+                            <h4>Prodejce nenalezen</h4>
+                            <p>Pro ID prodejce ${this.escapeHtml(this.userSellerId)} nejsou v tabulce žádná data.</p>
+                            <p><small>Zkontrolujte ID prodejce nebo kontaktujte administrátora.</small></p>
+                        </div>
+                        
+                        <div class="refresh-controls">
+                            <button class="retro-refresh-btn" onclick="window.reloadUserProfileData && window.reloadUserProfileData()">
+                                🔄 OBNOVIT DATA
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Aktualizovat metriky na nulu
+        this.updateUserMetrics([], isMonthly);
     }
 
     showError(error) {
@@ -591,7 +551,7 @@ class UserProfileDataLoader {
                     <div style="padding: 2rem; text-align: center; color: var(--error-color, #ff3333);">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
                         <h3>Chyba při načítání dat</h3>
-                        <p>Nepodařilo se načíst vaše prodejní data.</p>
+                        <p>Nepodařilo se načíst data z tabulky.</p>
                         <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
                         <p style="font-size: 0.875rem; opacity: 0.7; margin-top: 1rem;">
                             Chyba: ${this.escapeHtml(error.message)}
