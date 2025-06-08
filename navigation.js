@@ -137,9 +137,9 @@ function updateNavigation() {
                 
                 // Clear all session data
                 const sessionKeys = [
-                    'isLoggedIn', 'username', 'role', 'userId', 
+                    'isLoggedIn', 'username', 'role', 'userId', 'sellerId',
                     'userEmail', 'userPhone', 'userProdejna', 
-                    'deviceType', 'loginTime'
+                    'deviceType', 'loginTime', 'userData'
                 ];
                 sessionKeys.forEach(key => localStorage.removeItem(key));
                 

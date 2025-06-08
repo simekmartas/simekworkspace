@@ -40,13 +40,43 @@ class UserProfile {
 
     checkLogin() {
         const isLoggedIn = localStorage.getItem('isLoggedIn');
-        const userId = localStorage.getItem('userId');
+        const sellerId = localStorage.getItem('sellerId');
+        const username = localStorage.getItem('username');
 
-        if (isLoggedIn !== 'true' || !userId) {
+        if (isLoggedIn !== 'true') {
             alert('Musíte se nejdříve přihlásit.');
             window.location.href = 'login.html';
             return false;
         }
+
+        // Pokud není sellerId nebo username, zkus ho najít
+        if (!sellerId || !username) {
+            console.log('⚠️ Chybí sellerId nebo username, pokusím se je najít...');
+            const userId = localStorage.getItem('userId');
+            
+            if (userId) {
+                try {
+                    const users = JSON.parse(localStorage.getItem('users') || '[]');
+                    const user = users.find(u => u.id.toString() === userId);
+                    
+                    if (user) {
+                        if (user.sellerId) {
+                            localStorage.setItem('sellerId', user.sellerId);
+                        }
+                        if (user.username) {
+                            localStorage.setItem('username', user.username);
+                        }
+                        console.log('✅ Doplněny chybějící údaje z users tabulky');
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('❌ Chyba při načítání users tabulky');
+                }
+            }
+            
+            console.log('⚠️ Nepodařilo se najít potřebné údaje uživatele');
+        }
+        
         return true;
     }
 
@@ -80,22 +110,48 @@ class UserProfile {
     }
 
     async loadCurrentUser() {
-        const userId = localStorage.getItem('userId');
-        this.currentUser = this.users.find(u => u.id.toString() === userId);
+        // Preferuje hledání podle sellerId před systémovým userId
+        const sellerId = localStorage.getItem('sellerId');
+        const username = localStorage.getItem('username');
         
-        if (!this.currentUser) {
-            // Fallback na prvního uživatele
-            this.currentUser = this.users[0];
-            localStorage.setItem('userId', this.currentUser.id.toString());
+        // 1. Hledat podle sellerId
+        if (sellerId) {
+            this.currentUser = this.users.find(u => u.sellerId === sellerId);
         }
         
-        // Ujisti se, že uživatel má sellerId
+        // 2. Hledat podle username
+        if (!this.currentUser && username) {
+            this.currentUser = this.users.find(u => u.username === username);
+        }
+        
+        // 3. Fallback podle userId (systémové ID) - pouze pokud není sellerId
+        if (!this.currentUser) {
+            const userId = localStorage.getItem('userId');
+            if (userId) {
+                this.currentUser = this.users.find(u => u.id.toString() === userId);
+            }
+        }
+        
+        // 4. Fallback na prvního uživatele
+        if (!this.currentUser) {
+            this.currentUser = this.users[0];
+        }
+        
+        // Ujisti se, že uživatel má sellerId - pokud ne, přiřaď mu ho
         if (!this.currentUser.sellerId) {
-            this.currentUser.sellerId = this.currentUser.id.toString();
+            console.log('⚠️ Uživatel nemá sellerId, generuji nové...');
+            // Vygenuj sellerId na základě pozice v array nebo nějaké logiky
+            this.currentUser.sellerId = String(this.currentUser.id || '1');
             await this.saveUserData();
         }
         
-        console.log('👤 Aktuální uživatel načten:', this.currentUser.username, 'ID prodejce:', this.currentUser.sellerId);
+        // Synchronizuj sellerId do localStorage
+        localStorage.setItem('sellerId', this.currentUser.sellerId);
+        localStorage.setItem('username', this.currentUser.username);
+        
+        console.log('👤 Aktuální uživatel načten:', this.currentUser.username);
+        console.log('👤 ID prodejce:', this.currentUser.sellerId);
+        console.log('👤 Systémové ID:', this.currentUser.id);
         
         // Update profile title
         const profileTitle = document.getElementById('profileTitle');
@@ -446,6 +502,60 @@ function applyCrop() {
     closeCropModal();
 }
 
+// 🛠️ Admin Helper Functions - Globální funkce pro správu seller ID
+window.adminHelpers = {
+    // Nastavit seller ID pro uživatele
+    setSellerId: function(username, sellerId) {
+        try {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.username === username);
+            
+            if (user) {
+                user.sellerId = String(sellerId);
+                localStorage.setItem('users', JSON.stringify(users));
+                console.log(`✅ Nastaveno sellerId ${sellerId} pro uživatele ${username}`);
+                
+                // Pokud je to aktuálně přihlášený uživatel, aktualizuj i localStorage
+                if (localStorage.getItem('username') === username) {
+                    localStorage.setItem('sellerId', String(sellerId));
+                    console.log(`✅ Aktualizováno i pro aktuálně přihlášeného uživatele`);
+                }
+                
+                return true;
+            } else {
+                console.log(`❌ Uživatel ${username} nenalezen`);
+                return false;
+            }
+        } catch (e) {
+            console.error('❌ Chyba při nastavování sellerId:', e);
+            return false;
+        }
+    },
+    
+    // Zobrazit všechny uživatele a jejich seller ID
+    showAllUsers: function() {
+        try {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            console.log('👥 Seznam všech uživatelů:');
+            console.table(users.map(u => ({
+                username: u.username,
+                fullName: `${u.firstName} ${u.lastName}`,
+                sellerId: u.sellerId || 'CHYBÍ',
+                systemId: u.id
+            })));
+            return users;
+        } catch (e) {
+            console.error('❌ Chyba při načítání uživatelů:', e);
+            return [];
+        }
+    },
+    
+    // Rychlé nastavení pro Šimona
+    setupSimon: function() {
+        return this.setSellerId('simon', '2');
+    }
+};
+
 // 🚀 Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
     console.log('📊 DOM ready, inicializuji User Profile...');
@@ -466,4 +576,10 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Theme toggle buttons aktualizovány na user-profile.html');
         }
     }, 200);
+    
+    // Zobrazit admin helper instrukce
+    console.log('🛠️ Admin Helper Functions dostupné:');
+    console.log('adminHelpers.showAllUsers() - zobrazí všechny uživatele');
+    console.log('adminHelpers.setSellerId("username", "123") - nastaví seller ID');
+    console.log('adminHelpers.setupSimon() - nastaví Šimona na ID 2');
 }); 

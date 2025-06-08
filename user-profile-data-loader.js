@@ -9,10 +9,10 @@ class UserProfileDataLoader {
         // ID přihlášeného uživatele - získáme z localStorage (pouze ID, ne data)
         this.userSellerId = this.getCurrentUserSellerId();
         
-        // Google Sheets ID a gid pro hlavní list - STEJNÉ jako ProdejnyDataLoader
+        // Google Sheets ID a gid pro správné listy
         this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
-        this.mainGid = '0'; // aktuální list "statistiky aktual"
-        this.monthlyGid = '1829845095'; // měsíční list "od 1"
+        this.mainGid = '0'; // aktuální data - list "List 1" (obvykle GID = 0)
+        this.monthlyGid = '1829845095'; // měsíční data - list "od 1"
         
         // Publikované URL pro CSV export
         this.basePublishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv`;
@@ -32,43 +32,37 @@ class UserProfileDataLoader {
     }
 
     getCurrentUserSellerId() {
-        // Získá pouze ID prodejce pro filtrování - jinak vše z tabulky
+        // Získá ID prodejce - preferuje sellerId před systémovým ID
         let sellerId = null;
         
-        // 1. Z userData v localStorage - hledáme sellerId
-        try {
-            const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-            if (userData.sellerId) {
-                sellerId = userData.sellerId;
+        // 1. Přímo z localStorage sellerId (preferovaná metoda)
+        sellerId = localStorage.getItem('sellerId');
+        
+        // 2. Z userData v localStorage
+        if (!sellerId) {
+            try {
+                const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                if (userData.sellerId) {
+                    sellerId = userData.sellerId;
+                    localStorage.setItem('sellerId', sellerId); // Uložit pro příště
+                }
+            } catch (e) {
+                console.log('📊 Chyba při parsování userData');
             }
-        } catch (e) {
-            console.log('📊 Chyba při parsování userData');
         }
         
-        // 2. Přímo z localStorage sellerId
+        // 3. Hledat v tabulce uživatelů podle username
         if (!sellerId) {
-            sellerId = localStorage.getItem('sellerId');
-        }
-        
-        // 3. Získat sellerId z tabulky uživatelů podle userId
-        if (!sellerId) {
-            const userId = localStorage.getItem('userId');
-            if (userId) {
+            const username = localStorage.getItem('username');
+            if (username) {
                 try {
                     const users = JSON.parse(localStorage.getItem('users') || '[]');
-                    const user = users.find(u => u.id.toString() === userId);
+                    const user = users.find(u => u.username === username);
                     
                     if (user && user.sellerId) {
                         sellerId = user.sellerId;
                         localStorage.setItem('sellerId', sellerId);
-                    } else if (user) {
-                        // SPECIÁLNÍ PŘÍPAD: Pokud je to Šimon Gabriel (userId=4), nastav sellerId=2
-                        if (userId === '4' && user.firstName === 'Šimon' && user.lastName === 'Gabriel') {
-                            sellerId = '2';
-                            user.sellerId = '2';
-                            localStorage.setItem('users', JSON.stringify(users));
-                            localStorage.setItem('sellerId', '2');
-                        }
+                        console.log('📊 Nalezeno sellerId podle username:', username, '→', sellerId);
                     }
                 } catch (e) {
                     console.log('📊 Chyba při čtení tabulky uživatelů');
@@ -76,16 +70,11 @@ class UserProfileDataLoader {
             }
         }
         
-        // 4. Fallback pro Šimona Gabriela (ID prodejce = 2)
+        // 4. Fallback - default prodejce
         if (!sellerId) {
+            console.log('⚠️ Nenalezeno ID prodejce, používám fallback ID: 2');
             sellerId = '2';
             localStorage.setItem('sellerId', sellerId);
-        }
-        
-        // OPRAVA: Pokud je sellerId stále 4, vynuť 2
-        if (sellerId === '4') {
-            sellerId = '2';
-            localStorage.setItem('sellerId', '2');
         }
         
         console.log('📊 Používám ID prodejce:', sellerId);
@@ -106,6 +95,8 @@ class UserProfileDataLoader {
             
             // Použij Google Apps Script endpoint pro načítání dat
             const gid = isMonthly ? this.monthlyGid : this.mainGid;
+            console.log(`🔄 Načítám data z GID: ${gid} (${isMonthly ? 'měsíční list "od 1"' : 'aktuální list'})`);
+            
             await this.loadFromGoogleScript(gid, isMonthly);
             return;
         } catch (error) {
@@ -170,7 +161,10 @@ class UserProfileDataLoader {
             
             // Vytvoř script tag
             const script = document.createElement('script');
-            script.src = `${this.scriptUrl}?gid=${gid}&callback=${callbackName}&_=${timestamp}`;
+            const scriptSrc = `${this.scriptUrl}?gid=${gid}&callback=${callbackName}&_=${timestamp}`;
+            script.src = scriptSrc;
+            console.log(`🔗 Script URL pro ${isMonthly ? 'měsíční' : 'aktuální'} data:`, scriptSrc);
+            
             script.onerror = () => {
                 delete window[callbackName];
                 if (script.parentNode) {
@@ -295,7 +289,7 @@ class UserProfileDataLoader {
         console.log(`Po seřazení podle sloupce ${sortColumnIndex}: ${sortedRows.length} řádků`);
 
         // Aktualizovat metriky před zobrazením
-        this.updateUserMetrics(sortedRows, isMonthly);
+        this.updateUserMetrics(sortedRows, isMonthly, headers);
 
         // Zobrazit tabulku s použitím STEJNÉ logiky jako ProdejnyDataLoader
         this.displayTable(headers, sortedRows, isMonthly);
@@ -339,29 +333,65 @@ class UserProfileDataLoader {
     }
 
     // NOVÁ metoda - aktualizuje metriky pro uživatele
-    updateUserMetrics(rows, isMonthly) {
+    updateUserMetrics(rows, isMonthly, headers) {
         console.log('=== AKTUALIZUJI METRIKY UŽIVATELE ===');
         console.log(`Typ dat: ${isMonthly ? 'MĚSÍČNÍ' : 'AKTUÁLNÍ'}`);
+        console.log('Headers:', headers);
         
         let totalItems = 0;
         let totalServices = 0;
         let aligatorSales = 0;
 
+        // Najít indexy sloupců podle názvů
+        const polozkyIndex = headers.findIndex(h => h.toLowerCase().includes('polozky'));
+        const sluzbyIndex = headers.findIndex(h => h.toLowerCase().includes('sluzby'));
+        
+        // Hledat ALIGATOR různými způsoby
+        let aligatorIndex = headers.findIndex(h => h.toLowerCase() === 'aligator');
+        if (aligatorIndex === -1) {
+            aligatorIndex = headers.findIndex(h => h.toLowerCase().includes('aligator'));
+        }
+        
+        // Pro aktuální data: zkusit CT300 sloupec jako ALIGATOR (podle obrázku uživatele)
+        let ct300Index = -1;
+        if (!isMonthly && aligatorIndex === -1) {
+            ct300Index = headers.findIndex(h => h.toLowerCase() === 'ct300');
+        }
+        
+        console.log(`Indexy sloupců: položky=${polozkyIndex}, služby=${sluzbyIndex}, aligator=${aligatorIndex}, ct300=${ct300Index}`);
+
         rows.forEach(row => {
-            // Pro oba typy dat je struktura stejná podle Google Sheets:
-            // sloupec D (index 3): polozky_nad_100 
-            // sloupec E (index 4): sluzby_celkem
-            // Pro ALIGATOR telefony - součet všech CT sloupců (F, G, H - indexy 5, 6, 7)
+            console.log('Zpracovávám řádek:', row);
             
-            totalItems += parseInt(row[3]) || 0; // sloupec D: polozky_nad_100
-            totalServices += parseInt(row[4]) || 0; // sloupec E: sluzby_celkem
+            // Položky - obvykle sloupec D (index 3)
+            if (polozkyIndex >= 0) {
+                totalItems += parseInt(row[polozkyIndex]) || 0;
+            } else {
+                totalItems += parseInt(row[3]) || 0; // fallback na index 3
+            }
             
-            // ALIGATOR = CT300 + CT600 + CT1200 (sloupce F, G, H - indexy 5, 6, 7)
-            if (row.length > 7) {
-                const ct300 = parseInt(row[5]) || 0; // CT300
-                const ct600 = parseInt(row[6]) || 0; // CT600  
-                const ct1200 = parseInt(row[7]) || 0; // CT1200
-                aligatorSales += ct300 + ct600 + ct1200;
+            // Služby - obvykle sloupec E (index 4)  
+            if (sluzbyIndex >= 0) {
+                totalServices += parseInt(row[sluzbyIndex]) || 0;
+            } else {
+                totalServices += parseInt(row[4]) || 0; // fallback na index 4
+            }
+            
+            // ALIGATOR - hledat přímo sloupec ALIGATOR
+            if (aligatorIndex >= 0) {
+                aligatorSales += parseInt(row[aligatorIndex]) || 0;
+                console.log(`ALIGATOR z indexu ${aligatorIndex}: ${row[aligatorIndex]}`);
+            } else if (!isMonthly && ct300Index >= 0) {
+                // Pro aktuální data: použij CT300 jako ALIGATOR telefony
+                aligatorSales += parseInt(row[ct300Index]) || 0;
+                console.log(`ALIGATOR z CT300 indexu ${ct300Index}: ${row[ct300Index]}`);
+            } else {
+                console.log('⚠️ Sloupec ALIGATOR ani CT300 nenalezen, zkouším poslední sloupec');
+                // Fallback - zkus poslední sloupec, který by mohl být ALIGATOR
+                if (row.length > 15) {
+                    aligatorSales += parseInt(row[row.length - 1]) || 0;
+                    console.log(`ALIGATOR z posledního sloupce: ${row[row.length - 1]}`);
+                }
             }
         });
 
@@ -525,15 +555,17 @@ class UserProfileDataLoader {
     }
 
     showMockData(isMonthly) {
-        console.log('Zobrazuji mock data pro profil');
+        console.log(`Zobrazuji mock data pro profil (${isMonthly ? 'měsíční' : 'aktuální'})`);
         
         // Mock data podle skutečné struktury tabulky
         const mockData = isMonthly ? [
-            ['prodejna', 'prodejce', 'id_prodejce', 'polozky', 'sluzby', 'ALIGATOR'],
-            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1']
+            // Měsíční data (list "od 1") - Šimon Gabriel: 186 položek, 32 služeb
+            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'],
+            ['Globus', 'Šimon Gabriel', '2', '186', '32', '8', '7', '2', '0', '0', '10', '0', '1', '3', '1', '0']
         ] : [
-            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'],
-            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1', '2', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1']
+            // Aktuální data - Šimon Gabriel: 48 položek, 4 služby, 1 ALIGATOR
+            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'],
+            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
         ];
         
         const csvData = this.convertJsonToCsv(mockData);
@@ -572,7 +604,7 @@ class UserProfileDataLoader {
         `;
         
         // Aktualizovat metriky na nulu
-        this.updateUserMetrics([], isMonthly);
+        this.updateUserMetrics([], isMonthly, []);
     }
 
     showError(error) {
