@@ -133,6 +133,9 @@ async function savePosts() {
 }
 
 function renderApp() {
+    // Inicializuj animace pro liky
+    addLikeAnimationStyles();
+    
     document.getElementById('app').innerHTML = `
         <style>
             .simple-container { max-width: 600px; margin: 0 auto; padding: 2rem 1rem; }
@@ -1114,6 +1117,26 @@ async function toggleLike(postId) {
     
     const wasLiked = post.likes.includes(currentUserIdentifier);
     
+    // Najdi like tlačítko pro animaci
+    const likeButton = document.querySelector(`button[onclick="toggleLike('${postId}')"]`);
+    
+    // Spusť animaci PŘED změnou stavu
+    if (wasLiked) {
+        // Animace pro odebrání like (smutné smajlíky)
+        createUnlikeAnimation(likeButton);
+    } else {
+        // Animace pro přidání like (srdíčka)
+        createLikeAnimation(likeButton);
+    }
+    
+    // Přidej pulsující efekt k tlačítku
+    if (likeButton) {
+        likeButton.classList.add('like-button-pulse');
+        setTimeout(() => {
+            likeButton.classList.remove('like-button-pulse');
+        }, 300);
+    }
+    
     // Okamžitě aktualizuj UI (optimistic update)
     if (wasLiked) {
         // Odstraň like
@@ -1470,4 +1493,147 @@ function downloadFile(dataUrl, fileName) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-} 
+}
+
+// 💖 Animace pro like systém 💖
+function createLikeAnimation(button) {
+    if (!button) return;
+    
+    const hearts = ['💖', '❤️', '💕', '💗', '💝'];
+    const buttonRect = button.getBoundingClientRect();
+    
+    // Vytvoř 5-8 srdíček
+    const heartCount = 5 + Math.floor(Math.random() * 4);
+    
+    for (let i = 0; i < heartCount; i++) {
+        setTimeout(() => {
+            const heart = document.createElement('div');
+            heart.textContent = hearts[Math.floor(Math.random() * hearts.length)];
+            heart.style.cssText = `
+                position: fixed;
+                left: ${buttonRect.left + buttonRect.width / 2}px;
+                top: ${buttonRect.top + buttonRect.height / 2}px;
+                font-size: 20px;
+                pointer-events: none;
+                z-index: 10000;
+                animation: heartFloat 2s ease-out forwards;
+                transform-origin: center;
+            `;
+            
+            // Přidej unikátní směr pro každé srdíčko
+            const angle = (i / heartCount) * 360;
+            const distance = 60 + Math.random() * 40;
+            heart.style.setProperty('--angle', angle + 'deg');
+            heart.style.setProperty('--distance', distance + 'px');
+            
+            document.body.appendChild(heart);
+            
+            // Odstraň po animaci
+            setTimeout(() => {
+                if (heart.parentNode) {
+                    heart.parentNode.removeChild(heart);
+                }
+            }, 2000);
+        }, i * 100); // Postupné objevování
+    }
+}
+
+function createUnlikeAnimation(button) {
+    if (!button) return;
+    
+    const sadEmojis = ['😢', '😭', '💔', '😞', '😔'];
+    const buttonRect = button.getBoundingClientRect();
+    
+    // Vytvoř 3-5 smutných smajlíků
+    const emojiCount = 3 + Math.floor(Math.random() * 3);
+    
+    for (let i = 0; i < emojiCount; i++) {
+        setTimeout(() => {
+            const emoji = document.createElement('div');
+            emoji.textContent = sadEmojis[Math.floor(Math.random() * sadEmojis.length)];
+            emoji.style.cssText = `
+                position: fixed;
+                left: ${buttonRect.left + buttonRect.width / 2}px;
+                top: ${buttonRect.top + buttonRect.height / 2}px;
+                font-size: 18px;
+                pointer-events: none;
+                z-index: 10000;
+                animation: sadFloat 2.5s ease-out forwards;
+                transform-origin: center;
+            `;
+            
+            // Přidej unikátní směr pro každý smajlík (dolů a do stran)
+            const angle = -90 + (i - emojiCount/2) * 30; // Směr dolů s rozptylem
+            const distance = 40 + Math.random() * 30;
+            emoji.style.setProperty('--angle', angle + 'deg');
+            emoji.style.setProperty('--distance', distance + 'px');
+            
+            document.body.appendChild(emoji);
+            
+            // Odstraň po animaci
+            setTimeout(() => {
+                if (emoji.parentNode) {
+                    emoji.parentNode.removeChild(emoji);
+                }
+            }, 2500);
+        }, i * 150); // Postupné objevování
+    }
+}
+
+// Přidej CSS animace do head
+function addLikeAnimationStyles() {
+    if (document.getElementById('like-animations-css')) return; // Už je přidané
+    
+    const style = document.createElement('style');
+    style.id = 'like-animations-css';
+    style.textContent = `
+        @keyframes heartFloat {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotate(0deg) translateY(0px);
+            }
+            20% {
+                opacity: 1;
+                transform: scale(1.2) rotate(15deg) translateY(-10px);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.8) rotate(var(--angle, 45deg)) 
+                          translateY(-50px) 
+                          translateX(calc(cos(var(--angle, 45deg)) * var(--distance, 60px)));
+            }
+        }
+        
+        @keyframes sadFloat {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) translateY(0px);
+            }
+            20% {
+                opacity: 1;
+                transform: scale(1.1) translateY(-5px);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0.7) 
+                          translateY(var(--distance, 40px)) 
+                          translateX(calc(sin(var(--angle, -90deg)) * 20px));
+            }
+        }
+        
+        /* Pulsující efekt pro like tlačítko */
+        .like-button-pulse {
+            animation: likePulse 0.3s ease-in-out;
+        }
+        
+        @keyframes likePulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    `;
+    
+    document.head.appendChild(style);
+}
+
+// Animace se načtou automaticky při spuštění renderApp() 
