@@ -23,34 +23,53 @@ class UserManager {
     async loadUsers() {
         // Načtení uživatelů z localStorage (simulace databáze)
         const storedUsers = localStorage.getItem('users');
+        
+        const defaultUsers = [
+            {
+                id: 1,
+                firstName: 'Admin',
+                lastName: 'Administrátor',
+                username: 'admin',
+                email: 'admin@mobilmajak.cz',
+                phone: '+420777888999',
+                prodejna: 'Hlavní pobočka',
+                password: 'Admin123',
+                role: 'Administrator'
+            },
+            {
+                id: 2,
+                firstName: 'Tomáš',
+                lastName: 'Novák',
+                username: 'prodejce',
+                email: 'tomas.novak@mobilmajak.cz',
+                phone: '+420777123456',
+                prodejna: 'Praha 1',
+                password: 'prodejce123',
+                role: 'Prodejce'
+            }
+        ];
+
         if (storedUsers) {
             this.users = JSON.parse(storedUsers);
+            
+            // Vždy aktualizuj admin účet na správné údaje
+            const adminIndex = this.users.findIndex(u => u.username === 'admin' || u.id === 1);
+            if (adminIndex !== -1) {
+                this.users[adminIndex] = defaultUsers[0];
+            } else {
+                this.users.unshift(defaultUsers[0]);
+            }
+            
+            // Zkontroluj prodejce
+            const prodejceIndex = this.users.findIndex(u => u.username === 'prodejce');
+            if (prodejceIndex === -1) {
+                this.users.push(defaultUsers[1]);
+            }
+            
+            this.saveUsers();
         } else {
             // Vytvoření výchozích uživatelů pokud neexistují
-            this.users = [
-                {
-                    id: 1,
-                    firstName: 'Admin',
-                    lastName: 'Administrátor',
-                    username: 'admin',
-                    email: 'admin@mobilmajak.cz',
-                    phone: '+420777888999',
-                    prodejna: 'Hlavní pobočka',
-                    password: 'Admin123',
-                    role: 'Administrator'
-                },
-                {
-                    id: 2,
-                    firstName: 'Tomáš',
-                    lastName: 'Novák',
-                    username: 'prodejce',
-                    email: 'tomas.novak@mobilmajak.cz',
-                    phone: '+420777123456',
-                    prodejna: 'Praha 1',
-                    password: 'prodejce123',
-                    role: 'Prodejce'
-                }
-            ];
+            this.users = defaultUsers;
             this.saveUsers();
         }
         

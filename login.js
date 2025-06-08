@@ -81,33 +81,52 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Inicializace výchozích uživatelů
     function initializeUsers() {
-        const existingUsers = getUsers();
+        let existingUsers = getUsers();
+        
+        const defaultUsers = [
+            {
+                id: 1,
+                firstName: 'Admin',
+                lastName: 'Administrátor',
+                username: 'admin',
+                email: 'admin@mobilmajak.cz',
+                phone: '+420777888999',
+                prodejna: 'Hlavní pobočka',
+                password: 'Admin123',
+                role: 'Administrator'
+            },
+            {
+                id: 2,
+                firstName: 'Tomáš',
+                lastName: 'Novák',
+                username: 'prodejce',
+                email: 'tomas.novak@mobilmajak.cz',
+                phone: '+420777123456',
+                prodejna: 'Praha 1',
+                password: 'prodejce123',
+                role: 'Prodejce'
+            }
+        ];
+
         if (existingUsers.length === 0) {
-            const defaultUsers = [
-                {
-                    id: 1,
-                    firstName: 'Admin',
-                    lastName: 'Administrátor',
-                    username: 'admin',
-                    email: 'admin@mobilmajak.cz',
-                    phone: '+420777888999',
-                    prodejna: 'Hlavní pobočka',
-                    password: 'Admin123',
-                    role: 'Administrator'
-                },
-                {
-                    id: 2,
-                    firstName: 'Tomáš',
-                    lastName: 'Novák',
-                    username: 'prodejce',
-                    email: 'tomas.novak@mobilmajak.cz',
-                    phone: '+420777123456',
-                    prodejna: 'Praha 1',
-                    password: 'prodejce123',
-                    role: 'Prodejce'
-                }
-            ];
+            // Žádní uživatelé - vytvoř výchozí
             localStorage.setItem('users', JSON.stringify(defaultUsers));
+        } else {
+            // Aktualizuj admin účet pokud existuje
+            const adminIndex = existingUsers.findIndex(u => u.username === 'admin' || u.id === 1);
+            if (adminIndex !== -1) {
+                existingUsers[adminIndex] = defaultUsers[0]; // Aktualizuj admina
+            } else {
+                existingUsers.unshift(defaultUsers[0]); // Přidej admina na začátek
+            }
+            
+            // Zkontroluj prodejce
+            const prodejceIndex = existingUsers.findIndex(u => u.username === 'prodejce');
+            if (prodejceIndex === -1) {
+                existingUsers.push(defaultUsers[1]); // Přidej prodejce pokud neexistuje
+            }
+            
+            localStorage.setItem('users', JSON.stringify(existingUsers));
         }
     }
     
@@ -166,6 +185,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Reset funkcionalita pro debugging
+function resetUsers() {
+    if (confirm('Opravdu chcete resetovat všechny uživatele? Toto smaže všechny existující účty a vytvoří výchozí.')) {
+        localStorage.removeItem('users');
+        alert('Uživatelé byli resetováni. Můžete se nyní přihlásit s výchozími údaji.');
+        location.reload();
+    }
+}
 
 // Add shake animation CSS
 const style = document.createElement('style');
