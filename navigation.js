@@ -74,7 +74,7 @@ function updateNavigation() {
     
     // Položka pro nepřihlášené uživatele
     const loginItem = `
-        <li><a href="login.html" class="btn btn-primary" style="margin-left: 1rem;">Přihlásit</a></li>
+        <li><a href="login.html" class="login-btn">🔐 Přihlásit</a></li>
     `;
     
     // Aktualizace navigace podle role uživatele
@@ -187,13 +187,8 @@ function updateNavigation() {
     // Hamburger menu funkcionalita
     const hamburger = document.querySelector('.hamburger');
     
-    console.log('🍔 Hamburger element:', hamburger);
-    console.log('📱 Window width:', window.innerWidth);
-    
     if (hamburger) {
-        console.log('✅ Hamburger nalezen, přidávám event listener');
         hamburger.addEventListener('click', function(e) {
-            console.log('🖱️ Klik na hamburger!');
             e.stopPropagation();
             hamburger.classList.toggle('active');
             nav.classList.toggle('active');
@@ -202,14 +197,9 @@ function updateNavigation() {
             const isActive = hamburger.classList.contains('active');
             hamburger.setAttribute('aria-label', isActive ? 'Zavřít menu' : 'Otevřít menu');
             
-            console.log('🔄 Menu stav:', isActive ? 'OTEVŘENÉ' : 'ZAVŘENÉ');
-            console.log('🧭 Nav classes:', nav.className);
-            
             // Prevent body scroll when menu is open
             document.body.style.overflow = isActive ? 'hidden' : '';
         });
-    } else {
-        console.error('❌ Hamburger element nebyl nalezen!');
     }
     
     if (hamburger) {
