@@ -670,10 +670,9 @@
             <a href="index.html" class="logo">Mobil Maják</a>
             <nav>
                 <ul>
-                    <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+                    <!-- Navigace bude vložena JavaScriptem -->
                 </ul>
             </nav>
-            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
         </div>
     </header>
 
@@ -925,5 +924,27 @@
     <script src="accessibility-enhancements.js"></script>
     <script src="user-profile-data-loader.js"></script>
     <script src="user-profile.js"></script>
+    
+    <script>
+        // Vynutit inicializaci navigation.js po načtení stránky
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 User-profile.html loaded, inicializuji navigation...');
+            
+            // Ujisti se, že navigation se inicializuje
+            if (typeof initNavigation === 'function') {
+                initNavigation();
+                console.log('✅ Navigation inicializováno');
+            } else {
+                setTimeout(() => {
+                    if (typeof initNavigation === 'function') {
+                        initNavigation();
+                        console.log('✅ Navigation inicializováno (delayed)');
+                    } else {
+                        console.error('❌ Navigation function not available');
+                    }
+                }, 200);
+            }
+        });
+    </script>
 </body>
 </html> 

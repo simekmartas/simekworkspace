@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Menu - Mobil Maják</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+                </ul>
+            </nav>
+            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <h1>Test Menu</h1>
+            <p>Tato stránka slouží k otestování funkčnosti menu.</p>
+            
+            <div style="margin: 2rem 0; padding: 2rem; background: var(--bg-secondary); border-radius: 8px;">
+                <h2>Informace o uživateli:</h2>
+                <p><strong>Přihlášen:</strong> <span id="loginStatus">-</span></p>
+                <p><strong>Role:</strong> <span id="userRole">-</span></p>
+                <p><strong>Username:</strong> <span id="username">-</span></p>
+                <p><strong>Device Type:</strong> <span id="deviceType">-</span></p>
+            </div>
+            
+            <div style="margin: 2rem 0;">
+                <button onclick="localStorage.setItem('isLoggedIn', 'true'); localStorage.setItem('role', 'Prodejce'); localStorage.setItem('username', 'Šimon Gabriel'); updateInfo(); updateNavigation();" class="btn btn-primary">Přihlásit jako Prodejce</button>
+                
+                <button onclick="localStorage.setItem('isLoggedIn', 'true'); localStorage.setItem('role', 'Administrator'); localStorage.setItem('username', 'Admin'); updateInfo(); updateNavigation();" class="btn btn-secondary" style="margin-left: 1rem;">Přihlásit jako Admin</button>
+                
+                <button onclick="localStorage.clear(); updateInfo(); updateNavigation();" class="btn btn-secondary" style="margin-left: 1rem;">Odhlásit</button>
+            </div>
+        </div>
+    </main>
+
+    <script src="theme-toggle.js"></script>
+    <script src="navigation.js"></script>
+    <script>
+        function updateInfo() {
+            document.getElementById('loginStatus').textContent = localStorage.getItem('isLoggedIn') || 'false';
+            document.getElementById('userRole').textContent = localStorage.getItem('role') || 'none';
+            document.getElementById('username').textContent = localStorage.getItem('username') || 'none';
+            document.getElementById('deviceType').textContent = localStorage.getItem('deviceType') || 'desktop';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateInfo();
+            
+            // Initialize navigation
+            if (typeof initNavigation === 'function') {
+                initNavigation();
+            } else {
+                setTimeout(() => {
+                    if (typeof initNavigation === 'function') {
+                        initNavigation();
+                    }
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -22,7 +22,8 @@ class UserProfileDataLoader {
         // Google Apps Script URL - STEJNÝ jako ProdejnyDataLoader
         this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyrD0f_pWkPIaowVclG3zdzgfceYGjyqWin5-2jKKwadFb1e3itg6OMoeZdRxfX0Qk4xg/exec';
         
-        console.log('📊 UserProfileDataLoader vytvořen pro ID prodejce:', this.userSellerId);
+        console.log(`📊 UserProfileDataLoader vytvořen pro ${this.isMonthly ? 'MĚSÍČNÍ' : 'AKTUÁLNÍ'} data`);
+        console.log(`📊 ID prodejce: ${this.userSellerId}, GID: ${this.isMonthly ? this.monthlyGid : this.mainGid}`);
         
         // Automaticky načte data po vytvoření instance
         setTimeout(() => {
@@ -222,6 +223,7 @@ class UserProfileDataLoader {
     // UPRAVENÁ metoda z ProdejnyDataLoader - přidáno filtrování podle ID prodejce
     parseAndDisplayData(csvData, isMonthly) {
         console.log('=== PARSOVÁNÍ PRODEJNÍCH DAT PRO PROFIL ===');
+        console.log(`Typ dat: ${isMonthly ? 'MĚSÍČNÍ (list "od 1")' : 'AKTUÁLNÍ (main list)'}`);
         console.log('Délka CSV dat:', csvData.length);
         console.log('První 500 znaků:', csvData.substring(0, 500));
         console.log('ID prodejce pro filtrování:', this.userSellerId);
@@ -270,24 +272,27 @@ class UserProfileDataLoader {
             const matches = rowSellerId === this.userSellerId;
             
             if (matches) {
-                console.log('✅ Nalezen řádek pro prodejce:', this.userSellerId, row);
+                console.log(`✅ Nalezen řádek pro prodejce (${isMonthly ? 'měsíční' : 'aktuální'}):`, this.userSellerId, row);
             }
             
             return matches;
         });
 
-        console.log(`Po filtrování podle ID prodejce (${this.userSellerId}): ${userRows.length} řádků`);
+        console.log(`Po filtrování podle ID prodejce (${this.userSellerId}) - ${isMonthly ? 'měsíční' : 'aktuální'}: ${userRows.length} řádků`);
         
         if (userRows.length === 0) {
-            console.log('❌ Žádné řádky pro tohoto prodejce');
+            console.log('❌ Žádné řádky pro tohoto prodejce v', isMonthly ? 'měsíčních' : 'aktuálních', 'datech');
             console.log('Dostupná ID prodejců:', allRows.map(row => String(row[2] || '').trim()));
             this.showEmptyState(isMonthly);
             return;
         }
 
-        // Seřadit podle sloupce polozky_nad_100 (sloupec C - index 2) od největší po nejmenší
-        const sortedRows = this.sortRowsByColumn(userRows, 2);
-        console.log(`Po seřazení: ${sortedRows.length} řádků`);
+        // Seřadit podle správného sloupce podle typu dat
+        // Pro měsíční data: seřadit podle sloupce D (polozky_nad_100) - index 3
+        // Pro aktuální data: seřadit podle sloupce D (polozky_nad_100) - index 3
+        const sortColumnIndex = 3; // sloupec D (polozky_nad_100)
+        const sortedRows = this.sortRowsByColumn(userRows, sortColumnIndex);
+        console.log(`Po seřazení podle sloupce ${sortColumnIndex}: ${sortedRows.length} řádků`);
 
         // Aktualizovat metriky před zobrazením
         this.updateUserMetrics(sortedRows, isMonthly);
@@ -336,30 +341,33 @@ class UserProfileDataLoader {
     // NOVÁ metoda - aktualizuje metriky pro uživatele
     updateUserMetrics(rows, isMonthly) {
         console.log('=== AKTUALIZUJI METRIKY UŽIVATELE ===');
+        console.log(`Typ dat: ${isMonthly ? 'MĚSÍČNÍ' : 'AKTUÁLNÍ'}`);
         
         let totalItems = 0;
         let totalServices = 0;
         let aligatorSales = 0;
 
         rows.forEach(row => {
-            if (isMonthly) {
-                totalItems += parseInt(row[1]) || 0; // měsíční: položky v indexu 1
-                totalServices += parseInt(row[2]) || 0; // měsíční: služby v indexu 2
-                if (row.length > 4) {
-                    aligatorSales += parseInt(row[4]) || 0;
-                }
-            } else {
-                totalItems += parseInt(row[3]) || 0; // aktuální: položky v indexu 3 (sloupec D)
-                totalServices += parseInt(row[4]) || 0; // aktuální: služby v indexu 4 (sloupec E)
-                if (row.length > 16) {
-                    aligatorSales += parseInt(row[16]) || 0; // ALIGATOR sloupec Q = index 16
-                }
+            // Pro oba typy dat je struktura stejná podle Google Sheets:
+            // sloupec D (index 3): polozky_nad_100 
+            // sloupec E (index 4): sluzby_celkem
+            // Pro ALIGATOR telefony - součet všech CT sloupců (F, G, H - indexy 5, 6, 7)
+            
+            totalItems += parseInt(row[3]) || 0; // sloupec D: polozky_nad_100
+            totalServices += parseInt(row[4]) || 0; // sloupec E: sluzby_celkem
+            
+            // ALIGATOR = CT300 + CT600 + CT1200 (sloupce F, G, H - indexy 5, 6, 7)
+            if (row.length > 7) {
+                const ct300 = parseInt(row[5]) || 0; // CT300
+                const ct600 = parseInt(row[6]) || 0; // CT600  
+                const ct1200 = parseInt(row[7]) || 0; // CT1200
+                aligatorSales += ct300 + ct600 + ct1200;
             }
         });
 
-        console.log('Celkové metriky:', { totalItems, totalServices, aligatorSales });
+        console.log(`Celkové metriky (${isMonthly ? 'měsíční' : 'aktuální'}):`, { totalItems, totalServices, aligatorSales });
 
-        // Aktualizovat hlavní metriky (zobrazují se vždy)
+        // Aktualizovat hlavní metriky (zobrazují se vždy - berou se z aktuálně aktivního tabu)
         const totalItemsElement = document.getElementById('totalItemsSold');
         const totalServicesElement = document.getElementById('totalServicesSold');
         
@@ -445,15 +453,43 @@ class UserProfileDataLoader {
 
     // STEJNÁ metoda jako ProdejnyDataLoader
     processDataForDisplay(rows, isMonthly) {
-        // Jednoduché zpracování pro uživatelský profil
-        const headers = isMonthly 
-            ? ['Prodejna', 'Prodejce', 'ID', 'Položky', 'Služby', 'ALIGATOR'] 
-            : ['Prodejna', 'Prodejce', 'ID', 'Položky nad 100', 'Služby celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
+        // Zpracování pro uživatelský profil - SKRÝT sloupec ID prodejce
+        console.log(`Zpracovávám data pro zobrazení: ${isMonthly ? 'MĚSÍČNÍ' : 'AKTUÁLNÍ'}`);
+        
+        // Headers pro zobrazení - BEZ ID prodejce, stejné pro oba typy dat
+        const displayHeaders = [
+            'Prodejna', 
+            'Prodejce', 
+            'Položky nad 100', 
+            'Služby celkem', 
+            'CT300', 
+            'CT600', 
+            'CT1200', 
+            'AKT', 
+            'ZAH250', 
+            'NAP', 
+            'ZAH500', 
+            'KOP250', 
+            'KOP500', 
+            'PZ1', 
+            'KNZ'
+        ];
+        
+        // Zpracované řádky - odstraň sloupec ID prodejce (index 2)
+        const processedRows = rows.map(row => {
+            // Vytvoř nový řádek bez sloupce ID prodejce (index 2)
+            const newRow = [...row];
+            newRow.splice(2, 1); // Odstraň index 2 (ID prodejce)
+            return newRow;
+        });
+        
+        console.log('Původní řádky:', rows.length);
+        console.log('Zpracované řádky (bez ID):', processedRows.length);
         
         return {
-            headers: headers,
-            rows: rows,
-            nameColumnIndex: 1 // prodejce je v druhém sloupci
+            headers: displayHeaders,
+            rows: processedRows,
+            nameColumnIndex: 1 // prodejce je stále v druhém sloupci (index 1)
         };
     }
 
