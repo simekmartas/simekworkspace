@@ -2896,22 +2896,26 @@ tr:hover td {
     
     nav {
         order: 4;
-        position: fixed;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100vh;
-        background: var(--bg-primary);
-        z-index: 1000;
-        transition: left 0.3s ease;
-        overflow-y: auto;
-        padding-top: 80px;
-        border-right: 1px solid var(--border-light);
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        position: fixed !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 100% !important;
+        height: 100vh !important;
+        background: var(--bg-primary) !important;
+        z-index: 9999 !important;
+        transition: left 0.3s ease !important;
+        overflow-y: auto !important;
+        padding-top: 80px !important;
+        border-right: 1px solid var(--border-light) !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1) !important;
+        display: block !important;
     }
     
     nav.active {
-        left: 0;
+        left: 0 !important;
+        transform: translateX(0) !important;
+        display: block !important;
+        background: red !important; /* Debug - červené pozadí pro kontrolu */
     }
     
     nav ul {
