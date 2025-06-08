@@ -532,17 +532,17 @@ class ProdejnyDataLoader {
                     const prodejna = row[0]; // sloupec A - prodejna
                     
                     if (!prodejciData.has(prodejce)) {
-                        // Inicializovat data pro prodejce
+                        // Inicializovat data pro prodejce (přeskočit id_prodejce ve sloupci 2)
                         const newRow = [prodejce]; // název prodejce jako první sloupec
-                        for (let i = 2; i < row.length; i++) {
+                        for (let i = 3; i < row.length; i++) {
                             newRow.push(parseInt(row[i]) || 0);
                         }
                         prodejciData.set(prodejce, newRow);
                     } else {
-                        // Sečíst hodnoty k existujícímu prodejci
+                        // Sečíst hodnoty k existujícímu prodejci (přeskočit id_prodejce ve sloupci 2)
                         const existingRow = prodejciData.get(prodejce);
-                        for (let i = 2; i < row.length; i++) {
-                            existingRow[i - 1] = (existingRow[i - 1] || 0) + (parseInt(row[i]) || 0);
+                        for (let i = 3; i < row.length; i++) {
+                            existingRow[i - 2] = (existingRow[i - 2] || 0) + (parseInt(row[i]) || 0);
                         }
                     }
                 }
@@ -551,9 +551,9 @@ class ProdejnyDataLoader {
             // Vytvořit nové headers pro prodejce
             const newHeaders = ['prodejce', 'polozky_nad_100', 'sluzby_celkem'];
             
-            // Přidat zbývající sloupce z původních headers pokud existují
-            const originalHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
-            for (let i = 4; i < originalHeaders.length; i++) {
+            // Přidat zbývající sloupce z původních headers pokud existují (přeskočit id_prodejce)
+            const originalHeaders = ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
+            for (let i = 5; i < originalHeaders.length; i++) {
                 newHeaders.push(originalHeaders[i]);
             }
             
@@ -563,8 +563,8 @@ class ProdejnyDataLoader {
                 nameColumnIndex: 0 // prodejce je v prvním sloupci
             };
         } else {
-            // Aktuální - zachovat původní formát (prodejna + prodejce + všechny ostatní sloupce)
-            const originalHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
+            // Aktuální - zachovat původní formát (prodejna + prodejce + id_prodejce + všechny ostatní sloupce)
+            const originalHeaders = ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
             
             return {
                 headers: originalHeaders,
@@ -614,10 +614,10 @@ class ProdejnyDataLoader {
                     aligatorKing = { name: name, value: aligator };
                 }
             } else {
-                // Pro aktuální data: prodejna v 0, prodejce v 1, položky v 2, služby v 3, ALIGATOR v 15
-                const polozky = parseInt(row[2]) || 0;
-                const sluzby = parseInt(row[3]) || 0;
-                const aligator = parseInt(row[15]) || 0; // ALIGATOR je na indexu 15
+                // Pro aktuální data: prodejna v 0, prodejce v 1, id_prodejce v 2, položky v 3, služby v 4, ALIGATOR v 16
+                const polozky = parseInt(row[3]) || 0;
+                const sluzby = parseInt(row[4]) || 0;
+                const aligator = parseInt(row[16]) || 0; // ALIGATOR je na indexu 16
                 const name = row[1]; // prodejce
                 
                 if (polozky > maxPolozky && name && name.trim()) {
@@ -885,39 +885,39 @@ class ProdejnyDataLoader {
     showMockData(isMonthly) {
         console.log('=== ZOBRAZUJEM MOCK PRODEJNÍ DATA ===');
         
-        const mockHeaders = ['prodejna', 'prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
+        const mockHeaders = ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'];
         
         let mockData;
         
         if (isMonthly) {
             // Mock data pro měsíční přehled (vyšší čísla)
             mockData = [
-                ['Globus', 'Šimon Gabriel', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1', '1'],
-                ['Čepkov', 'Lukáš Kováčik', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3', '0'],
-                ['Globus', 'Jiří Pohořelský', '282', '35', '0', '13', '0', '1', '0', '7', '0', '2', '3', '0', '9', '0'],
-                ['Čepkov', 'Tomáš Doležel', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2', '0'],
-                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '239', '19', '0', '3', '0', '0', '0', '9', '0', '0', '0', '1', '6', '0'],
-                ['Šternberk', 'Adam Kolarčík', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4', '0'],
-                ['Přerov', 'Benny Babušík', '206', '15', '0', '5', '0', '0', '0', '4', '0', '1', '2', '0', '3', '0'],
-                ['Šternberk', 'Jakub Králik', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1', '0'],
-                ['Vsetín', 'Lukáš Krumpolc', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3', '0'],
-                ['Přerov', 'Jakub Málek', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7', '0'],
-                ['Vsetín', 'Štěpán Kundera', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1', '0'],
-                ['Přerov', 'Nový Prodejce', '91', '2', '0', '0', '0', '1', '0', '0', '0', '0', '0', '1', '0', '0'],
-                ['Hlavní sklad - Senimo', 'Adéla Koldová', '58', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-                ['Globus', 'František Vychodil', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0'],
-                ['Přerov', 'Radek Bulandra', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0', '0'],
-                ['Globus', 'Martin Markovič', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+                ['Globus', 'Šimon Gabriel', '2', '349', '45', '0', '21', '2', '0', '0', '15', '0', '3', '2', '1', '1', '1'],
+                ['Čepkov', 'Lukáš Kováčik', '1', '341', '24', '0', '7', '0', '3', '2', '3', '2', '4', '0', '0', '3', '0'],
+                ['Globus', 'Jiří Pohořelský', '18', '282', '35', '0', '13', '0', '1', '0', '7', '0', '2', '3', '0', '9', '0'],
+                ['Čepkov', 'Tomáš Doležel', '7', '274', '30', '0', '3', '0', '8', '0', '8', '0', '2', '2', '5', '2', '0'],
+                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '3', '239', '19', '0', '3', '0', '0', '0', '9', '0', '0', '0', '1', '6', '0'],
+                ['Šternberk', 'Adam Kolarčík', '11', '237', '20', '0', '7', '1', '0', '0', '4', '0', '2', '0', '2', '4', '0'],
+                ['Přerov', 'Benny Babušík', '5', '206', '15', '0', '5', '0', '0', '0', '4', '0', '1', '2', '0', '3', '0'],
+                ['Šternberk', 'Jakub Králik', '7', '204', '13', '0', '2', '0', '1', '0', '5', '0', '3', '1', '0', '1', '0'],
+                ['Vsetín', 'Lukáš Krumpolc', '8', '176', '14', '0', '2', '0', '0', '1', '3', '0', '1', '3', '1', '3', '0'],
+                ['Přerov', 'Jakub Málek', '3', '135', '18', '0', '5', '0', '0', '0', '4', '0', '2', '0', '0', '7', '0'],
+                ['Vsetín', 'Štěpán Kundera', '11', '117', '12', '0', '3', '1', '1', '2', '3', '0', '1', '0', '0', '1', '0'],
+                ['Přerov', 'Nový Prodejce', '12', '91', '2', '0', '0', '0', '1', '0', '0', '0', '0', '0', '1', '0', '0'],
+                ['Hlavní sklad - Senimo', 'Adéla Koldová', '9', '58', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+                ['Globus', 'František Vychodil', '14', '42', '3', '0', '2', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0'],
+                ['Přerov', 'Radek Bulandra', '15', '10', '2', '0', '0', '0', '0', '0', '1', '0', '0', '1', '0', '0', '0'],
+                ['Globus', 'Martin Markovič', '16', '6', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
             ];
         } else {
             // Mock data pro aktuální přehled (podle screenshotu z 26.05.2025)
             mockData = [
-                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '12', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '0', '0', '0'],
-                ['Vsetín', 'Lukáš Krumpolc', '10', '1', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
-                ['Přerov', 'Benny Babušík', '8', '2', '0', '0', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0'],
-                ['Šternberk', 'Jakub Králik', '6', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-                ['Globus', 'Jiří Pohořelský', '4', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0'],
-                ['Hlavní sklad - Senimo', 'Adéla Koldová', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+                ['Hlavní sklad - Senimo', 'Tomáš Valenta', '3', '12', '2', '0', '0', '0', '0', '0', '2', '0', '0', '0', '0', '0', '0'],
+                ['Vsetín', 'Lukáš Krumpolc', '8', '10', '1', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
+                ['Přerov', 'Benny Babušík', '5', '8', '2', '0', '0', '0', '0', '0', '1', '0', '1', '0', '0', '0', '0'],
+                ['Šternberk', 'Jakub Králik', '7', '6', '1', '0', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+                ['Globus', 'Jiří Pohořelský', '18', '4', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0'],
+                ['Hlavní sklad - Senimo', 'Adéla Koldová', '9', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
             ];
         }
 
