@@ -8,6 +8,7 @@ class ThemeToggle {
     init() {
         this.applyTheme(this.currentTheme);
         this.createToggleButton();
+        this.createAdminSettingsButton();
     }
 
     applyTheme(theme) {
@@ -49,6 +50,98 @@ class ThemeToggle {
         });
     }
 
+    createAdminSettingsButton() {
+        // Zkontroluj zda je uživatel přihlášen jako administrátor
+        const userRole = localStorage.getItem('role');
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        
+        if (isLoggedIn !== 'true' || (userRole !== 'Administrator' && userRole !== 'Administrátor')) {
+            // Odstranit existující tlačítko pokud uživatel není admin
+            const existingButton = document.querySelector('.admin-settings-button');
+            if (existingButton) {
+                existingButton.remove();
+            }
+            return;
+        }
+
+        // Najdi existující tlačítko administrátorských nastavení
+        let settingsButton = document.querySelector('.admin-settings-button');
+        
+        if (!settingsButton) {
+            settingsButton = document.createElement('button');
+            settingsButton.className = 'admin-settings-button';
+            settingsButton.setAttribute('aria-label', 'Administrátorská nastavení');
+            settingsButton.innerHTML = '⚙️';
+            
+            // Přidat do header-content vedle theme toggle
+            const headerContent = document.querySelector('.header-content');
+            const themeToggle = document.querySelector('.theme-toggle');
+            
+            if (headerContent && themeToggle) {
+                // Vložit hned za theme toggle
+                themeToggle.parentNode.insertBefore(settingsButton, themeToggle.nextSibling);
+            } else if (headerContent) {
+                headerContent.appendChild(settingsButton);
+            }
+        }
+
+        // Odstranit staré event listenery a přidat nový
+        const newButton = settingsButton.cloneNode(true);
+        settingsButton.parentNode.replaceChild(newButton, settingsButton);
+        
+        newButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.showAdminMenu();
+        });
+    }
+
+    showAdminMenu() {
+        // Odstranit existující menu pokud je otevřené
+        const existingMenu = document.querySelector('.admin-menu');
+        if (existingMenu) {
+            existingMenu.remove();
+            return;
+        }
+
+        // Vytvořit dropdown menu
+        const menu = document.createElement('div');
+        menu.className = 'admin-menu';
+        menu.innerHTML = `
+            <div class="admin-menu-item" data-action="user-management">
+                👥 Nastavení uživatelů
+            </div>
+        `;
+
+        // Pozicovat menu vedle tlačítka
+        const settingsButton = document.querySelector('.admin-settings-button');
+        if (settingsButton) {
+            const rect = settingsButton.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.top = (rect.bottom + 5) + 'px';
+            menu.style.right = '20px';
+            menu.style.zIndex = '1000';
+        }
+
+        document.body.appendChild(menu);
+
+        // Přidat event listenery pro menu položky
+        menu.addEventListener('click', (e) => {
+            const action = e.target.getAttribute('data-action');
+            if (action === 'user-management') {
+                window.location.href = 'user-management.html';
+            }
+            menu.remove();
+        });
+
+        // Zavřít menu při kliknutí mimo
+        document.addEventListener('click', function closeMenu(e) {
+            if (!menu.contains(e.target) && !settingsButton.contains(e.target)) {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            }
+        });
+    }
+
     toggleTheme() {
         const newTheme = this.currentTheme === 'light' ? 'dark' : 'light';
         this.applyTheme(newTheme);
@@ -66,12 +159,13 @@ class ThemeToggle {
 
     updateAllToggleButtons() {
         this.updateToggleButton();
+        this.createAdminSettingsButton(); // Aktualizovat i admin tlačítko
     }
 }
 
-// CSS styly pro přepínač témat
+// CSS styly pro přepínač témat a admin nastavení
 const themeStyles = `
-.theme-toggle {
+.theme-toggle, .admin-settings-button {
     background: none;
     border: none;
     font-size: 1.5rem;
@@ -84,15 +178,41 @@ const themeStyles = `
     justify-content: center;
     width: 40px;
     height: 40px;
+    margin-left: 0.5rem;
 }
 
-.theme-toggle:hover {
+.theme-toggle:hover, .admin-settings-button:hover {
     background: rgba(255, 255, 255, 0.1);
     transform: scale(1.1);
 }
 
-.theme-toggle:active {
+.theme-toggle:active, .admin-settings-button:active {
     transform: scale(0.95);
+}
+
+.admin-menu {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+    min-width: 200px;
+    padding: 0.5rem 0;
+}
+
+.admin-menu-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: background-color 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.admin-menu-item:hover {
+    background: var(--accent-color);
+    color: white;
 }
 
 /* Světlý režim */

@@ -149,6 +149,15 @@
             box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
         }
         
+        select.form-input {
+            cursor: pointer;
+        }
+        
+        select.form-input option {
+            background: #000;
+            color: var(--terminal-green);
+        }
+        
         .modal-actions {
             display: flex;
             gap: 10px;
@@ -231,7 +240,10 @@
                 </div>
             </div>
 
-            <button class="btn-add" onclick="userManager.showAddModal()">+ Přidat nového prodejce</button>
+            <div style="display: flex; gap: 1rem; margin-bottom: 20px; flex-wrap: wrap;">
+                <button class="btn-add" onclick="userManager.showAddModal()">+ Přidat nového uživatele</button>
+                <button class="btn-edit" onclick="userManager.exportUsers()">📥 Exportovat do CSV</button>
+            </div>
 
             <div class="user-table-container">
                 <table class="user-table" id="userTable">
@@ -239,7 +251,9 @@
                         <tr>
                             <th>ID</th>
                             <th>Jméno</th>
-                            <th>Uživatelské jméno</th>
+                            <th>Příjmení</th>
+                            <th>Email</th>
+                            <th>Telefon</th>
                             <th>Prodejna</th>
                             <th>Role</th>
                             <th>Akce</th>
@@ -256,18 +270,33 @@
     <!-- Modal pro přidání/editaci uživatele -->
     <div id="userModal" class="modal">
         <div class="modal-content">
-            <h2 class="modal-header" id="modalTitle">// Přidat prodejce</h2>
+            <h2 class="modal-header" id="modalTitle">// Přidat uživatele</h2>
             <form id="userForm">
                 <input type="hidden" id="userId" value="">
                 
                 <div class="form-group">
-                    <label class="form-label" for="name">Celé jméno</label>
-                    <input type="text" id="name" class="form-input" required>
+                    <label class="form-label" for="firstName">Jméno</label>
+                    <input type="text" id="firstName" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="username">Uživatelské jméno</label>
-                    <input type="text" id="username" class="form-input" required>
+                    <label class="form-label" for="lastName">Příjmení</label>
+                    <input type="text" id="lastName" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="email">Email</label>
+                    <input type="email" id="email" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="phone">Telefon</label>
+                    <input type="tel" id="phone" class="form-input" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="prodejna">Prodejna</label>
+                    <input type="text" id="prodejna" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
@@ -279,8 +308,12 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="prodejna">Prodejna</label>
-                    <input type="text" id="prodejna" class="form-input" required>
+                    <label class="form-label" for="role">Role uživatele</label>
+                    <select id="role" class="form-input" required>
+                        <option value="">Vyberte roli...</option>
+                        <option value="Prodejce">Prodejce - omezený přístup (prodejny, bazar, novinky)</option>
+                        <option value="Administrator">Administrator - plný přístup ke všem sekcím</option>
+                    </select>
                 </div>
                 
                 <div class="modal-actions">
@@ -297,9 +330,9 @@
 
     <div class="version-info">v2.2.0</div>
 
+    <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
-    <script src="ai-chatbot.js"></script>
-    <script src="auth-new.js"></script>
+    <script src="access-control.js"></script>
     <script src="user-management.js"></script>
 </body>
 </html> 

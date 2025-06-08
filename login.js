@@ -1,17 +1,3 @@
-// Přihlašovací údaje (v reálné aplikaci by byly na serveru)
-const users = [
-    {
-        username: 'admin',
-        password: 'Admin123',
-        role: 'Administrátor'
-    },
-    {
-        username: 'prodejce',
-        password: 'Prodejce123',
-        role: 'Prodejce'
-    }
-];
-
 // Enhanced login form functionality
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('login-form');
@@ -25,19 +11,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Demo přístupy byly odstraněny
+    // Inicializace výchozích uživatelů pokud neexistují
+    initializeUsers();
     
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const username = document.getElementById('username').value.trim();
+        const email = document.getElementById('username').value.trim(); // Email jako username
         const password = document.getElementById('password').value;
         
         // Reset previous messages
         hideMessage();
         
         // Validate input
-        if (!username || !password) {
+        if (!email || !password) {
             showMessage('Vyplňte prosím všechna pole.', 'error');
             return;
         }
@@ -47,13 +34,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Simulate API call delay for better UX
         setTimeout(() => {
-            const user = users.find(u => u.username === username && u.password === password);
+            const users = getUsers();
+            const user = users.find(u => u.email === email && u.password === password);
             
             if (user) {
                 // Success - store login info
                 localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('username', username);
+                localStorage.setItem('username', `${user.firstName} ${user.lastName}`);
+                localStorage.setItem('userId', user.id.toString());
                 localStorage.setItem('role', user.role);
+                localStorage.setItem('userEmail', user.email);
+                localStorage.setItem('userPhone', user.phone);
+                localStorage.setItem('userProdejna', user.prodejna);
                 
                 showMessage('Přihlášení úspěšné! Přesměrovávám...', 'success');
                 
@@ -77,6 +69,45 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 800);
     });
+
+    // Funkce pro získání uživatelů z localStorage
+    function getUsers() {
+        const storedUsers = localStorage.getItem('users');
+        if (storedUsers) {
+            return JSON.parse(storedUsers);
+        }
+        return [];
+    }
+
+    // Inicializace výchozích uživatelů
+    function initializeUsers() {
+        const existingUsers = getUsers();
+        if (existingUsers.length === 0) {
+            const defaultUsers = [
+                {
+                    id: 1,
+                    firstName: 'Admin',
+                    lastName: 'Administrátor',
+                    email: 'admin@mobilmajak.cz',
+                    phone: '+420777888999',
+                    prodejna: 'Hlavní pobočka',
+                    password: 'admin123',
+                    role: 'Administrator'
+                },
+                {
+                    id: 2,
+                    firstName: 'Tomáš',
+                    lastName: 'Novák',
+                    email: 'tomas.novak@mobilmajak.cz',
+                    phone: '+420777123456',
+                    prodejna: 'Praha 1',
+                    password: 'prodejce123',
+                    role: 'Prodejce'
+                }
+            ];
+            localStorage.setItem('users', JSON.stringify(defaultUsers));
+        }
+    }
     
     // Show/hide message function
     function showMessage(text, type) {

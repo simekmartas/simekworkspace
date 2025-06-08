@@ -1,13 +1,18 @@
-// Správa uživatelů
+// Správa uživatelů - vylepšená verze
 class UserManager {
     constructor() {
+        this.users = [];
         this.init();
     }
 
     async init() {
         // Zkontrolovat, zda je uživatel admin
-        if (!window.authSystem.isLoggedIn() || !window.authSystem.isAdmin()) {
-            window.location.href = 'dashboard.html';
+        const userRole = localStorage.getItem('role');
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        
+        if (isLoggedIn !== 'true' || (userRole !== 'Administrator' && userRole !== 'Administrátor')) {
+            alert('Přístup zamítnut. Pouze administrátoři mohou spravovat uživatele.');
+            window.location.href = 'index.html';
             return;
         }
 
@@ -16,25 +21,61 @@ class UserManager {
     }
 
     async loadUsers() {
-        const db = await window.authSystem.loadDatabase();
-        const tbody = document.getElementById('userTableBody');
+        // Načtení uživatelů z localStorage (simulace databáze)
+        const storedUsers = localStorage.getItem('users');
+        if (storedUsers) {
+            this.users = JSON.parse(storedUsers);
+        } else {
+            // Vytvoření výchozích uživatelů pokud neexistují
+            this.users = [
+                {
+                    id: 1,
+                    firstName: 'Admin',
+                    lastName: 'Administrátor',
+                    email: 'admin@mobilmajak.cz',
+                    phone: '+420777888999',
+                    prodejna: 'Hlavní pobočka',
+                    password: 'admin123',
+                    role: 'Administrator'
+                },
+                {
+                    id: 2,
+                    firstName: 'Tomáš',
+                    lastName: 'Novák',
+                    email: 'tomas.novak@mobilmajak.cz',
+                    phone: '+420777123456',
+                    prodejna: 'Praha 1',
+                    password: 'prodejce123',
+                    role: 'Prodejce'
+                }
+            ];
+            this.saveUsers();
+        }
         
+        this.displayUsers();
+    }
+
+    displayUsers() {
+        const tbody = document.getElementById('userTableBody');
         tbody.innerHTML = '';
         
-        db.users.forEach(user => {
+        this.users.forEach(user => {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${user.id}</td>
-                <td>${user.name}</td>
-                <td>${user.username}</td>
+                <td>${user.firstName}</td>
+                <td>${user.lastName}</td>
+                <td>${user.email}</td>
+                <td>${user.phone}</td>
                 <td>${user.prodejna}</td>
-                <td>${user.role === 'admin' ? 'Administrátor' : 'Prodejce'}</td>
+                <td>${user.role}</td>
                 <td>
                     <div class="action-buttons">
-                        ${user.role !== 'admin' ? `
-                            <button class="btn-edit" onclick="userManager.showEditModal(${user.id})">Upravit</button>
+                        <button class="btn-edit" onclick="userManager.showEditModal(${user.id})">Upravit</button>
+                        ${user.role !== 'Administrator' ? `
                             <button class="btn-delete" onclick="userManager.deleteUser(${user.id})">Smazat</button>
                         ` : ''}
+                        <button class="btn-edit" onclick="userManager.changePassword(${user.id})">Změnit heslo</button>
                     </div>
                 </td>
             `;
@@ -59,7 +100,7 @@ class UserManager {
     }
 
     showAddModal() {
-        document.getElementById('modalTitle').textContent = '// Přidat prodejce';
+        document.getElementById('modalTitle').textContent = '// Přidat uživatele';
         document.getElementById('userForm').reset();
         document.getElementById('userId').value = '';
         document.getElementById('password').required = true;
@@ -67,18 +108,20 @@ class UserManager {
     }
 
     async showEditModal(userId) {
-        const db = await window.authSystem.loadDatabase();
-        const user = db.users.find(u => u.id === userId);
+        const user = this.users.find(u => u.id === userId);
         
         if (!user) return;
         
-        document.getElementById('modalTitle').textContent = '// Upravit prodejce';
+        document.getElementById('modalTitle').textContent = '// Upravit uživatele';
         document.getElementById('userId').value = user.id;
-        document.getElementById('name').value = user.name;
-        document.getElementById('username').value = user.username;
+        document.getElementById('firstName').value = user.firstName;
+        document.getElementById('lastName').value = user.lastName;
+        document.getElementById('email').value = user.email;
+        document.getElementById('phone').value = user.phone;
+        document.getElementById('prodejna').value = user.prodejna;
+        document.getElementById('role').value = user.role;
         document.getElementById('password').value = '';
         document.getElementById('password').required = false;
-        document.getElementById('prodejna').value = user.prodejna;
         
         document.getElementById('userModal').style.display = 'block';
     }
@@ -91,45 +134,124 @@ class UserManager {
     async saveUser() {
         const userId = document.getElementById('userId').value;
         const userData = {
-            name: document.getElementById('name').value,
-            username: document.getElementById('username').value,
-            password: document.getElementById('password').value,
-            prodejna: document.getElementById('prodejna').value
+            firstName: document.getElementById('firstName').value.trim(),
+            lastName: document.getElementById('lastName').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            prodejna: document.getElementById('prodejna').value.trim(),
+            role: document.getElementById('role').value,
+            password: document.getElementById('password').value
         };
+
+        // Validace
+        if (!userData.firstName || !userData.lastName || !userData.email || !userData.phone || !userData.prodejna || !userData.role) {
+            alert('Prosím vyplňte všechna povinná pole.');
+            return;
+        }
+
+        // Validace emailu
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(userData.email)) {
+            alert('Prosím zadejte platný email.');
+            return;
+        }
 
         try {
             if (userId) {
                 // Editace existujícího uživatele
-                if (!userData.password) {
-                    delete userData.password; // Zachovat stávající heslo
+                const userIndex = this.users.findIndex(u => u.id === parseInt(userId));
+                if (userIndex === -1) {
+                    throw new Error('Uživatel nenalezen');
                 }
-                await window.authSystem.updateUser(parseInt(userId), userData);
+
+                // Zkontrolovat duplicitní email (kromě aktuálního uživatele)
+                const emailExists = this.users.some(u => u.email === userData.email && u.id !== parseInt(userId));
+                if (emailExists) {
+                    throw new Error('Uživatel s tímto emailem již existuje');
+                }
+
+                // Aktualizovat uživatele
+                this.users[userIndex] = {
+                    ...this.users[userIndex],
+                    ...userData,
+                    password: userData.password || this.users[userIndex].password // Zachovat staré heslo pokud není nové
+                };
+
                 alert('Uživatel byl úspěšně aktualizován');
             } else {
                 // Přidání nového uživatele
-                await window.authSystem.addUser(userData);
-                alert('Nový prodejce byl úspěšně přidán');
+                if (!userData.password) {
+                    throw new Error('Heslo je povinné pro nového uživatele');
+                }
+
+                // Zkontrolovat duplicitní email
+                const emailExists = this.users.some(u => u.email === userData.email);
+                if (emailExists) {
+                    throw new Error('Uživatel s tímto emailem již existuje');
+                }
+
+                // Vytvořit nové ID
+                const newId = Math.max(...this.users.map(u => u.id), 0) + 1;
+                
+                const newUser = {
+                    id: newId,
+                    ...userData
+                };
+
+                this.users.push(newUser);
+                alert('Nový uživatel byl úspěšně přidán');
             }
 
+            this.saveUsers();
             this.closeModal();
-            await this.loadUsers();
+            this.displayUsers();
         } catch (error) {
             alert('Chyba při ukládání: ' + error.message);
         }
     }
 
     async deleteUser(userId) {
-        if (!confirm('Opravdu chcete smazat tohoto uživatele?')) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+
+        if (!confirm(`Opravdu chcete smazat uživatele ${user.firstName} ${user.lastName}?`)) {
             return;
         }
 
         try {
-            await window.authSystem.deleteUser(userId);
+            this.users = this.users.filter(u => u.id !== userId);
+            this.saveUsers();
             alert('Uživatel byl úspěšně smazán');
-            await this.loadUsers();
+            this.displayUsers();
         } catch (error) {
             alert('Chyba při mazání: ' + error.message);
         }
+    }
+
+    async changePassword(userId) {
+        const user = this.users.find(u => u.id === userId);
+        if (!user) return;
+
+        const newPassword = prompt(`Zadejte nové heslo pro uživatele ${user.firstName} ${user.lastName}:`);
+        if (!newPassword) return;
+
+        if (newPassword.length < 6) {
+            alert('Heslo musí mít alespoň 6 znaků');
+            return;
+        }
+
+        try {
+            const userIndex = this.users.findIndex(u => u.id === userId);
+            this.users[userIndex].password = newPassword;
+            this.saveUsers();
+            alert('Heslo bylo úspěšně změněno');
+        } catch (error) {
+            alert('Chyba při změně hesla: ' + error.message);
+        }
+    }
+
+    saveUsers() {
+        localStorage.setItem('users', JSON.stringify(this.users));
     }
 
     // Pomocná funkce pro export uživatelů
@@ -140,23 +262,28 @@ class UserManager {
         // Headers
         const headers = [];
         table.querySelectorAll('thead th').forEach(th => {
-            headers.push(th.textContent);
+            if (th.textContent !== 'Akce') {
+                headers.push(th.textContent);
+            }
         });
         csv.push(headers.join(','));
         
         // Data
-        table.querySelectorAll('tbody tr').forEach(tr => {
-            const row = [];
-            tr.querySelectorAll('td').forEach((td, index) => {
-                if (index < headers.length - 1) { // Skip action column
-                    row.push(td.textContent);
-                }
-            });
+        this.users.forEach(user => {
+            const row = [
+                user.id,
+                user.firstName,
+                user.lastName,
+                user.email,
+                user.phone,
+                user.prodejna,
+                user.role
+            ];
             csv.push(row.join(','));
         });
         
         // Download
-        const blob = new Blob([csv.join('\n')], { type: 'text/csv' });
+        const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -167,4 +294,6 @@ class UserManager {
 }
 
 // Inicializace
-window.userManager = new UserManager(); 
+document.addEventListener('DOMContentLoaded', () => {
+    window.userManager = new UserManager();
+}); 
