@@ -1,4 +1,4 @@
-// Správa uživatelů - vylepšená verze
+// Správa uživatelů - vylepšená verze s online synchronizací
 class UserManager {
     constructor() {
         this.users = [];
@@ -26,12 +26,72 @@ class UserManager {
 
         await this.loadUsers();
         this.setupEventListeners();
+        this.startAutoSync();
+        
+        // Sleduj změny v localStorage (při změnách uživatelů v jiném tabu)
+        window.addEventListener('storage', async (e) => {
+            if (e.key === 'users') {
+                console.log('Změna uživatelů detekována z jiného tabu, znovu načítám...');
+                await this.loadUsers();
+                this.displayUsers();
+            }
+        });
     }
 
     async loadUsers() {
-        // Načtení uživatelů z localStorage (simulace databáze)
-        const storedUsers = localStorage.getItem('users');
+        // Nejdřív načti z localStorage (spolehlivé)
+        try {
+            const savedUsers = localStorage.getItem('users');
+            if (savedUsers) {
+                this.users = JSON.parse(savedUsers);
+                console.log('📦 Načteno ' + this.users.length + ' uživatelů z localStorage');
+            } else {
+                this.users = [];
+            }
+        } catch (error) {
+            console.error('❌ Chyba při načítání z localStorage:', error);
+            this.users = [];
+        }
         
+        // Zkus načíst ze serveru na pozadí (ale nespoléhej na to)
+        try {
+            const response = await fetch('/api/users-github', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && Array.isArray(data.users)) {
+                    // Pokud server má novější data, použij je
+                    if (data.users.length > 0) {
+                        this.users = data.users;
+                        localStorage.setItem('users', JSON.stringify(this.users));
+                        console.log('✅ Synchronizováno ' + this.users.length + ' uživatelů ze serveru');
+                    }
+                }
+            } else {
+                console.warn('⚠️ Server nedostupný, používám místní data');
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Server nedostupný, používám místní data:', error.message);
+        }
+        
+        // Pokud nejsou žádní uživatelé, vytvoř výchozí
+        if (this.users.length === 0) {
+            await this.createDefaultUsers();
+        } else {
+            // Vždy zajisti, že admin účet existuje a má správné údaje
+            await this.ensureAdminUser();
+        }
+        
+        this.displayUsers();
+    }
+
+    async createDefaultUsers() {
         const defaultUsers = [
             {
                 id: 1,
@@ -56,31 +116,69 @@ class UserManager {
                 role: 'Prodejce'
             }
         ];
+        
+        this.users = defaultUsers;
+        await this.saveUsers();
+        console.log('🔧 Vytvořeni výchozí uživatelé');
+    }
 
-        if (storedUsers) {
-            this.users = JSON.parse(storedUsers);
-            
-            // Vždy aktualizuj admin účet na správné údaje
-            const adminIndex = this.users.findIndex(u => u.username === 'admin' || u.id === 1);
-            if (adminIndex !== -1) {
-                this.users[adminIndex] = defaultUsers[0];
-            } else {
-                this.users.unshift(defaultUsers[0]);
-            }
-            
-            // Zkontroluj prodejce
-            const prodejceIndex = this.users.findIndex(u => u.username === 'prodejce');
-            if (prodejceIndex === -1) {
-                this.users.push(defaultUsers[1]);
-            }
-            
-            this.saveUsers();
+    async ensureAdminUser() {
+        const adminUser = {
+            id: 1,
+            firstName: 'Admin',
+            lastName: 'Administrátor',
+            username: 'admin',
+            email: 'admin@mobilmajak.cz',
+            phone: '+420777888999',
+            prodejna: 'Hlavní pobočka',
+            password: 'Admin123',
+            role: 'Administrator'
+        };
+        
+        // Najdi admin účet
+        const adminIndex = this.users.findIndex(u => u.username === 'admin' || u.id === 1);
+        if (adminIndex !== -1) {
+            // Aktualizuj existující admin účet
+            this.users[adminIndex] = adminUser;
         } else {
-            // Vytvoření výchozích uživatelů pokud neexistují
-            this.users = defaultUsers;
-            this.saveUsers();
+            // Přidej admin účet na začátek
+            this.users.unshift(adminUser);
         }
         
+        // Zkontroluj výchozího prodejce
+        const prodejceIndex = this.users.findIndex(u => u.username === 'prodejce');
+        if (prodejceIndex === -1) {
+            this.users.push({
+                id: 2,
+                firstName: 'Tomáš',
+                lastName: 'Novák',
+                username: 'prodejce',
+                email: 'tomas.novak@mobilmajak.cz',
+                phone: '+420777123456',
+                prodejna: 'Praha 1',
+                password: 'prodejce123',
+                role: 'Prodejce'
+            });
+        }
+        
+        await this.saveUsers();
+    }
+
+    startAutoSync() {
+        // Automatická synchronizace každé 2 minuty (jako u novinek)
+        setInterval(async () => {
+            try {
+                console.log('🔄 Automatická synchronizace uživatelů...');
+                await this.loadUsers();
+            } catch (error) {
+                console.error('❌ Chyba při automatické synchronizaci:', error);
+            }
+        }, 120000); // 2 minuty
+    }
+
+    async reloadUsers() {
+        console.log('🔄 Ruční reload uživatelů...');
+        await this.loadUsers();
         this.displayUsers();
     }
 
@@ -248,7 +346,7 @@ class UserManager {
                 alert('Nový uživatel byl úspěšně přidán');
             }
 
-            this.saveUsers();
+            await this.saveUsers();
             this.closeModal();
             this.displayUsers();
         } catch (error) {
@@ -266,7 +364,7 @@ class UserManager {
 
         try {
             this.users = this.users.filter(u => u.id !== userId);
-            this.saveUsers();
+            await this.saveUsers();
             alert('Uživatel byl úspěšně smazán');
             this.displayUsers();
         } catch (error) {
@@ -289,15 +387,54 @@ class UserManager {
         try {
             const userIndex = this.users.findIndex(u => u.id === userId);
             this.users[userIndex].password = newPassword;
-            this.saveUsers();
+            await this.saveUsers();
             alert('Heslo bylo úspěšně změněno');
         } catch (error) {
             alert('Chyba při změně hesla: ' + error.message);
         }
     }
 
-    saveUsers() {
-        localStorage.setItem('users', JSON.stringify(this.users));
+    async saveUsers() {
+        try {
+            // Ulož také do localStorage jako backup
+            localStorage.setItem('users', JSON.stringify(this.users));
+            console.log('📦 Backup uložen do localStorage');
+            
+            // Zkus synchronizovat se serverem na pozadí
+            try {
+                const response = await fetch('/api/users-github', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        users: this.users,
+                        timestamp: Date.now()
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('✅ Uživatelé synchronizováni se serverem');
+                    }
+                } else {
+                    console.warn('⚠️ Synchronizace se serverem selhala, používám pouze localStorage');
+                }
+                
+            } catch (error) {
+                console.warn('⚠️ Server nedostupný, používám pouze localStorage:', error.message);
+            }
+            
+            return true;
+        } catch (error) {
+            if (error.name === 'QuotaExceededError') {
+                console.error('localStorage QuotaExceededError - nutno vyčistit cache');
+            } else {
+                console.error('Chyba při backup ukládání:', error);
+            }
+            return false;
+        }
     }
 
     // Pomocná funkce pro export uživatelů

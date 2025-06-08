@@ -432,6 +432,13 @@
             }
         }
 
+        // Globální funkce pro reload dat
+        window.reloadProdejnyData = function() {
+            console.log('🔄 Globální reload prodejny dat...');
+            if (currentLoader) currentLoader.reloadData();
+            if (monthlyLoader) monthlyLoader.reloadData();
+        };
+
 
 
         // Enhanced loader switching function

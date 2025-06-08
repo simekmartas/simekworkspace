@@ -31,12 +31,92 @@ class ProdejnyDataLoader {
         try {
             this.showLoading();
             
-            console.log('Načítání demo dat pro prodejny...');
-            
-            // Prozatím použijeme mock data, dokud nebude opraveno připojení k Google Sheets
-            this.showMockData(isMonthly);
+            // Použij Google Apps Script endpoint pro načítání dat
+            const gid = isMonthly ? this.monthlyGid : this.mainGid;
+            await this.loadFromGoogleScript(gid, isMonthly);
             return;
+        } catch (error) {
+            console.error('Chyba při načítání dat:', error);
+            this.showError(error);
+        }
+    }
+
+    async loadFromGoogleScript(gid, isMonthly) {
+        console.log('=== NAČÍTÁNÍ Z GOOGLE APPS SCRIPT ===');
+        console.log('GID:', gid, 'Je měsíční:', isMonthly);
+        
+        // Google Apps Script endpoint (podobně jako u novinek)
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyBrNsKbvJqRgYUDdBiHf2XSRJLjM7vkryCUb8l2Jgu2WqvvKPUYVhFGPjj1e5-WPIS/exec';
+        
+        try {
+            const timestamp = Date.now();
+            const requestUrl = `${scriptUrl}?spreadsheetId=${this.spreadsheetId}&gid=${gid}&t=${timestamp}&action=getData`;
             
+            console.log('Google Apps Script URL:', requestUrl);
+            
+            const response = await fetch(requestUrl, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json, text/plain, */*',
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache'
+                }
+            });
+            
+            console.log('Google Apps Script response status:', response.status);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Data z Google Apps Script úspěšně načtena:', data);
+                
+                if (data.success && data.data) {
+                    console.log(`📊 Zpracovávám ${data.data.length} řádků dat`);
+                    // Konvertuj data z JSON formátu na CSV formát pro kompatibilitu
+                    const csvData = this.convertJsonToCsv(data.data);
+                    this.parseAndDisplayData(csvData, isMonthly);
+                    console.log('✅ Data úspěšně zobrazena');
+                    return;
+                } else {
+                    console.warn('⚠️ Google Apps Script nevrátil validní data:', data);
+                    throw new Error(`Google Apps Script vrátil nevalidní data: ${JSON.stringify(data)}`);
+                }
+            } else {
+                console.warn(`⚠️ Google Apps Script nedostupný, HTTP status: ${response.status}`);
+                const responseText = await response.text();
+                console.warn('Response text:', responseText);
+                throw new Error(`Google Apps Script nedostupný (HTTP ${response.status})`);
+            }
+            
+            
+        } catch (error) {
+            console.error('❌ Chyba při komunikaci s Google Apps Script:', error);
+            console.log('🔄 Používám fallback mock data...');
+            this.showMockData(isMonthly);
+        }
+    }
+
+    convertJsonToCsv(jsonData) {
+        if (!jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
+            return '';
+        }
+        
+        // První řádek obsahuje hlavičky
+        const headers = jsonData[0];
+        let csvLines = [headers.join(',')];
+        
+        // Přidej datové řádky
+        for (let i = 1; i < jsonData.length; i++) {
+            if (Array.isArray(jsonData[i])) {
+                csvLines.push(jsonData[i].join(','));
+            }
+        }
+        
+        return csvLines.join('\n');
+    }
+
+    // Zachováno pro kompatibilitu - stará implementace
+    async loadDataOldMethod(isMonthly = false) {
+        try {
             // Přístup 1: Vlastní Netlify API proxy (nejvyšší priorita)
             console.log('=== PŘÍSTUP 1: Vlastní Netlify API ===');
             try {
@@ -403,6 +483,9 @@ class ProdejnyDataLoader {
                              <button class="retro-filter-clear" id="clearFilterBtn">
                                  VYMAZAT
                              </button>
+                             <button class="retro-filter-clear" id="quickReloadBtn" title="Rychlé obnovení dat">
+                                 🔄 OBNOVIT
+                             </button>
                              <button class="retro-refresh-btn" id="refreshDataBtn">
                                  VYMAZAT CACHE & OBNOVIT
                              </button>
@@ -574,6 +657,12 @@ class ProdejnyDataLoader {
         return { polozkyKing, sluzbyKing, aligatorTotal, aligatorKing };
     }
 
+    async reloadData() {
+        console.log('🔄 Ruční reload dat prodejny...');
+        this.showLoading();
+        await this.loadData(this.isMonthly);
+    }
+
     setupEventListeners() {
         // Event listener pro filtr
         const filterInput = document.getElementById('prodejnyFilter');
@@ -602,6 +691,15 @@ class ProdejnyDataLoader {
                 this.clearAllCaches().then(() => {
                     this.loadData(this.isMonthly);
                 });
+            });
+        }
+
+        // Event listener pro rychlé obnovení (bez mazání cache)
+        const quickReloadBtn = document.getElementById('quickReloadBtn');
+        if (quickReloadBtn) {
+            quickReloadBtn.addEventListener('click', () => {
+                console.log('🔄 Rychlé obnovení dat...');
+                this.reloadData();
             });
         }
 
@@ -860,11 +958,14 @@ class ProdejnyDataLoader {
                         <div class="error-title">Chyba při načítání dat</div>
                         <div class="error-message">${error.message || 'Neznámá chyba'}</div>
                         <div class="error-actions">
-                            <button class="retry-button" onclick="location.reload()">
-                                🔄 Znovu načíst stránku
+                            <button class="retry-button" onclick="if(window.prodejnyLoader) window.prodejnyLoader.reloadData(); else location.reload();">
+                                🔄 Zkusit znovu
                             </button>
-                            <button class="retry-button" onclick="this.parentElement.parentElement.parentElement.parentElement.parentElement.style.display='none'">
-                                ❌ Skrýt chybu
+                            <button class="retry-button" onclick="if(window.prodejnyLoader) window.prodejnyLoader.showMockData(${this.isMonthly});">
+                                📋 Zobrazit demo data
+                            </button>
+                            <button class="retry-button" onclick="location.reload()">
+                                🔄 Načíst stránku
                             </button>
                         </div>
                         <div class="error-details">
