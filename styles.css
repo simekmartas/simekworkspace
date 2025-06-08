@@ -1213,7 +1213,7 @@ textarea:not(#contact-form textarea)::placeholder {
     color: var(--text-tertiary);
 }
 
-button:not(#contact-form button):not(.theme-toggle):not(.hamburger):not(.btn) {
+button:not(#contact-form button):not(.theme-toggle):not(.hamburger):not(.btn):not(.admin-settings-button) {
     background: var(--accent-pink);
     color: white;
     border: none;
@@ -1226,7 +1226,7 @@ button:not(#contact-form button):not(.theme-toggle):not(.hamburger):not(.btn) {
     font-family: inherit;
 }
 
-button:not(#contact-form button):not(.theme-toggle):not(.hamburger):not(.btn):hover {
+button:not(#contact-form button):not(.theme-toggle):not(.hamburger):not(.btn):not(.admin-settings-button):hover {
     background: var(--accent-pink-hover);
     transform: translateY(-2px);
     box-shadow: var(--shadow-medium);

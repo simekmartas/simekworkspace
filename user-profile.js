@@ -575,56 +575,39 @@ function handleMouseMove(e) {
         
         let newSelection = { ...cropState.selection };
         
-        // Pro kruhový crop používáme pouze jednu velikost
-        const delta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
-        const direction = (deltaX > 0 || deltaY > 0) ? 1 : -1;
+        // Pro kruhový crop - jednoduché změnění velikosti ze středu
+        let sizeDelta = 0;
         
         switch (cropState.resizeHandle) {
-            case 'crop-handle-nw': // Horní střed - změna velikosti nahoru/dolů
-                const topDelta = deltaY * direction;
-                newSelection.y -= topDelta / 2;
-                newSelection.x -= topDelta / 2;
-                newSelection.width += topDelta;
-                newSelection.height += topDelta;
+            case 'crop-handle-nw': // Horní střed
+                sizeDelta = -deltaY * 2;
                 break;
-            case 'crop-handle-ne': // Pravý střed - změna velikosti doprava/vlevo  
-                const rightDelta = deltaX * direction;
-                newSelection.x -= rightDelta / 2;
-                newSelection.y -= rightDelta / 2;
-                newSelection.width += rightDelta;
-                newSelection.height += rightDelta;
+            case 'crop-handle-ne': // Pravý střed
+                sizeDelta = deltaX * 2;
                 break;
-            case 'crop-handle-sw': // Dolní střed - změna velikosti dolů/nahoru
-                const bottomDelta = deltaY * direction;
-                newSelection.x -= bottomDelta / 2;
-                newSelection.y -= bottomDelta / 2;
-                newSelection.width += bottomDelta;
-                newSelection.height += bottomDelta;
+            case 'crop-handle-sw': // Dolní střed
+                sizeDelta = deltaY * 2;
                 break;
-            case 'crop-handle-se': // Levý střed - změna velikosti vlevo/vpravo
-                const leftDelta = deltaX * direction;
-                newSelection.x -= leftDelta / 2;
-                newSelection.y -= leftDelta / 2;
-                newSelection.width += leftDelta;
-                newSelection.height += leftDelta;
+            case 'crop-handle-se': // Levý střed
+                sizeDelta = -deltaX * 2;
                 break;
         }
         
-        // Ujistit se, že je to kruh (čtverec)
-        const size = Math.max(newSelection.width, newSelection.height);
-        newSelection.width = size;
-        newSelection.height = size;
+        // Nová velikost (čtverec)
+        const newSize = Math.max(50, cropState.selection.width + sizeDelta);
         
-        // Omezit na minimální velikost
-        if (size >= 50) {
-            // Omezit na hranice obrázku
-            newSelection.x = Math.max(imgLeft, Math.min(newSelection.x, imgRight - size));
-            newSelection.y = Math.max(imgTop, Math.min(newSelection.y, imgBottom - size));
-            
-            if (newSelection.x + size <= imgRight && newSelection.y + size <= imgBottom) {
-                cropState.selection = newSelection;
-            }
-        }
+        // Centrovat nový výběr
+        newSelection.width = newSize;
+        newSelection.height = newSize;
+        newSelection.x = cropState.selection.x + (cropState.selection.width - newSize) / 2;
+        newSelection.y = cropState.selection.y + (cropState.selection.height - newSize) / 2;
+        
+        // Omezit na hranice obrázku
+        newSelection.x = Math.max(imgLeft, Math.min(newSelection.x, imgRight - newSelection.width));
+        newSelection.y = Math.max(imgTop, Math.min(newSelection.y, imgBottom - newSelection.height));
+        
+        // Aplikovat změny
+        cropState.selection = newSelection;
         
         cropState.startPos = { x: e.clientX, y: e.clientY };
     }
@@ -682,10 +665,16 @@ function updatePreview() {
     ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, 2 * Math.PI);
     ctx.clip();
     
-    // Nakreslit obrázek
+    // Vypočítat rozměry pro správný poměr stran (čtverec -> kruh)
+    // Protože crop je čtvercový, můžeme použít jen width
+    const cropSize = Math.min(relativeWidth, relativeHeight);
+    const cropX = relativeX + (relativeWidth - cropSize) / 2;
+    const cropY = relativeY + (relativeHeight - cropSize) / 2;
+    
+    // Nakreslit čtvercový výřez do kruhového canvas
     ctx.drawImage(
         img,
-        relativeX, relativeY, relativeWidth, relativeHeight,
+        cropX, cropY, cropSize, cropSize,
         0, 0, canvas.width, canvas.height
     );
     
@@ -729,10 +718,16 @@ function applyCrop() {
     ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, 2 * Math.PI);
     ctx.clip();
     
-    // Nakreslit oříznutý obrázek
+    // Vypočítat rozměry pro správný poměr stran (čtverec -> kruh)
+    // Protože crop je čtvercový, zajistíme že výřez je skutečně čtvercový
+    const cropSize = Math.min(relativeWidth, relativeHeight);
+    const cropX = relativeX + (relativeWidth - cropSize) / 2;
+    const cropY = relativeY + (relativeHeight - cropSize) / 2;
+    
+    // Nakreslit čtvercový výřez do kruhového canvas
     ctx.drawImage(
         img,
-        relativeX, relativeY, relativeWidth, relativeHeight,
+        cropX, cropY, cropSize, cropSize,
         0, 0, canvas.width, canvas.height
     );
     
