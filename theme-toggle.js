@@ -55,11 +55,14 @@ class ThemeToggle {
         const userRole = localStorage.getItem('role');
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         
+        console.log('🔧 createAdminSettingsButton - isLoggedIn:', isLoggedIn, 'userRole:', userRole);
+        
         if (isLoggedIn !== 'true') {
             // Odstranit existující tlačítko pokud uživatel není přihlášen
             const existingButton = document.querySelector('.admin-settings-button');
             if (existingButton) {
                 existingButton.remove();
+                console.log('🗑️ Odstraněno nastavovací tlačítko - uživatel není přihlášen');
             }
             return;
         }
@@ -77,12 +80,20 @@ class ThemeToggle {
             const headerContent = document.querySelector('.header-content');
             const themeToggle = document.querySelector('.theme-toggle');
             
+            console.log('🔧 Vytvářím nastavovací tlačítko - headerContent:', !!headerContent, 'themeToggle:', !!themeToggle);
+            
             if (headerContent && themeToggle) {
                 // Vložit hned za theme toggle
                 themeToggle.parentNode.insertBefore(settingsButton, themeToggle.nextSibling);
+                console.log('✅ Nastavovací tlačítko přidáno za theme toggle');
             } else if (headerContent) {
                 headerContent.appendChild(settingsButton);
+                console.log('✅ Nastavovací tlačítko přidáno do headerContent');
+            } else {
+                console.warn('⚠️ HeaderContent nebyl nalezen, tlačítko nebude přidáno');
             }
+        } else {
+            console.log('🔧 Nastavovací tlačítko už existuje');
         }
 
         // Odstranit staré event listenery a přidat nový
@@ -185,19 +196,21 @@ class ThemeToggle {
 // CSS styly pro přepínač témat a admin nastavení
 const themeStyles = `
 .theme-toggle, .admin-settings-button {
-    background: none;
-    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     font-size: 1.5rem;
     cursor: pointer;
     padding: 0.5rem;
     border-radius: 50%;
     transition: all 0.3s ease;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     width: 40px;
     height: 40px;
     margin-left: 0.5rem;
+    position: relative;
+    z-index: 10;
 }
 
 .theme-toggle:hover, .admin-settings-button:hover {
@@ -309,8 +322,38 @@ if (!document.querySelector('#theme-styles')) {
 
 // Inicializace při načtení stránky
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎨 Inicializuji ThemeToggle...');
     window.themeManager = new ThemeToggle();
+    console.log('🎨 ThemeToggle inicializován');
 });
+
+// Debugging funkce - dostupná v konzoli
+window.debugTheme = function() {
+    console.log('🔍 Debug theme manageru:');
+    console.log('- themeManager exists:', !!window.themeManager);
+    console.log('- isLoggedIn:', localStorage.getItem('isLoggedIn'));
+    console.log('- userRole:', localStorage.getItem('role'));
+    console.log('- header-content exists:', !!document.querySelector('.header-content'));
+    console.log('- theme-toggle exists:', !!document.querySelector('.theme-toggle'));
+    console.log('- admin-settings-button exists:', !!document.querySelector('.admin-settings-button'));
+    
+    if (window.themeManager) {
+        console.log('🔄 Force update buttons...');
+        window.themeManager.updateAllToggleButtons();
+    }
+};
+
+// Test login funkce
+window.testLogin = function() {
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userId', '2');
+    localStorage.setItem('role', 'Prodejce');
+    localStorage.setItem('username', 'Test Uživatel');
+    console.log('✅ Test přihlášení nastaveno');
+    if (window.themeManager) {
+        window.themeManager.updateAllToggleButtons();
+    }
+};
 
 // Export pro použití v jiných souborech
 if (typeof module !== 'undefined' && module.exports) {

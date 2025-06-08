@@ -114,6 +114,14 @@ function updateNavigation() {
             }
         });
     }
+
+    // Aktualizovat theme toggle a nastavovací tlačítka po aktualizaci navigace
+    setTimeout(() => {
+        if (window.themeManager) {
+            window.themeManager.updateAllToggleButtons();
+            console.log('Theme toggle buttons aktualizovány po aktualizaci navigace');
+        }
+    }, 100);
     
     // Přidání event listeneru pro dropdown menu
     const dropdownToggle = document.querySelector('.dropdown-toggle');
