@@ -17,14 +17,14 @@ document.addEventListener('DOMContentLoaded', function() {
     loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
         
-        const email = document.getElementById('username').value.trim(); // Email jako username
+        const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
         
         // Reset previous messages
         hideMessage();
         
         // Validate input
-        if (!email || !password) {
+        if (!username || !password) {
             showMessage('Vyplňte prosím všechna pole.', 'error');
             return;
         }
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Simulate API call delay for better UX
         setTimeout(() => {
             const users = getUsers();
-            const user = users.find(u => u.email === email && u.password === password);
+            const user = users.find(u => u.username === username && u.password === password);
             
             if (user) {
                 // Success - store login info
@@ -88,16 +88,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     id: 1,
                     firstName: 'Admin',
                     lastName: 'Administrátor',
+                    username: 'admin',
                     email: 'admin@mobilmajak.cz',
                     phone: '+420777888999',
                     prodejna: 'Hlavní pobočka',
-                    password: 'admin123',
+                    password: 'Admin123',
                     role: 'Administrator'
                 },
                 {
                     id: 2,
                     firstName: 'Tomáš',
                     lastName: 'Novák',
+                    username: 'prodejce',
                     email: 'tomas.novak@mobilmajak.cz',
                     phone: '+420777123456',
                     prodejna: 'Praha 1',

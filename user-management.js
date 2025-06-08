@@ -32,16 +32,18 @@ class UserManager {
                     id: 1,
                     firstName: 'Admin',
                     lastName: 'Administrátor',
+                    username: 'admin',
                     email: 'admin@mobilmajak.cz',
                     phone: '+420777888999',
                     prodejna: 'Hlavní pobočka',
-                    password: 'admin123',
+                    password: 'Admin123',
                     role: 'Administrator'
                 },
                 {
                     id: 2,
                     firstName: 'Tomáš',
                     lastName: 'Novák',
+                    username: 'prodejce',
                     email: 'tomas.novak@mobilmajak.cz',
                     phone: '+420777123456',
                     prodejna: 'Praha 1',
@@ -65,6 +67,7 @@ class UserManager {
                 <td>${user.id}</td>
                 <td>${user.firstName}</td>
                 <td>${user.lastName}</td>
+                <td>${user.username}</td>
                 <td>${user.email}</td>
                 <td>${user.phone}</td>
                 <td>${user.prodejna}</td>
@@ -116,6 +119,7 @@ class UserManager {
         document.getElementById('userId').value = user.id;
         document.getElementById('firstName').value = user.firstName;
         document.getElementById('lastName').value = user.lastName;
+        document.getElementById('username').value = user.username;
         document.getElementById('email').value = user.email;
         document.getElementById('phone').value = user.phone;
         document.getElementById('prodejna').value = user.prodejna;
@@ -136,6 +140,7 @@ class UserManager {
         const userData = {
             firstName: document.getElementById('firstName').value.trim(),
             lastName: document.getElementById('lastName').value.trim(),
+            username: document.getElementById('username').value.trim(),
             email: document.getElementById('email').value.trim(),
             phone: document.getElementById('phone').value.trim(),
             prodejna: document.getElementById('prodejna').value.trim(),
@@ -144,7 +149,7 @@ class UserManager {
         };
 
         // Validace
-        if (!userData.firstName || !userData.lastName || !userData.email || !userData.phone || !userData.prodejna || !userData.role) {
+        if (!userData.firstName || !userData.lastName || !userData.username || !userData.email || !userData.phone || !userData.prodejna || !userData.role) {
             alert('Prosím vyplňte všechna povinná pole.');
             return;
         }
@@ -164,8 +169,12 @@ class UserManager {
                     throw new Error('Uživatel nenalezen');
                 }
 
-                // Zkontrolovat duplicitní email (kromě aktuálního uživatele)
+                // Zkontrolovat duplicitní username a email (kromě aktuálního uživatele)
+                const usernameExists = this.users.some(u => u.username === userData.username && u.id !== parseInt(userId));
                 const emailExists = this.users.some(u => u.email === userData.email && u.id !== parseInt(userId));
+                if (usernameExists) {
+                    throw new Error('Uživatel s tímto uživatelským jménem již existuje');
+                }
                 if (emailExists) {
                     throw new Error('Uživatel s tímto emailem již existuje');
                 }
@@ -184,8 +193,12 @@ class UserManager {
                     throw new Error('Heslo je povinné pro nového uživatele');
                 }
 
-                // Zkontrolovat duplicitní email
+                // Zkontrolovat duplicitní username a email
+                const usernameExists = this.users.some(u => u.username === userData.username);
                 const emailExists = this.users.some(u => u.email === userData.email);
+                if (usernameExists) {
+                    throw new Error('Uživatel s tímto uživatelským jménem již existuje');
+                }
                 if (emailExists) {
                     throw new Error('Uživatel s tímto emailem již existuje');
                 }
@@ -274,6 +287,7 @@ class UserManager {
                 user.id,
                 user.firstName,
                 user.lastName,
+                user.username,
                 user.email,
                 user.phone,
                 user.prodejna,
