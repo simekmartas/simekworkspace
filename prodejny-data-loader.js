@@ -739,7 +739,7 @@ class ProdejnyDataLoader {
     async loadWithJsonp(gid, isMonthly) {
         return new Promise((resolve, reject) => {
             const timestamp = Date.now();
-            const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
+            const sheetName = gid === '0' ? 'List 1' : 'od 1';
             const callbackName = `jsonp_callback_${timestamp}`;
             
             // Vytvoř JSONP callback
