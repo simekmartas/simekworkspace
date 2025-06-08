@@ -65,7 +65,7 @@ class UserManager {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && Array.isArray(data.users)) {
-                    // Pokud server má novější data, použij je
+                    // Pokud server má data, použij je
                     if (data.users.length > 0) {
                         this.users = data.users;
                         localStorage.setItem('users', JSON.stringify(this.users));
@@ -396,11 +396,11 @@ class UserManager {
 
     async saveUsers() {
         try {
-            // Ulož také do localStorage jako backup
+            // Okamžitě ulož do localStorage (spolehlivé)
             localStorage.setItem('users', JSON.stringify(this.users));
             console.log('📦 Backup uložen do localStorage');
             
-            // Zkus synchronizovat se serverem na pozadí
+            // Zkus synchronizovat se serverem na pozadí (ale nespoléhej na to)
             try {
                 const response = await fetch('/api/users-github', {
                     method: 'POST',
@@ -423,7 +423,7 @@ class UserManager {
                 }
                 
             } catch (error) {
-                console.warn('⚠️ Server nedostupný, používám pouze localStorage:', error.message);
+                console.warn('⚠️ Synchronizace se serverem selhala, používám pouze localStorage:', error.message);
             }
             
             return true;
