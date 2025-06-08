@@ -113,16 +113,25 @@ class ProdejnyDataLoader {
         } catch (error) {
             console.error('❌ Chyba při komunikaci s Google Apps Script:', error);
             
-            // Pokud selže hlavní metoda, zkus JSONP callback
+            // Zkus /dev endpoint pro testování
             try {
-                console.log('🔄 Zkouším JSONP callback metodu...');
-                await this.loadWithJsonp(gid, isMonthly);
+                console.log('🔄 Zkouším /dev endpoint...');
+                await this.loadWithDevEndpoint(gid, isMonthly);
                 return;
-            } catch (jsonpError) {
-                console.error('❌ JSONP metoda také selhala:', jsonpError);
+            } catch (devError) {
+                console.error('❌ /dev endpoint také selhal:', devError);
             }
             
-            console.log('🔄 Používám fallback mock data...');
+            // Pokud selže, zkus iframe metodu
+            try {
+                console.log('🔄 Zkouším iframe metodu...');
+                await this.loadWithIframe(gid, isMonthly);
+                return;
+            } catch (iframeError) {
+                console.error('❌ iframe metoda také selhala:', iframeError);
+            }
+            
+            console.log('🔄 Všechny metody selhaly, používám mock data...');
             this.showMockData(isMonthly);
         }
     }
@@ -704,6 +713,99 @@ class ProdejnyDataLoader {
         });
         
         return { polozkyKing, sluzbyKing, aligatorTotal, aligatorKing };
+    }
+
+    async loadWithDevEndpoint(gid, isMonthly) {
+        const timestamp = Date.now();
+        const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
+        
+        // Zkus /dev endpoint místo /exec pro testování
+        const devScriptUrl = 'https://script.google.com/macros/s/AKfycbyalQORqvcnXbB3GeC3q3CL5TIbn2SV6F9jYxJ7QYfV/dev';
+        const requestUrl = `${devScriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&t=${timestamp}`;
+        
+        console.log('Dev endpoint URL:', requestUrl);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000);
+        
+        const response = await fetch(requestUrl, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Dev endpoint data:', data);
+            
+            if (data && data.success && data.data) {
+                const csvData = this.convertJsonToCsv(data.data);
+                this.parseAndDisplayData(csvData, isMonthly);
+                return;
+            } else {
+                throw new Error(`Dev endpoint nevrátil validní data: ${data.error || 'Neznámá chyba'}`);
+            }
+        } else {
+            throw new Error(`Dev endpoint nedostupný (HTTP ${response.status})`);
+        }
+    }
+
+    async loadWithIframe(gid, isMonthly) {
+        return new Promise((resolve, reject) => {
+            const timestamp = Date.now();
+            const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
+            const messageHandlerName = `iframe_handler_${timestamp}`;
+            
+            // Vytvoř skrytý iframe
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            
+            // Message handler pro komunikaci s iframe
+            window[messageHandlerName] = (event) => {
+                try {
+                    console.log('iframe message:', event);
+                    
+                    if (event.data && event.data.success && event.data.data) {
+                        const csvData = this.convertJsonToCsv(event.data.data);
+                        this.parseAndDisplayData(csvData, isMonthly);
+                        resolve();
+                    } else {
+                        reject(new Error('iframe nevrátil validní data'));
+                    }
+                } catch (error) {
+                    reject(error);
+                } finally {
+                    // Cleanup
+                    document.body.removeChild(iframe);
+                    window.removeEventListener('message', window[messageHandlerName]);
+                    delete window[messageHandlerName];
+                }
+            };
+            
+            window.addEventListener('message', window[messageHandlerName]);
+            
+            // Timeout
+            setTimeout(() => {
+                if (window[messageHandlerName]) {
+                    document.body.removeChild(iframe);
+                    window.removeEventListener('message', window[messageHandlerName]);
+                    delete window[messageHandlerName];
+                    reject(new Error('iframe timeout'));
+                }
+            }, 10000);
+            
+            // Nastav iframe src
+            const iframeUrl = `${this.scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&iframe=true&t=${timestamp}`;
+            iframe.src = iframeUrl;
+            document.body.appendChild(iframe);
+        });
     }
 
     async loadWithJsonp(gid, isMonthly) {
