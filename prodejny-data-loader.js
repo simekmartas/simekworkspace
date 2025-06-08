@@ -45,8 +45,8 @@ class ProdejnyDataLoader {
         console.log('=== NAČÍTÁNÍ Z GOOGLE APPS SCRIPT ===');
         console.log('GID:', gid, 'Je měsíční:', isMonthly);
         
-        // Google Apps Script endpoint (podobně jako u novinek)
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyBrNsKbvJqRgYUDdBiHf2XSRJLjM7vkryCUb8l2Jgu2WqvvKPUYVhFGPjj1e5-WPIS/exec';
+        // Google Apps Script endpoint (správný ID od uživatele)
+        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyalQORqvcnXbB3GeC3q3CL5TIbn2SV6F9jYxJ7QYfV/exec';
         
         try {
             const timestamp = Date.now();
@@ -102,12 +102,19 @@ class ProdejnyDataLoader {
         
         // První řádek obsahuje hlavičky
         const headers = jsonData[0];
-        let csvLines = [headers.join(',')];
+        let csvLines = [headers.map(h => String(h || '')).join(',')];
         
-        // Přidej datové řádky
+        // Přidej datové řádky - převeď všechny hodnoty na stringy
         for (let i = 1; i < jsonData.length; i++) {
             if (Array.isArray(jsonData[i])) {
-                csvLines.push(jsonData[i].join(','));
+                const row = jsonData[i].map(cell => {
+                    // Převeď každou buňku na string a ošetři null/undefined
+                    if (cell === null || cell === undefined) {
+                        return '';
+                    }
+                    return String(cell);
+                });
+                csvLines.push(row.join(','));
             }
         }
         
@@ -345,7 +352,7 @@ class ProdejnyDataLoader {
         console.log('Délka CSV dat:', csvData.length);
         console.log('První 500 znaků:', csvData.substring(0, 500));
         
-        const lines = csvData.split('\n').filter(line => line.trim());
+        const lines = csvData.split('\n').filter(line => String(line || '').trim());
         console.log('Počet řádků po filtrování:', lines.length);
         
         if (lines.length === 0) {
@@ -372,7 +379,10 @@ class ProdejnyDataLoader {
         
         const rows = lines.slice(headerRowIndex + 1)
             .map(line => this.parseCSVLine(line))
-            .filter(row => row.some(cell => cell.trim())); // Odfiltrovat prázdné řádky
+            .filter(row => row && row.some(cell => {
+                const cellStr = String(cell || '').trim();
+                return cellStr && cellStr.length > 0;
+            })); // Odfiltrovat prázdné řádky
 
         console.log(`Načteno ${rows.length} řádků dat`);
         console.log('První 3 řádky dat:', rows.slice(0, 3));
@@ -394,6 +404,11 @@ class ProdejnyDataLoader {
         const result = [];
         let current = '';
         let inQuotes = false;
+        
+        // Ujisti se, že line je string
+        if (typeof line !== 'string') {
+            line = String(line || '');
+        }
         
         for (let i = 0; i < line.length; i++) {
             const char = line[i];
@@ -428,7 +443,7 @@ class ProdejnyDataLoader {
         // Filtrovat řádky - odstranit aktualizační řádek a prázdné řádky
         const dataRows = processedData.rows.filter(row => {
             return row[0] && !row[0].includes('Aktualizováno') && 
-                   row[processedData.nameColumnIndex] && row[processedData.nameColumnIndex].trim() && // název musí existovat
+                   row[processedData.nameColumnIndex] && String(row[processedData.nameColumnIndex] || '').trim() && // název musí existovat
                    (isMonthly 
                        ? (parseInt(row[1]) > 0 || parseInt(row[2]) > 0) // měsíční: položky a služby v indexech 1,2
                        : (parseInt(row[2]) > 0 || parseInt(row[3]) > 0) // aktuální: položky a služby v indexech 2,3
@@ -506,7 +521,7 @@ class ProdejnyDataLoader {
                                         ${row.map((cell, cellIndex) => {
                                             // Pro měsíční: číselné od indexu 1, pro aktuální: číselné od indexu 2
                                             const isNumeric = isMonthly ? (cellIndex >= 1) : (cellIndex >= 2);
-                                            if (isNumeric && !isNaN(cell) && cell.trim() !== '') {
+                                            if (isNumeric && !isNaN(cell) && String(cell || '').trim() !== '') {
                                                 return `<td class="numeric" data-value="${cell}">${this.escapeHtml(cell)}</td>`;
                                             }
                                             return `<td>${this.escapeHtml(cell)}</td>`;
@@ -845,9 +860,10 @@ class ProdejnyDataLoader {
     }
 
     escapeHtml(text) {
-        if (!text) return '';
+        if (text === null || text === undefined) return '';
+        const textStr = String(text);
         const div = document.createElement('div');
-        div.textContent = text;
+        div.textContent = textStr;
         return div.innerHTML;
     }
 
