@@ -71,22 +71,22 @@
         }
         
         .hero {
-            background: var(--terminal-bg);
-            color: var(--terminal-green);
-            padding: 3rem 0;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #e91e63 100%);
+            color: white;
+            padding: 4rem 0;
             text-align: center;
         }
         
         .hero h1 {
-            font-size: 2.5rem;
+            font-size: 3rem;
             margin: 0 0 1rem 0;
             font-weight: 700;
         }
         
         .hero p {
-            font-size: 1.125rem;
+            font-size: 1.25rem;
             margin: 0;
-            opacity: 0.8;
+            opacity: 0.9;
         }
         
         footer {
@@ -116,11 +116,13 @@
         }
         
         .user-table-container {
-            background: var(--terminal-bg);
-            border: 2px solid var(--terminal-green);
-            padding: 20px;
-            margin-bottom: 30px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
             overflow-x: auto;
+            box-shadow: var(--shadow);
         }
         
         .user-table {
@@ -130,67 +132,75 @@
         
         .user-table th,
         .user-table td {
-            padding: 12px;
+            padding: 1rem 0.75rem;
             text-align: left;
-            border-bottom: 1px solid rgba(0, 255, 65, 0.3);
+            border-bottom: 1px solid var(--border-light);
         }
         
         .user-table th {
-            color: var(--terminal-green);
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            background: var(--bg-secondary);
         }
         
         .user-table td {
-            color: var(--terminal-green);
-            font-size: 14px;
+            color: var(--text-primary);
+            font-size: 0.875rem;
         }
         
         .user-table tr:hover {
-            background: rgba(0, 255, 65, 0.05);
+            background: var(--bg-secondary);
         }
         
         .action-buttons {
             display: flex;
-            gap: 10px;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
         
         .btn-edit, .btn-delete, .btn-add {
-            background: transparent;
-            border: 1px solid var(--terminal-green);
-            color: var(--terminal-green);
-            padding: 6px 12px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
         
         .btn-edit:hover {
-            background: var(--terminal-green);
-            color: #000;
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
         }
         
         .btn-delete {
-            border-color: #ff0040;
-            color: #ff0040;
+            border-color: #dc3545;
+            color: #dc3545;
         }
         
         .btn-delete:hover {
-            background: #ff0040;
-            color: #000;
+            background: #dc3545;
+            color: white;
         }
         
         .btn-add {
-            background: var(--terminal-green);
-            color: #000;
-            font-weight: 700;
-            margin-bottom: 20px;
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
         }
         
         .btn-add:hover {
-            background: #fff;
+            background: #e91e63;
+            border-color: #e91e63;
+            transform: translateY(-1px);
         }
         
         /* Modal styles */
@@ -203,50 +213,62 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.8);
+            overflow-y: auto;
+            padding: 20px 0;
         }
         
         .modal-content {
-            background-color: var(--terminal-bg);
-            margin: 10% auto;
-            padding: 30px;
-            border: 2px solid var(--terminal-green);
+            background-color: var(--bg-primary);
+            margin: 2rem auto;
+            padding: 2rem;
+            border: 1px solid var(--border-light);
+            border-radius: 1rem;
             width: 90%;
-            max-width: 500px;
-            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            position: relative;
         }
         
         .modal-header {
-            color: var(--terminal-green);
-            font-size: 20px;
-            margin-bottom: 20px;
-            text-transform: uppercase;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-light);
+            padding-bottom: 1rem;
         }
         
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 1.5rem;
         }
         
         .form-label {
-            color: var(--terminal-green);
+            color: var(--text-primary);
             display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
         }
         
         .form-input {
             width: 100%;
-            padding: 10px;
-            background: #000;
-            border: 1px solid var(--terminal-green);
-            color: var(--terminal-green);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
+            padding: 0.75rem 1rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 0.5rem;
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
         }
         
         .form-input:focus {
             outline: none;
-            box-shadow: 0 0 10px rgba(0, 255, 65, 0.5);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(255, 20, 147, 0.1);
         }
         
         select.form-input {
@@ -254,64 +276,78 @@
         }
         
         select.form-input option {
-            background: #000;
-            color: var(--terminal-green);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+        
+        .form-input small {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            display: block;
         }
         
         .modal-actions {
             display: flex;
-            gap: 10px;
+            gap: 1rem;
             justify-content: flex-end;
-            margin-top: 30px;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-light);
         }
         
         .btn-save, .btn-cancel {
-            padding: 10px 20px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
+            padding: 0.75rem 1.5rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-radius: 0.5rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
         
         .btn-save {
-            background: var(--terminal-green);
-            color: #000;
-            border: none;
-            font-weight: 700;
+            background: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
         }
         
         .btn-save:hover {
-            background: #fff;
+            background: #e91e63;
+            border-color: #e91e63;
+            transform: translateY(-1px);
         }
         
         .btn-cancel {
             background: transparent;
-            color: var(--terminal-green);
-            border: 1px solid var(--terminal-green);
+            color: var(--text-secondary);
+            border-color: var(--border-light);
         }
         
         .btn-cancel:hover {
-            background: rgba(0, 255, 65, 0.1);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
         
         .info-panel {
-            background: var(--terminal-bg);
-            border: 2px solid var(--terminal-green);
-            padding: 20px;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.1), rgba(233, 30, 99, 0.1));
+            border: 1px solid rgba(255, 20, 147, 0.2);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
         }
         
         .info-title {
-            color: var(--terminal-green);
-            font-size: 16px;
-            margin-bottom: 10px;
-            text-transform: uppercase;
+            color: var(--accent-color);
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
         }
         
         .info-text {
-            color: var(--terminal-green);
-            font-size: 14px;
-            opacity: 0.7;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
             line-height: 1.6;
         }
         
@@ -360,8 +396,10 @@
 
     <main>
         <section class="hero">
-            <h1>&gt; SPRÁVA UŽIVATELŮ_</h1>
-            <p>Administrace prodejců a jejich přístupů</p>
+            <div class="container">
+                <h1>Správa uživatelů</h1>
+                <p>Administrace uživatelských účtů a jejich přístupových práv</p>
+            </div>
         </section>
 
         <div class="management-container">
@@ -404,53 +442,60 @@
     <!-- Modal pro přidání/editaci uživatele -->
     <div id="userModal" class="modal">
         <div class="modal-content">
-            <h2 class="modal-header" id="modalTitle">// Přidat uživatele</h2>
+            <h2 class="modal-header" id="modalTitle">Přidat uživatele</h2>
+            
+            <div style="background: rgba(255, 20, 147, 0.1); border: 1px solid rgba(255, 20, 147, 0.2); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
+                <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
+                    <span style="color: #dc3545;">*</span> označuje povinná pole (Jméno, Příjmení, Uživatelské jméno, Heslo)
+                </p>
+            </div>
+            
             <form id="userForm">
                 <input type="hidden" id="userId" value="">
                 
                 <div class="form-group">
-                    <label class="form-label" for="firstName">Jméno</label>
+                    <label class="form-label" for="firstName">Jméno <span style="color: #dc3545;">*</span></label>
                     <input type="text" id="firstName" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="lastName">Příjmení</label>
+                    <label class="form-label" for="lastName">Příjmení <span style="color: #dc3545;">*</span></label>
                     <input type="text" id="lastName" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="username">Uživatelské jméno</label>
+                    <label class="form-label" for="username">Uživatelské jméno <span style="color: #dc3545;">*</span></label>
                     <input type="text" id="username" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="email">Email</label>
-                    <input type="email" id="email" class="form-input" required>
+                    <label class="form-label" for="email">Email <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <input type="email" id="email" class="form-input">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="phone">Telefon</label>
-                    <input type="tel" id="phone" class="form-input" required>
+                    <label class="form-label" for="phone">Telefon <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <input type="tel" id="phone" class="form-input">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="prodejna">Prodejna</label>
-                    <input type="text" id="prodejna" class="form-input" required>
+                    <label class="form-label" for="prodejna">Prodejna <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <input type="text" id="prodejna" class="form-input">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="password">Heslo</label>
+                    <label class="form-label" for="password">Heslo <span style="color: #dc3545;">*</span></label>
                     <input type="password" id="password" class="form-input">
-                    <small style="color: var(--terminal-green); opacity: 0.6; font-size: 12px;">
+                    <small style="color: var(--text-secondary); font-size: 0.75rem;">
                         Při editaci nechte prázdné pro zachování stávajícího hesla
                     </small>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="role">Role uživatele</label>
-                    <select id="role" class="form-input" required>
+                    <label class="form-label" for="role">Role uživatele <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <select id="role" class="form-input">
                         <option value="">Vyberte roli...</option>
-                        <option value="Prodejce">Prodejce - omezený přístup (prodejny, bazar, novinky)</option>
+                        <option value="Prodejce" selected>Prodejce - omezený přístup (prodejny, bazar, novinky)</option>
                         <option value="Administrator">Administrator - plný přístup ke všem sekcím</option>
                     </select>
                 </div>

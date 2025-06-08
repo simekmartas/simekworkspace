@@ -130,7 +130,7 @@ class UserManager {
     }
 
     showAddModal() {
-        document.getElementById('modalTitle').textContent = '// Přidat uživatele';
+        document.getElementById('modalTitle').textContent = 'Přidat uživatele';
         document.getElementById('userForm').reset();
         document.getElementById('userId').value = '';
         document.getElementById('password').required = true;
@@ -142,7 +142,7 @@ class UserManager {
         
         if (!user) return;
         
-        document.getElementById('modalTitle').textContent = '// Upravit uživatele';
+        document.getElementById('modalTitle').textContent = 'Upravit uživatele';
         document.getElementById('userId').value = user.id;
         document.getElementById('firstName').value = user.firstName;
         document.getElementById('lastName').value = user.lastName;
@@ -175,9 +175,9 @@ class UserManager {
             password: document.getElementById('password').value
         };
 
-        // Validace
-        if (!userData.firstName || !userData.lastName || !userData.username || !userData.email || !userData.phone || !userData.prodejna || !userData.role) {
-            alert('Prosím vyplňte všechna povinná pole.');
+        // Validace povinných polí
+        if (!userData.firstName || !userData.lastName || !userData.username) {
+            alert('Prosím vyplňte všechna povinná pole (Jméno, Příjmení, Uživatelské jméno).');
             return;
         }
 
@@ -219,6 +219,12 @@ class UserManager {
                 if (!userData.password) {
                     throw new Error('Heslo je povinné pro nového uživatele');
                 }
+                
+                // Nastavit výchozí hodnoty pro nepovinná pole
+                userData.email = userData.email || '';
+                userData.phone = userData.phone || '';
+                userData.prodejna = userData.prodejna || 'Nezadáno';
+                userData.role = userData.role || 'Prodejce';
 
                 // Zkontrolovat duplicitní username a email
                 const usernameExists = this.users.some(u => u.username === userData.username);

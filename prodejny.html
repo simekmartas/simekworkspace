@@ -329,33 +329,7 @@
             </div>
         </section>
 
-        <!-- Data source selector -->
-        <section class="container" style="padding: 2rem 0;">
-            <div class="filter-section">
-                <div class="filter-row">
-                    <div class="filter-label">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                            <polyline points="22,6 12,13 2,6"></polyline>
-                        </svg>
-                        Zdroj dat:
-                    </div>
-                    <div class="dropdown" id="sourceDropdown">
-                        <button class="btn btn-secondary dropdown-toggle" onclick="toggleSourceDropdown()">
-                            <span id="currentSource">Script loader (doporučeno)</span>
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <polyline points="6,9 12,15 18,9"></polyline>
-                            </svg>
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a href="#" onclick="switchLoader('script')">Script loader (doporučeno)</a></li>
-                            <li><a href="#" onclick="switchLoader('api')">API loader</a></li>
-                            <li><a href="#" onclick="switchLoader('file')">File loader</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </section>
+
 
         <!-- Data section -->
         <section id="data-section" class="container">
@@ -387,8 +361,6 @@
     <script src="navigation.js"></script>
     <script src="ai-chatbot.js"></script>
     <script src="prodejny-data-loader.js"></script>
-    <script src="prodejny-data-loader-script.js"></script>
-    <script src="prodejny-data-loader-api.js"></script>
     <script>
         // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
         if (!localStorage.getItem('isLoggedIn')) {
@@ -416,7 +388,7 @@
         // Globální proměnné pro data loadery
         let currentLoader, monthlyLoader;
         let prodejnyLoader; // Globální proměnná pro přístup z inline event handlerů
-        let currentLoaderType = 'script'; // Výchozí na script, protože nejlépe funguje
+        let currentLoaderType = 'file'; // Výchozí na file, protože to je jediný dostupný loader
 
         // Tab switching functionality
         function initTabSwitching() {
@@ -460,19 +432,7 @@
             }
         }
 
-        // Funkce pro toggle rozbalovacího menu
-        function toggleSourceDropdown() {
-            const dropdown = document.getElementById('sourceDropdown');
-            dropdown.classList.toggle('active');
-        }
 
-        // Zavřít dropdown při kliknutí mimo
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('sourceDropdown');
-            if (!dropdown.contains(event.target)) {
-                dropdown.classList.remove('active');
-            }
-        });
 
         // Enhanced loader switching function
         function switchLoader(type, tabType = null) {
@@ -516,19 +476,8 @@
                     let loader;
                     console.log(`Vytváření ${type} loaderu pro tab: ${tab}`);
                     
-                    switch(type) {
-                        case 'script':
-                            loader = new ProdejnyDataLoaderScript(containerId, tab);
-                            break;
-                        case 'api':
-                            loader = new ProdejnyDataLoaderAPI(containerId, tab);
-                            break;
-                        case 'file':
-                            loader = new ProdejnyDataLoader(containerId, tab);
-                            break;
-                        default:
-                            throw new Error('Neznámý typ loaderu');
-                    }
+                    // Momentálně máme jen jeden funkční loader
+                    loader = new ProdejnyDataLoader(containerId, tab);
                     
                     console.log(`${type} loader úspěšně vytvořen pro tab: ${tab}`);
                     
@@ -562,14 +511,15 @@
             // Update current loader type and UI
             currentLoaderType = type;
             const sourceNames = {
-                'script': 'Script loader (doporučeno)',
-                'api': 'API loader', 
-                'file': 'File loader'
+                'file': 'Google Sheets loader'
             };
-            document.getElementById('currentSource').textContent = sourceNames[type];
+            const sourceName = sourceNames[type] || 'Základní loader';
+            const currentSourceElement = document.getElementById('currentSource');
+            if (currentSourceElement) {
+                currentSourceElement.textContent = sourceName;
+            }
             
-            // Close dropdown
-            document.getElementById('sourceDropdown').classList.remove('active');
+
         }
 
         // Initialize when DOM is ready

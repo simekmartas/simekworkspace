@@ -31,21 +31,11 @@ class ProdejnyDataLoader {
         try {
             this.showLoading();
             
-            // Extrémně agresivní cache-busting s mnoha parametry
-            const timestamp = new Date().getTime();
-            const randomId = Math.random().toString(36).substring(2, 15);
-            const dateString = new Date().toISOString().split('T')[0];
-            const timeString = new Date().toISOString().split('T')[1].replace(/[:.]/g, '');
-            const microtime = performance.now().toString().replace('.', '');
-            const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+            console.log('Načítání demo dat pro prodejny...');
             
-            // URL pro CSV export s maximálním počtem cache-busting parametrů
-            const gid = isMonthly ? this.monthlyGid : this.mainGid;
-            const csvUrl = `${this.basePublishedUrl}&gid=${gid}&cachebust=${timestamp}&rand=${randomId}&date=${dateString}&time=${timeString}&micro=${microtime}&session=${sessionId}&v=${Date.now()}&r=${Math.random()}&force=1&refresh=1&nocache=1`;
-            
-            console.log('CSV URL:', csvUrl);
-            
-            let csvData = null;
+            // Prozatím použijeme mock data, dokud nebude opraveno připojení k Google Sheets
+            this.showMockData(isMonthly);
+            return;
             
             // Přístup 1: Vlastní Netlify API proxy (nejvyšší priorita)
             console.log('=== PŘÍSTUP 1: Vlastní Netlify API ===');
