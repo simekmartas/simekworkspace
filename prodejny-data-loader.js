@@ -15,8 +15,8 @@ class ProdejnyDataLoader {
         
         this.refreshInterval = null;
         
-        // Google Apps Script URL
-        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyalQORqvcnXbB3GeC3q3CL5TIbn2SV6F9jYxJ7QYfV/exec';
+        // Google Apps Script URL - nové nasazení
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbxraNeqN9xFiKVtCG_Ok0teUV8XNJ1ZMYpsg9ZiN4AtV_Ry9yyB_FoKfgvOtF3mClsU/exec';
         
         // Automaticky načte data po vytvoření instance
         setTimeout(() => {
@@ -48,8 +48,8 @@ class ProdejnyDataLoader {
         console.log('=== NAČÍTÁNÍ Z GOOGLE APPS SCRIPT ===');
         console.log('GID:', gid, 'Je měsíční:', isMonthly);
         
-        // Google Apps Script endpoint (správný ID od uživatele) - používej /dev pro testování
-        const scriptUrl = 'https://script.google.com/macros/s/AKfycbyalQORqvcnXbB3GeC3q3CL5TIbn2SV6F9jYxJ7QYfV/exec';
+        // Google Apps Script endpoint - nové nasazení
+        const scriptUrl = this.scriptUrl;
         
         try {
             const timestamp = Date.now();
@@ -719,8 +719,8 @@ class ProdejnyDataLoader {
         const timestamp = Date.now();
         const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
         
-        // Zkus /dev endpoint místo /exec pro testování
-        const devScriptUrl = 'https://script.google.com/macros/s/AKfycbyalQORqvcnXbB3GeC3q3CL5TIbn2SV6F9jYxJ7QYfV/dev';
+        // Zkus /dev endpoint místo /exec pro testování  
+        const devScriptUrl = this.scriptUrl.replace('/exec', '/dev');
         const requestUrl = `${devScriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&t=${timestamp}`;
         
         console.log('Dev endpoint URL:', requestUrl);
