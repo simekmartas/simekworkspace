@@ -118,8 +118,11 @@ function updateNavigation() {
     // Aktualizovat theme toggle a nastavovací tlačítka po aktualizaci navigace
     setTimeout(() => {
         if (window.themeManager) {
+            console.log('🔄 Aktualizuji theme buttons z navigation.js');
             window.themeManager.updateAllToggleButtons();
             console.log('Theme toggle buttons aktualizovány po aktualizaci navigace');
+        } else {
+            console.warn('⚠️ themeManager není dostupný v navigation.js');
         }
     }, 100);
     

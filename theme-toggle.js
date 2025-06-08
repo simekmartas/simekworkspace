@@ -56,6 +56,8 @@ class ThemeToggle {
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         
         console.log('🔧 createAdminSettingsButton - isLoggedIn:', isLoggedIn, 'userRole:', userRole);
+        console.log('🔧 isLoggedIn === "true":', isLoggedIn === 'true');
+        console.log('🔧 typeof isLoggedIn:', typeof isLoggedIn);
         
         if (isLoggedIn !== 'true') {
             // Odstranit existující tlačítko pokud uživatel není přihlášen
@@ -149,15 +151,11 @@ class ThemeToggle {
         
         menu.innerHTML = menuContent;
 
-        // Pozicovat menu vedle tlačítka
-        const settingsButton = document.querySelector('.admin-settings-button');
-        if (settingsButton) {
-            const rect = settingsButton.getBoundingClientRect();
-            menu.style.position = 'fixed';
-            menu.style.top = (rect.bottom + 5) + 'px';
-            menu.style.right = '20px';
-            menu.style.zIndex = '1000';
-        }
+        // Pozicovat menu vpravo nahoře
+        menu.style.position = 'fixed';
+        menu.style.top = '60px';
+        menu.style.right = '20px';
+        menu.style.zIndex = '1000';
 
         document.body.appendChild(menu);
 
@@ -252,34 +250,41 @@ const themeStyles = `
 }
 
 .admin-menu {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
-    border-radius: 0.5rem;
-    box-shadow: var(--shadow);
-    min-width: 200px;
-    padding: 0.5rem 0;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    min-width: 180px;
+    padding: 8px 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
 .admin-menu-item {
-    padding: 0.75rem 1rem;
+    padding: 12px 16px;
     cursor: pointer;
-    color: var(--text-primary);
-    font-size: 0.875rem;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
     transition: background-color 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
+    white-space: nowrap;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
 }
 
 .admin-menu-item:hover {
-    background: var(--accent-color);
-    color: white;
+    background: #f5f5f5;
+    color: #333;
 }
 
 .admin-menu-separator {
     height: 1px;
-    background: var(--border-light);
-    margin: 0.5rem 0;
+    background: #e0e0e0;
+    margin: 8px 0;
 }
 
 /* Světlý režim */
@@ -380,13 +385,45 @@ window.debugTheme = function() {
     }
 };
 
-// Test login funkce
-window.testLogin = function() {
+// Test login funkce - simuluje přihlášení prodejce
+window.testLoginProdejce = function() {
     localStorage.setItem('isLoggedIn', 'true');
     localStorage.setItem('userId', '2');
     localStorage.setItem('role', 'Prodejce');
-    localStorage.setItem('username', 'Test Uživatel');
-    console.log('✅ Test přihlášení nastaveno');
+    localStorage.setItem('username', 'Tomáš Novák');
+    localStorage.setItem('userEmail', 'tomas.novak@mobilmajak.cz');
+    localStorage.setItem('userPhone', '+420777123456');
+    localStorage.setItem('userProdejna', 'Praha 1');
+    console.log('✅ Test přihlášení PRODEJCE nastaveno');
+    console.log('📋 Role:', localStorage.getItem('role'));
+    console.log('📋 IsLoggedIn:', localStorage.getItem('isLoggedIn'));
+    
+    // Aktualizuj navigaci a tlačítka
+    if (typeof updateNavigation === 'function') {
+        updateNavigation();
+    }
+    if (window.themeManager) {
+        window.themeManager.updateAllToggleButtons();
+    }
+};
+
+// Test login funkce - simuluje přihlášení admina
+window.testLoginAdmin = function() {
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userId', '1');
+    localStorage.setItem('role', 'Administrator');
+    localStorage.setItem('username', 'Admin Administrátor');
+    localStorage.setItem('userEmail', 'admin@mobilmajak.cz');
+    localStorage.setItem('userPhone', '+420777888999');
+    localStorage.setItem('userProdejna', 'Hlavní pobočka');
+    console.log('✅ Test přihlášení ADMIN nastaveno');
+    console.log('📋 Role:', localStorage.getItem('role'));
+    console.log('📋 IsLoggedIn:', localStorage.getItem('isLoggedIn'));
+    
+    // Aktualizuj navigaci a tlačítka
+    if (typeof updateNavigation === 'function') {
+        updateNavigation();
+    }
     if (window.themeManager) {
         window.themeManager.updateAllToggleButtons();
     }
