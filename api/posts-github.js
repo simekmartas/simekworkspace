@@ -1,39 +1,94 @@
-const fs = require('fs').promises;
-const path = require('path');
+// GitHub API pro ukládání příspěvků
+const GITHUB_TOKEN = process.env.github_token; // Nastavíš v Netlify Environment Variables
+const GITHUB_OWNER = 'simekmartas'; // Tvoje GitHub username
+const GITHUB_REPO = 'mobilmajakdata'; // Název repository pro data
+const GITHUB_FILE_PATH = 'posts.json';
 
-// Cesta k datovému souboru - Netlify Functions můžou zapisovat jen do /tmp
-const DATA_FILE = path.join('/tmp', 'posts.json');
-
-// Zajistí, že adresář existuje
-async function ensureDataDir() {
-    const dir = path.dirname(DATA_FILE);
+async function getPostsFromGitHub() {
     try {
-        await fs.access(dir);
-    } catch {
-        await fs.mkdir(dir, { recursive: true });
-    }
-}
+        console.log('🔍 GitHub API debug:');
+        console.log('- Owner:', GITHUB_OWNER);
+        console.log('- Repo:', GITHUB_REPO);
+        console.log('- Token available:', !!GITHUB_TOKEN);
+        console.log('- Token format:', GITHUB_TOKEN ? GITHUB_TOKEN.substring(0, 10) + '...' : 'none');
 
-// Načte příspěvky ze souboru
-async function loadPosts() {
-    try {
-        await ensureDataDir();
-        const data = await fs.readFile(DATA_FILE, 'utf8');
-        return JSON.parse(data);
+        const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+        console.log('- API URL:', url);
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'mobilmajak-netlify-function'
+            }
+        });
+
+        console.log('- Response status:', response.status);
+        console.log('- Response statusText:', response.statusText);
+
+        if (response.status === 404) {
+            console.log('📁 File not found, returning empty array');
+            return [];
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ GitHub API error:', errorText);
+            throw new Error(`GitHub API error: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        const content = Buffer.from(data.content, 'base64').toString('utf8');
+        return JSON.parse(content);
     } catch (error) {
-        // Pokud soubor neexistuje, vrať prázdné pole
+        console.error('❌ Chyba při načítání z GitHub:', error);
         return [];
     }
 }
 
-// Uloží příspěvky do souboru
-async function savePosts(posts) {
+async function savePostsToGitHub(posts) {
     try {
-        await ensureDataDir();
-        await fs.writeFile(DATA_FILE, JSON.stringify(posts, null, 2));
-        return true;
+        // Nejdřív získej aktuální SHA souboru (potřebné pro update)
+        let sha = null;
+        try {
+            const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
+                headers: {
+                    'Authorization': `token ${GITHUB_TOKEN}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                sha = data.sha;
+            }
+        } catch (e) {
+            // Soubor neexistuje, vytvoří se nový
+        }
+
+        // Ulož data
+        const content = Buffer.from(JSON.stringify(posts, null, 2)).toString('base64');
+        
+        const payload = {
+            message: `Update posts - ${new Date().toISOString()}`,
+            content: content,
+            ...(sha && { sha })
+        };
+
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `token ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'Content-Type': 'application/json',
+                'User-Agent': 'mobilmajak-netlify-function'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        return response.ok;
     } catch (error) {
-        console.error('Chyba při ukládání:', error);
+        console.error('Chyba při ukládání do GitHub:', error);
         return false;
     }
 }
@@ -56,12 +111,27 @@ exports.handler = async (event, context) => {
         };
     }
 
+    // Kontrola GitHub tokenu
+    if (!GITHUB_TOKEN) {
+        console.error('❌ GITHUB_TOKEN není nastaven v environment variables');
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({
+                success: false,
+                error: 'GitHub token není nastaven - zkontrolujte environment variables'
+            })
+        };
+    }
+    
+    console.log('✅ GitHub token je dostupný');
+
     try {
         const { httpMethod, body, queryStringParameters } = event;
 
         // GET - načti všechny příspěvky
         if (httpMethod === 'GET') {
-            const posts = await loadPosts();
+            const posts = await getPostsFromGitHub();
             return {
                 statusCode: 200,
                 headers,
@@ -75,20 +145,20 @@ exports.handler = async (event, context) => {
         // POST - vytvoř nový příspěvek
         if (httpMethod === 'POST') {
             const postData = JSON.parse(body);
-            const posts = await loadPosts();
+            const posts = await getPostsFromGitHub();
             
             // Přidej timestamp a ID
             const newPost = {
                 ...postData,
                 id: Date.now().toString(),
-                timestamp: Date.now(), // JavaScript timestamp v milisekundách
-                likes: Array.isArray(postData.likes) ? postData.likes : [], // Pole uživatelů
+                timestamp: Date.now(),
+                likes: Array.isArray(postData.likes) ? postData.likes : [],
                 comments: postData.comments || []
             };
             
             posts.unshift(newPost); // Přidej na začátek
             
-            const saved = await savePosts(posts);
+            const saved = await savePostsToGitHub(posts);
             
             if (saved) {
                 return {
@@ -107,7 +177,7 @@ exports.handler = async (event, context) => {
         // PUT - aktualizuj příspěvek
         if (httpMethod === 'PUT') {
             const updateData = JSON.parse(body);
-            const posts = await loadPosts();
+            const posts = await getPostsFromGitHub();
             const postIndex = posts.findIndex(p => p.id === updateData.id);
             
             if (postIndex === -1) {
@@ -123,15 +193,14 @@ exports.handler = async (event, context) => {
             
             // Aktualizuj pouze předané vlastnosti
             Object.keys(updateData).forEach(key => {
-                if (key !== 'id') { // ID se nemění
+                if (key !== 'id') {
                     posts[postIndex][key] = updateData[key];
                 }
             });
             
-            // Přidej timestamp poslední aktualizace
             posts[postIndex].lastUpdated = Date.now();
             
-            const saved = await savePosts(posts);
+            const saved = await savePostsToGitHub(posts);
             
             if (saved) {
                 return {
@@ -162,7 +231,7 @@ exports.handler = async (event, context) => {
                 };
             }
             
-            const posts = await loadPosts();
+            const posts = await getPostsFromGitHub();
             const filteredPosts = posts.filter(p => p.id !== postId);
             
             if (filteredPosts.length === posts.length) {
@@ -176,7 +245,7 @@ exports.handler = async (event, context) => {
                 };
             }
             
-            const saved = await savePosts(filteredPosts);
+            const saved = await savePostsToGitHub(filteredPosts);
             
             if (saved) {
                 return {
@@ -192,7 +261,6 @@ exports.handler = async (event, context) => {
             }
         }
 
-        // Nepodporovaná metoda
         return {
             statusCode: 405,
             headers,
