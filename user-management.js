@@ -178,6 +178,7 @@ class UserManager {
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${user.id}</td>
+                <td>${user.customId || '-'}</td>
                 <td>${user.firstName}</td>
                 <td>${user.lastName}</td>
                 <td>${user.username}</td>
@@ -230,6 +231,7 @@ class UserManager {
         
         document.getElementById('modalTitle').textContent = 'Upravit uživatele';
         document.getElementById('userId').value = user.id;
+        document.getElementById('customId').value = user.customId || '';
         document.getElementById('firstName').value = user.firstName;
         document.getElementById('lastName').value = user.lastName;
         document.getElementById('username').value = user.username;
@@ -251,6 +253,7 @@ class UserManager {
     async saveUser() {
         const userId = document.getElementById('userId').value;
         const userData = {
+            customId: document.getElementById('customId').value.trim(),
             firstName: document.getElementById('firstName').value.trim(),
             lastName: document.getElementById('lastName').value.trim(),
             username: document.getElementById('username').value.trim(),
@@ -267,9 +270,9 @@ class UserManager {
             return;
         }
 
-        // Validace emailu
+        // Validace emailu - pouze pokud je vyplněný
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(userData.email)) {
+        if (userData.email && !emailRegex.test(userData.email)) {
             alert('Prosím zadejte platný email.');
             return;
         }
@@ -284,7 +287,7 @@ class UserManager {
 
                 // Zkontrolovat duplicitní username a email (kromě aktuálního uživatele)
                 const usernameExists = this.users.some(u => u.username === userData.username && u.id !== parseInt(userId));
-                const emailExists = this.users.some(u => u.email === userData.email && u.id !== parseInt(userId));
+                const emailExists = userData.email && this.users.some(u => u.email === userData.email && u.id !== parseInt(userId));
                 if (usernameExists) {
                     throw new Error('Uživatel s tímto uživatelským jménem již existuje');
                 }
@@ -314,7 +317,7 @@ class UserManager {
 
                 // Zkontrolovat duplicitní username a email
                 const usernameExists = this.users.some(u => u.username === userData.username);
-                const emailExists = this.users.some(u => u.email === userData.email);
+                const emailExists = userData.email && this.users.some(u => u.email === userData.email);
                 if (usernameExists) {
                     throw new Error('Uživatel s tímto uživatelským jménem již existuje');
                 }
@@ -443,6 +446,7 @@ class UserManager {
         this.users.forEach(user => {
             const row = [
                 user.id,
+                user.customId || '',
                 user.firstName,
                 user.lastName,
                 user.username,

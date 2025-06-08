@@ -606,7 +606,8 @@
                 <table class="user-table" id="userTable">
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            <th>ID systému</th>
+                            <th>ID prodejce</th>
                             <th>Jméno</th>
                             <th>Příjmení</th>
                             <th>Uživatelské jméno</th>
@@ -632,12 +633,18 @@
             
             <div class="modal-info-box">
                 <p style="margin: 0; font-size: 0.875rem;">
-                    <span class="required-asterisk">*</span> označuje povinná pole (Jméno, Příjmení, Uživatelské jméno, Heslo)
+                    <span class="required-asterisk">*</span> označuje povinná pole (Jméno, Příjmení, Uživatelské jméno, Heslo)<br>
+                    ID prodejce slouží pro vlastní identifikaci prodejce - můžete zadat jakékoli ID dle potřeby.
                 </p>
             </div>
             
             <form id="userForm">
                 <input type="hidden" id="userId" value="">
+                
+                <div class="form-group">
+                    <label class="form-label" for="customId">ID prodejce <span class="optional-note">(nepovinné)</span></label>
+                    <input type="text" id="customId" class="form-input" placeholder="Zadejte vlastní ID prodejce">
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="firstName">Jméno <span class="required-asterisk">*</span></label>
