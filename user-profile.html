@@ -11,19 +11,18 @@
     <link rel="icon" type="image/png" sizes="192x192" href="https://via.placeholder.com/192x192/2196F3/white?text=MM">
     <style>
         .profile-container {
-            max-width: 800px;
-            margin: 4rem auto 2rem;
-            padding: 2rem;
-            background: var(--card-background, #ffffff);
-            border-radius: 12px;
-            box-shadow: var(--shadow-medium, 0 4px 6px rgba(0, 0, 0, 0.1));
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
         }
         
         .profile-header {
             text-align: center;
             margin-bottom: 3rem;
-            padding-bottom: 2rem;
-            border-bottom: 2px solid var(--border-color, #e0e0e0);
+            padding: 2rem;
+            background: var(--card-background, #ffffff);
+            border-radius: 12px;
+            box-shadow: var(--shadow-medium, 0 4px 6px rgba(0, 0, 0, 0.1));
         }
         
         .profile-image-container {
@@ -83,7 +82,227 @@
             height: 16px;
             fill: white;
         }
-        
+
+        /* Hlavní metriky nahoře */
+        .main-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: var(--card-background, #ffffff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: #2196F3;
+        }
+
+        .metric-card.primary {
+            background: linear-gradient(145deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border-color: #1976D2;
+        }
+
+        .metric-card.secondary {
+            background: linear-gradient(145deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+            border-color: #388E3C;
+        }
+
+        .metric-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        /* Tab switcher podobný prodejnám */
+        .tab-container {
+            max-width: 400px;
+            margin: 2rem auto;
+            display: flex;
+            background: var(--card-background, #ffffff);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-medium, 0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .tab {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            color: var(--text-secondary, #666);
+        }
+
+        .tab.active {
+            background: var(--primary-color, #2196F3);
+            color: white;
+        }
+
+        .tab:hover:not(.active) {
+            background: var(--hover-color, #f5f5f5);
+        }
+
+        .tab svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dodatečné statistiky */
+        .additional-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-background, #ffffff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: #2196F3;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .stat-content {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary, #666);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+            color: var(--text-primary, #333);
+        }
+
+        .stat-subtitle {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            font-weight: 500;
+            color: var(--text-secondary, #666);
+        }
+
+        /* Tlačítko pro úpravu profilu */
+        .profile-actions {
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .btn-edit-profile {
+            background: var(--primary-color, #2196F3);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-edit-profile:hover {
+            background: var(--primary-dark, #1976D2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+        }
+
+        /* Skrytá sekce pro úpravu profilu */
+        .profile-edit-section {
+            display: none;
+            background: var(--card-background, #ffffff);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: var(--shadow-medium, 0 4px 6px rgba(0, 0, 0, 0.1));
+        }
+
+        .profile-edit-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
         .profile-form {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -220,115 +439,177 @@
             display: none;
         }
 
-        /* Statistiky sekce */
-        .stats-section {
-            margin-bottom: 3rem;
-            padding-bottom: 3rem;
-            border-bottom: 2px solid var(--border-color, #e0e0e0);
-        }
-
-        .stats-section h2 {
-            text-align: center;
-            color: var(--text-primary, #333);
-            margin-bottom: 2rem;
-            font-size: 1.5rem;
-            font-weight: 600;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
-            border: 1px solid #e9ecef;
-            border-radius: 16px;
-            padding: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            border-color: #2196F3;
-        }
-
-        .stat-card.highlight {
-            background: linear-gradient(145deg, #2196F3 0%, #1976D2 100%);
-            color: white;
-            border-color: #1976D2;
-        }
-
-        .stat-card.highlight:hover {
-            background: linear-gradient(145deg, #1976D2 0%, #1565C0 100%);
-        }
-
-        .stat-icon {
-            font-size: 2.5rem;
+        /* Image Crop Modal Styles */
+        .crop-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            flex-shrink: 0;
+            backdrop-filter: blur(5px);
         }
 
-        .stat-card:not(.highlight) .stat-icon {
-            background: #f8f9fa;
+        .crop-modal-content {
+            background: var(--secondary-color, #fff);
+            border-radius: 16px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
 
-        .stat-content {
-            flex-grow: 1;
-            min-width: 0;
+        .crop-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color, #e0e0e0);
         }
 
-        .stat-label {
-            font-size: 0.75rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            opacity: 0.8;
-            margin-bottom: 0.5rem;
+        .crop-modal-header h3 {
+            margin: 0;
+            color: var(--text-primary, #333);
+            font-size: 1.25rem;
         }
 
-        .stat-value {
+        .crop-modal-close {
+            background: none;
+            border: none;
             font-size: 2rem;
-            font-weight: 700;
-            line-height: 1;
-            margin-bottom: 0.25rem;
+            cursor: pointer;
+            color: var(--text-secondary, #666);
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
         }
 
-        .stat-subtitle {
-            font-size: 0.875rem;
-            opacity: 0.7;
-            font-weight: 500;
+        .crop-modal-close:hover {
+            background: var(--hover-color, #f5f5f5);
+            color: var(--text-primary, #333);
         }
 
-        /* Animace pro statistiky */
-        .stat-card::before {
-            content: '';
+        .crop-modal-body {
+            padding: 1.5rem;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .crop-container {
+            position: relative;
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .crop-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-height: 300px;
+            object-fit: contain;
+        }
+
+        .crop-selection {
             position: absolute;
-            top: 0;
-            left: -100%;
+            border: 2px solid #2196F3;
+            background: transparent;
+            cursor: move;
+            min-width: 100px;
+            min-height: 100px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+        }
+
+        .crop-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #2196F3;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            cursor: grab;
+        }
+
+        .crop-handle:active {
+            cursor: grabbing;
+        }
+
+        .crop-handle-nw {
+            top: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: n-resize;
+        }
+
+        .crop-handle-ne {
+            top: 50%;
+            right: -6px;
+            transform: translateY(-50%);
+            cursor: e-resize;
+        }
+
+        .crop-handle-sw {
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            cursor: s-resize;
+        }
+
+        .crop-handle-se {
+            top: 50%;
+            left: -6px;
+            transform: translateY(-50%);
+            cursor: w-resize;
+        }
+
+        .crop-preview {
+            flex: 0 0 150px;
+            text-align: center;
+        }
+
+        .crop-preview p {
+            margin: 0 0 1rem 0;
+            font-weight: 600;
+            color: var(--text-primary, #333);
+        }
+
+        .crop-preview-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--primary-color, #2196F3);
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .crop-preview-circle canvas {
             width: 100%;
             height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
+            border-radius: 50%;
         }
 
-        .stat-card:hover::before {
-            left: 100%;
+        .crop-modal-actions {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border-color, #e0e0e0);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
         }
         
         @media (max-width: 768px) {
@@ -346,233 +627,41 @@
                 flex-direction: column;
             }
 
-            .stats-grid {
+            .main-metrics {
                 grid-template-columns: 1fr;
-                gap: 1rem;
             }
 
-            .stat-card {
-                padding: 1rem;
+            .additional-stats {
+                grid-template-columns: 1fr;
             }
 
-            .stat-icon {
-                width: 50px;
-                height: 50px;
-                font-size: 2rem;
+            .crop-modal-content {
+                width: 95%;
+                margin: 1rem;
             }
 
-            .stat-value {
-                font-size: 1.5rem;
+            .crop-modal-body {
+                flex-direction: column;
+                align-items: center;
             }
 
-                    .stats-section h2 {
-            font-size: 1.25rem;
+            .crop-container {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .crop-preview {
+                flex: none;
+            }
+
+            .crop-modal-actions {
+                flex-direction: column-reverse;
+            }
+
+            .crop-modal-actions button {
+                width: 100%;
+            }
         }
-    }
-
-    /* Image Crop Modal Styles */
-    .crop-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 10000;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        backdrop-filter: blur(5px);
-    }
-
-    .crop-modal-content {
-        background: var(--secondary-color, #fff);
-        border-radius: 16px;
-        max-width: 600px;
-        width: 90%;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    }
-
-    .crop-modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--border-color, #e0e0e0);
-    }
-
-    .crop-modal-header h3 {
-        margin: 0;
-        color: var(--text-primary, #333);
-        font-size: 1.25rem;
-    }
-
-    .crop-modal-close {
-        background: none;
-        border: none;
-        font-size: 2rem;
-        cursor: pointer;
-        color: var(--text-secondary, #666);
-        padding: 0;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        transition: all 0.3s ease;
-    }
-
-    .crop-modal-close:hover {
-        background: var(--hover-color, #f5f5f5);
-        color: var(--text-primary, #333);
-    }
-
-    .crop-modal-body {
-        padding: 1.5rem;
-        display: flex;
-        gap: 2rem;
-        flex-wrap: wrap;
-    }
-
-    .crop-container {
-        position: relative;
-        flex: 1;
-        min-width: 300px;
-        max-width: 400px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .crop-container img {
-        width: 100%;
-        height: auto;
-        display: block;
-        max-height: 300px;
-        object-fit: contain;
-    }
-
-
-
-    .crop-selection {
-        position: absolute;
-        border: 2px solid #2196F3;
-        background: transparent;
-        cursor: move;
-        min-width: 100px;
-        min-height: 100px;
-        border-radius: 50%;
-        box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-    }
-
-    .crop-handle {
-        position: absolute;
-        width: 12px;
-        height: 12px;
-        background: #2196F3;
-        border: 2px solid #fff;
-        border-radius: 50%;
-        cursor: grab;
-    }
-
-    .crop-handle:active {
-        cursor: grabbing;
-    }
-
-    .crop-handle-nw {
-        top: -6px;
-        left: 50%;
-        transform: translateX(-50%);
-        cursor: n-resize;
-    }
-
-    .crop-handle-ne {
-        top: 50%;
-        right: -6px;
-        transform: translateY(-50%);
-        cursor: e-resize;
-    }
-
-    .crop-handle-sw {
-        bottom: -6px;
-        left: 50%;
-        transform: translateX(-50%);
-        cursor: s-resize;
-    }
-
-    .crop-handle-se {
-        top: 50%;
-        left: -6px;
-        transform: translateY(-50%);
-        cursor: w-resize;
-    }
-
-    .crop-preview {
-        flex: 0 0 150px;
-        text-align: center;
-    }
-
-    .crop-preview p {
-        margin: 0 0 1rem 0;
-        font-weight: 600;
-        color: var(--text-primary, #333);
-    }
-
-    .crop-preview-circle {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 3px solid var(--primary-color, #2196F3);
-        margin: 0 auto;
-        position: relative;
-    }
-
-    .crop-preview-circle canvas {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-    }
-
-    .crop-modal-actions {
-        padding: 1.5rem;
-        border-top: 1px solid var(--border-color, #e0e0e0);
-        display: flex;
-        gap: 1rem;
-        justify-content: flex-end;
-    }
-
-    @media (max-width: 768px) {
-        .crop-modal-content {
-            width: 95%;
-            margin: 1rem;
-        }
-
-        .crop-modal-body {
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .crop-container {
-            min-width: unset;
-            width: 100%;
-        }
-
-        .crop-preview {
-            flex: none;
-        }
-
-        .crop-modal-actions {
-            flex-direction: column-reverse;
-        }
-
-        .crop-modal-actions button {
-            width: 100%;
-        }
-    }
     </style>
 </head>
 <body>
@@ -602,136 +691,193 @@
                     </div>
                     <input type="file" id="profileImageInput" class="hidden-file-input" accept="image/*" onchange="handleImageUpload(event)">
                 </div>
-                <h1>Můj profil</h1>
-                <p>Zde si můžete upravit své osobní údaje a nastavení</p>
+                <h1 id="profileTitle">Můj profil</h1>
+                <p>Vaše prodejní statistiky a osobní údaje</p>
             </div>
 
-            <div class="success-message" id="successMessage"></div>
-            <div class="error-message" id="errorMessage"></div>
-
-            <!-- Prodejní statistiky -->
-            <div class="stats-section">
-                <h2>📊 Moje statistiky</h2>
-                <div class="stats-grid">
-                    <div class="stat-card highlight">
-                        <div class="stat-icon">📱</div>
-                        <div class="stat-content">
-                            <div class="stat-label">CELKEM PRODEJŮ</div>
-                            <div class="stat-value" id="totalSales">24</div>
-                            <div class="stat-subtitle">telefonů</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">🔧</div>
-                        <div class="stat-content">
-                            <div class="stat-label">OPRAVY</div>
-                            <div class="stat-value" id="totalRepairs">12</div>
-                            <div class="stat-subtitle">služeb</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-content">
-                            <div class="stat-label">VÝKUPY</div>
-                            <div class="stat-value" id="totalBuyouts">8</div>
-                            <div class="stat-subtitle">zařízení</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">⭐</div>
-                        <div class="stat-content">
-                            <div class="stat-label">HODNOCENÍ</div>
-                            <div class="stat-value" id="averageRating">4.8</div>
-                            <div class="stat-subtitle">z 5 hvězd</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">📈</div>
-                        <div class="stat-content">
-                            <div class="stat-label">TENTO MĚSÍC</div>
-                            <div class="stat-value" id="monthlyStats">6</div>
-                            <div class="stat-subtitle">prodejů</div>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">🏆</div>
-                        <div class="stat-content">
-                            <div class="stat-label">NEJLEPŠÍ DEN</div>
-                            <div class="stat-value" id="bestDay">5</div>
-                            <div class="stat-subtitle">prodejů</div>
-                        </div>
-                    </div>
+            <!-- Hlavní metriky nahoře -->
+            <div class="main-metrics">
+                <div class="metric-card primary">
+                    <div class="metric-icon">📱</div>
+                    <div class="metric-value" id="totalItemsSold">0</div>
+                    <div class="metric-label">Celkem prodané položky</div>
+                </div>
+                <div class="metric-card secondary">
+                    <div class="metric-icon">🔧</div>
+                    <div class="metric-value" id="totalServicesSold">0</div>
+                    <div class="metric-label">Celkem prodané služby</div>
                 </div>
             </div>
 
-            <form class="profile-form" id="profileForm">
-                <div class="form-group">
-                    <label for="firstName">Jméno *</label>
-                    <input type="text" id="firstName" name="firstName" required>
-                </div>
+            <!-- Tab switcher pro přepínání mezi aktuálními a měsíčními daty -->
+            <div class="tab-container">
+                <button class="tab active" data-tab="current">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12,6 12,12 16,14"></polyline>
+                    </svg>
+                    Aktuální den
+                </button>
+                <button class="tab" data-tab="monthly">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Aktuální měsíc
+                </button>
+            </div>
 
-                <div class="form-group">
-                    <label for="lastName">Příjmení *</label>
-                    <input type="text" id="lastName" name="lastName" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="username">Uživatelské jméno *</label>
-                    <input type="text" id="username" name="username" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">E-mail *</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">Telefon</label>
-                    <input type="tel" id="phone" name="phone">
-                </div>
-
-                <div class="form-group">
-                    <label for="prodejna">Prodejna</label>
-                    <input type="text" id="prodejna" name="prodejna">
-                </div>
-
-                <div class="form-group full-width">
-                    <label for="bio">O mně</label>
-                    <textarea id="bio" name="bio" placeholder="Napište něco o sobě..."></textarea>
-                </div>
-
-                <div class="password-section">
-                    <h3>🔒 Změna hesla</h3>
-                    <div class="password-fields">
-                        <div class="form-group">
-                            <label for="currentPassword">Současné heslo</label>
-                            <input type="password" id="currentPassword" name="currentPassword">
+            <!-- Data section -->
+            <section id="data-section">
+                <!-- Data container pro aktuální zobrazení -->
+                <div id="current-data" class="tab-content active">
+                    <!-- Dodatečné statistiky pro aktuální den -->
+                    <div class="additional-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">🐊</div>
+                            <div class="stat-content">
+                                <div class="stat-label">ALIGATOR TELEFONY</div>
+                                <div class="stat-value" id="currentAligatorSales">0</div>
+                                <div class="stat-subtitle">prodané dnes</div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="newPassword">Nové heslo</label>
-                            <input type="password" id="newPassword" name="newPassword">
+                        <div class="stat-card">
+                            <div class="stat-icon">📈</div>
+                            <div class="stat-content">
+                                <div class="stat-label">DNESNÍ CELKEM</div>
+                                <div class="stat-value" id="currentTotalSales">0</div>
+                                <div class="stat-subtitle">všech položek</div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="confirmPassword">Potvrdit nové heslo</label>
-                            <input type="password" id="confirmPassword" name="confirmPassword">
+                        <div class="stat-card">
+                            <div class="stat-icon">⭐</div>
+                            <div class="stat-content">
+                                <div class="stat-label">POZICE V ŽEBŘÍČKU</div>
+                                <div class="stat-value" id="currentRanking">-</div>
+                                <div class="stat-subtitle">mezi prodejci</div>
+                            </div>
                         </div>
                     </div>
+                    <div id="current-table-container">
+                        <!-- Tabulka bude načtena JavaScriptem -->
+                    </div>
                 </div>
+                
+                <!-- Data container pro měsíční zobrazení -->
+                <div id="monthly-data" class="tab-content">
+                    <!-- Dodatečné statistiky pro měsíc -->
+                    <div class="additional-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">🐊</div>
+                            <div class="stat-content">
+                                <div class="stat-label">ALIGATOR TELEFONY</div>
+                                <div class="stat-value" id="monthlyAligatorSales">0</div>
+                                <div class="stat-subtitle">prodané tento měsíc</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-content">
+                                <div class="stat-label">MĚSÍČNÍ CELKEM</div>
+                                <div class="stat-value" id="monthlyTotalSales">0</div>
+                                <div class="stat-subtitle">všech položek</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🏆</div>
+                            <div class="stat-content">
+                                <div class="stat-label">POZICE V ŽEBŘÍČKU</div>
+                                <div class="stat-value" id="monthlyRanking">-</div>
+                                <div class="stat-subtitle">mezi prodejci</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="monthly-table-container">
+                        <!-- Tabulka bude načtena JavaScriptem -->
+                    </div>
+                </div>
+            </section>
 
-                <div class="action-buttons">
-                    <button type="submit" class="btn-primary">
-                        💾 Uložit změny
-                    </button>
-                    <a href="index.html" class="btn-secondary">
-                        ↶ Zpět na hlavní stránku
-                    </a>
-                </div>
-            </form>
+            <!-- Tlačítko pro úpravu profilu -->
+            <div class="profile-actions">
+                <button class="btn-edit-profile" onclick="toggleProfileEdit()">
+                    ⚙️ Upravit profil
+                </button>
+            </div>
+
+            <!-- Skrytá sekce pro úpravu profilu -->
+            <div class="profile-edit-section" id="profileEditSection">
+                <h2>✏️ Úprava profilu</h2>
+                
+                <div class="success-message" id="successMessage"></div>
+                <div class="error-message" id="errorMessage"></div>
+
+                <form class="profile-form" id="profileForm">
+                    <div class="form-group">
+                        <label for="firstName">Jméno *</label>
+                        <input type="text" id="firstName" name="firstName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Příjmení *</label>
+                        <input type="text" id="lastName" name="lastName" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="username">Uživatelské jméno *</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">E-mail *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">Telefon</label>
+                        <input type="tel" id="phone" name="phone">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="prodejna">Prodejna</label>
+                        <input type="text" id="prodejna" name="prodejna">
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label for="bio">O mně</label>
+                        <textarea id="bio" name="bio" placeholder="Napište něco o sobě..."></textarea>
+                    </div>
+
+                    <div class="password-section">
+                        <h3>🔒 Změna hesla</h3>
+                        <div class="password-fields">
+                            <div class="form-group">
+                                <label for="currentPassword">Současné heslo</label>
+                                <input type="password" id="currentPassword" name="currentPassword">
+                            </div>
+                            <div class="form-group">
+                                <label for="newPassword">Nové heslo</label>
+                                <input type="password" id="newPassword" name="newPassword">
+                            </div>
+                            <div class="form-group">
+                                <label for="confirmPassword">Potvrdit nové heslo</label>
+                                <input type="password" id="confirmPassword" name="confirmPassword">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="submit" class="btn-primary">
+                            💾 Uložit změny
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="toggleProfileEdit()">
+                            ❌ Zrušit
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </main>
 
@@ -777,6 +923,7 @@
     <script src="navigation.js"></script>
     <script src="performance-monitor.js"></script>
     <script src="accessibility-enhancements.js"></script>
+    <script src="user-profile-data-loader.js"></script>
     <script src="user-profile.js"></script>
 </body>
 </html> 
