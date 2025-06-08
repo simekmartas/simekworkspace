@@ -433,19 +433,28 @@
         }
         
         [data-theme="dark"] .form-input {
-            background: var(--bg-secondary);
-            border-color: var(--border-light);
-            color: var(--text-primary);
+            background: var(--bg-secondary) !important;
+            border-color: var(--border-light) !important;
+            color: var(--text-primary) !important;
         }
         
         [data-theme="dark"] .form-input:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(255, 20, 147, 0.1);
+            border-color: var(--accent-color) !important;
+            box-shadow: 0 0 0 3px rgba(255, 20, 147, 0.1) !important;
+        }
+        
+        [data-theme="dark"] .form-input::placeholder {
+            color: var(--text-tertiary) !important;
+        }
+        
+        [data-theme="dark"] select.form-input {
+            background: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
         }
         
         [data-theme="dark"] select.form-input option {
-            background: var(--bg-secondary);
-            color: var(--text-primary);
+            background: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
         }
         
         [data-theme="dark"] .btn-save {
@@ -482,6 +491,44 @@
         
         [data-theme="dark"] .info-text {
             color: var(--text-secondary);
+        }
+        
+        /* Nové CSS třídy pro modal */
+        .modal-info-box {
+            background: rgba(255, 20, 147, 0.1);
+            border: 1px solid rgba(255, 20, 147, 0.2);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-secondary);
+        }
+        
+        [data-theme="dark"] .modal-info-box {
+            background: rgba(255, 20, 147, 0.15);
+            border-color: rgba(255, 20, 147, 0.3);
+            color: var(--text-secondary);
+        }
+        
+        .required-asterisk {
+            color: #dc3545;
+        }
+        
+        .optional-note {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+        
+        [data-theme="dark"] .optional-note {
+            color: var(--text-tertiary);
+        }
+        
+        .form-note {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+        
+        [data-theme="dark"] .form-note {
+            color: var(--text-tertiary);
         }
 
         /* Mobile responsivita */
@@ -578,9 +625,9 @@
         <div class="modal-content">
             <h2 class="modal-header" id="modalTitle">Přidat uživatele</h2>
             
-            <div style="background: rgba(255, 20, 147, 0.1); border: 1px solid rgba(255, 20, 147, 0.2); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
-                <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
-                    <span style="color: #dc3545;">*</span> označuje povinná pole (Jméno, Příjmení, Uživatelské jméno, Heslo)
+            <div class="modal-info-box">
+                <p style="margin: 0; font-size: 0.875rem;">
+                    <span class="required-asterisk">*</span> označuje povinná pole (Jméno, Příjmení, Uživatelské jméno, Heslo)
                 </p>
             </div>
             
@@ -588,45 +635,45 @@
                 <input type="hidden" id="userId" value="">
                 
                 <div class="form-group">
-                    <label class="form-label" for="firstName">Jméno <span style="color: #dc3545;">*</span></label>
+                    <label class="form-label" for="firstName">Jméno <span class="required-asterisk">*</span></label>
                     <input type="text" id="firstName" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="lastName">Příjmení <span style="color: #dc3545;">*</span></label>
+                    <label class="form-label" for="lastName">Příjmení <span class="required-asterisk">*</span></label>
                     <input type="text" id="lastName" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="username">Uživatelské jméno <span style="color: #dc3545;">*</span></label>
+                    <label class="form-label" for="username">Uživatelské jméno <span class="required-asterisk">*</span></label>
                     <input type="text" id="username" class="form-input" required>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="email">Email <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <label class="form-label" for="email">Email <span class="optional-note">(nepovinné)</span></label>
                     <input type="email" id="email" class="form-input">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="phone">Telefon <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <label class="form-label" for="phone">Telefon <span class="optional-note">(nepovinné)</span></label>
                     <input type="tel" id="phone" class="form-input">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="prodejna">Prodejna <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <label class="form-label" for="prodejna">Prodejna <span class="optional-note">(nepovinné)</span></label>
                     <input type="text" id="prodejna" class="form-input">
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="password">Heslo <span style="color: #dc3545;">*</span></label>
+                    <label class="form-label" for="password">Heslo <span class="required-asterisk">*</span></label>
                     <input type="password" id="password" class="form-input">
-                    <small style="color: var(--text-secondary); font-size: 0.75rem;">
+                    <small class="form-note">
                         Při editaci nechte prázdné pro zachování stávajícího hesla
                     </small>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label" for="role">Role uživatele <span style="color: var(--text-secondary); font-size: 0.75rem;">(nepovinné)</span></label>
+                    <label class="form-label" for="role">Role uživatele <span class="optional-note">(nepovinné)</span></label>
                     <select id="role" class="form-input">
                         <option value="">Vyberte roli...</option>
                         <option value="Prodejce" selected>Prodejce - omezený přístup (prodejny, bazar, novinky)</option>
