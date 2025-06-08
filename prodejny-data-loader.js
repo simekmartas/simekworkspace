@@ -15,6 +15,9 @@ class ProdejnyDataLoader {
         
         this.refreshInterval = null;
         
+        // Google Apps Script URL
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyalQORqvcnXbB3GeC3q3CL5TIbn2SV6F9jYxJ7QYfV/exec';
+        
         // Automaticky načte data po vytvoření instance
         setTimeout(() => {
             this.loadData(this.isMonthly);
@@ -45,13 +48,15 @@ class ProdejnyDataLoader {
         console.log('=== NAČÍTÁNÍ Z GOOGLE APPS SCRIPT ===');
         console.log('GID:', gid, 'Je měsíční:', isMonthly);
         
-        // Google Apps Script endpoint (správný ID od uživatele)
+        // Google Apps Script endpoint (správný ID od uživatele) - používej /dev pro testování
         const scriptUrl = 'https://script.google.com/macros/s/AKfycbyalQORqvcnXbB3GeC3q3CL5TIbn2SV6F9jYxJ7QYfV/exec';
         
         try {
             const timestamp = Date.now();
-            // Použij stejné parametry jak funguje v Google Apps Script
-            const requestUrl = `${scriptUrl}?spreadsheetId=${this.spreadsheetId}&sheet=${gid === '0' ? 'statistiky aktual' : 'od 1'}&gid=${gid}&t=${timestamp}`;
+            const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
+            
+            // Použij přesně stejné parametry jako má Google Apps Script doGet funkce
+            const requestUrl = `${scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&t=${timestamp}`;
             
             console.log('Google Apps Script URL:', requestUrl);
             
@@ -59,12 +64,12 @@ class ProdejnyDataLoader {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sekund timeout
             
+            // Google Apps Script doGet() funkcí - používá GET metodu
             const response = await fetch(requestUrl, {
                 method: 'GET',
                 headers: {
-                    'Accept': 'application/json, text/plain, */*',
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache'
+                    'Accept': 'application/json',
+                    'Cache-Control': 'no-cache'
                 },
                 signal: controller.signal
             });
@@ -107,6 +112,16 @@ class ProdejnyDataLoader {
             
         } catch (error) {
             console.error('❌ Chyba při komunikaci s Google Apps Script:', error);
+            
+            // Pokud selže hlavní metoda, zkus JSONP callback
+            try {
+                console.log('🔄 Zkouším JSONP callback metodu...');
+                await this.loadWithJsonp(gid, isMonthly);
+                return;
+            } catch (jsonpError) {
+                console.error('❌ JSONP metoda také selhala:', jsonpError);
+            }
+            
             console.log('🔄 Používám fallback mock data...');
             this.showMockData(isMonthly);
         }
@@ -689,6 +704,52 @@ class ProdejnyDataLoader {
         });
         
         return { polozkyKing, sluzbyKing, aligatorTotal, aligatorKing };
+    }
+
+    async loadWithJsonp(gid, isMonthly) {
+        return new Promise((resolve, reject) => {
+            const timestamp = Date.now();
+            const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
+            const callbackName = `jsonp_callback_${timestamp}`;
+            
+            // Vytvoř JSONP callback
+            window[callbackName] = (data) => {
+                console.log('✅ JSONP callback úspěšný:', data);
+                
+                if (data && data.success && data.data) {
+                    const csvData = this.convertJsonToCsv(data.data);
+                    this.parseAndDisplayData(csvData, isMonthly);
+                    resolve();
+                } else {
+                    reject(new Error('JSONP nevrátil validní data'));
+                }
+                
+                // Cleanup
+                document.head.removeChild(script);
+                delete window[callbackName];
+            };
+            
+            // Vytvoř script tag
+            const script = document.createElement('script');
+            script.src = `${this.scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&callback=${callbackName}&t=${timestamp}`;
+            
+            script.onerror = () => {
+                document.head.removeChild(script);
+                delete window[callbackName];
+                reject(new Error('JSONP script se nepodařilo načíst'));
+            };
+            
+            // Timeout pro JSONP
+            setTimeout(() => {
+                if (window[callbackName]) {
+                    document.head.removeChild(script);
+                    delete window[callbackName];
+                    reject(new Error('JSONP timeout'));
+                }
+            }, 10000);
+            
+            document.head.appendChild(script);
+        });
     }
 
     async reloadData() {
