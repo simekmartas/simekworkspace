@@ -26,6 +26,9 @@ class UserProfile {
         
         // Načíst profilový obrázek
         this.loadProfileImage();
+        
+        // Načíst statistiky
+        this.loadUserStats();
     }
 
     checkLogin() {
@@ -363,6 +366,56 @@ class UserProfile {
     saveProfileImage(imageDataUrl) {
         localStorage.setItem(`profileImage_${this.currentUser.id}`, imageDataUrl);
         this.loadProfileImage();
+    }
+
+    // Načítání uživatelských statistik
+    loadUserStats() {
+        // TODO: Později nahradit skutečnými daty z API/localStorage
+        const mockStats = {
+            totalSales: this.generateRandomStat(15, 50),
+            totalRepairs: this.generateRandomStat(5, 25),
+            totalBuyouts: this.generateRandomStat(3, 15),
+            averageRating: (4.2 + Math.random() * 0.8).toFixed(1),
+            monthlyStats: this.generateRandomStat(2, 10),
+            bestDay: this.generateRandomStat(3, 8)
+        };
+
+        // Aktualizovat DOM elementy
+        this.updateStatElement('totalSales', mockStats.totalSales);
+        this.updateStatElement('totalRepairs', mockStats.totalRepairs);
+        this.updateStatElement('totalBuyouts', mockStats.totalBuyouts);
+        this.updateStatElement('averageRating', mockStats.averageRating);
+        this.updateStatElement('monthlyStats', mockStats.monthlyStats);
+        this.updateStatElement('bestDay', mockStats.bestDay);
+
+        // Animovat čísla
+        this.animateStats();
+    }
+
+    generateRandomStat(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    updateStatElement(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = value;
+        }
+    }
+
+    animateStats() {
+        // Jednoduchá animace pro čísla
+        const statValues = document.querySelectorAll('.stat-value');
+        statValues.forEach((element, index) => {
+            element.style.opacity = '0';
+            element.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                element.style.transition = 'all 0.6s ease';
+                element.style.opacity = '1';
+                element.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
     }
 }
 

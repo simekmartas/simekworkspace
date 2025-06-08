@@ -12,18 +12,18 @@
     <style>
         .profile-container {
             max-width: 800px;
-            margin: 2rem auto;
+            margin: 4rem auto 2rem;
             padding: 2rem;
-            background: var(--card-background);
+            background: var(--card-background, #ffffff);
             border-radius: 12px;
-            box-shadow: var(--shadow-medium);
+            box-shadow: var(--shadow-medium, 0 4px 6px rgba(0, 0, 0, 0.1));
         }
         
         .profile-header {
             text-align: center;
             margin-bottom: 3rem;
             padding-bottom: 2rem;
-            border-bottom: 2px solid var(--border-color);
+            border-bottom: 2px solid var(--border-color, #e0e0e0);
         }
         
         .profile-image-container {
@@ -37,8 +37,8 @@
             height: 120px;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid var(--primary-color);
-            background: var(--secondary-color);
+            border: 4px solid var(--primary-color, #2196F3);
+            background: var(--secondary-color, #f5f5f5);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -215,6 +215,117 @@
         .hidden-file-input {
             display: none;
         }
+
+        /* Statistiky sekce */
+        .stats-section {
+            margin-bottom: 3rem;
+            padding-bottom: 3rem;
+            border-bottom: 2px solid var(--border-color, #e0e0e0);
+        }
+
+        .stats-section h2 {
+            text-align: center;
+            color: var(--text-primary, #333);
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e9ecef;
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: #2196F3;
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(145deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border-color: #1976D2;
+        }
+
+        .stat-card.highlight:hover {
+            background: linear-gradient(145deg, #1976D2 0%, #1565C0 100%);
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .stat-card:not(.highlight) .stat-icon {
+            background: #f8f9fa;
+        }
+
+        .stat-content {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-subtitle {
+            font-size: 0.875rem;
+            opacity: 0.7;
+            font-weight: 500;
+        }
+
+        /* Animace pro statistiky */
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
         
         @media (max-width: 768px) {
             .profile-form,
@@ -230,35 +341,46 @@
             .action-buttons {
                 flex-direction: column;
             }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .stat-card {
+                padding: 1rem;
+            }
+
+            .stat-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 2rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .stats-section h2 {
+                font-size: 1.25rem;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-logo">
-                <a href="index.html">📱 MobilMajak</a>
-            </div>
-            <div class="nav-menu" id="nav-menu">
-                <a href="index.html" class="nav-link">Domů</a>
-                <a href="novinky.html" class="nav-link">Novinky</a>
-                <a href="majak.html" class="nav-link">Majak</a>
-                <a href="prodejny.html" class="nav-link">Prodejny</a>
-                <a href="servis.html" class="nav-link">Servis</a>
-                <a href="bazar.html" class="nav-link">Bazar</a>
-                <a href="user-profile.html" class="nav-link active">Můj profil</a>
-                <button class="nav-link logout-btn" onclick="logout()">Odhlásit se</button>
-            </div>
-            <div class="nav-toggle" id="nav-toggle">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
-            </div>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+                </ul>
+            </nav>
+            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
         </div>
-    </nav>
+    </header>
 
-    <main class="main-content">
+    <main>
         <div class="profile-container">
             <div class="profile-header">
                 <div class="profile-image-container">
@@ -278,6 +400,66 @@
 
             <div class="success-message" id="successMessage"></div>
             <div class="error-message" id="errorMessage"></div>
+
+            <!-- Prodejní statistiky -->
+            <div class="stats-section">
+                <h2>📊 Moje statistiky</h2>
+                <div class="stats-grid">
+                    <div class="stat-card highlight">
+                        <div class="stat-icon">📱</div>
+                        <div class="stat-content">
+                            <div class="stat-label">CELKEM PRODEJŮ</div>
+                            <div class="stat-value" id="totalSales">24</div>
+                            <div class="stat-subtitle">telefonů</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🔧</div>
+                        <div class="stat-content">
+                            <div class="stat-label">OPRAVY</div>
+                            <div class="stat-value" id="totalRepairs">12</div>
+                            <div class="stat-subtitle">služeb</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">💰</div>
+                        <div class="stat-content">
+                            <div class="stat-label">VÝKUPY</div>
+                            <div class="stat-value" id="totalBuyouts">8</div>
+                            <div class="stat-subtitle">zařízení</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-content">
+                            <div class="stat-label">HODNOCENÍ</div>
+                            <div class="stat-value" id="averageRating">4.8</div>
+                            <div class="stat-subtitle">z 5 hvězd</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">📈</div>
+                        <div class="stat-content">
+                            <div class="stat-label">TENTO MĚSÍC</div>
+                            <div class="stat-value" id="monthlyStats">6</div>
+                            <div class="stat-subtitle">prodejů</div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-content">
+                            <div class="stat-label">NEJLEPŠÍ DEN</div>
+                            <div class="stat-value" id="bestDay">5</div>
+                            <div class="stat-subtitle">prodejů</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <form class="profile-form" id="profileForm">
                 <div class="form-group">
@@ -345,9 +527,17 @@
         </div>
     </main>
 
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        </div>
+    </footer>
+
     <!-- Scripts -->
-    <script src="navigation.js"></script>
     <script src="theme-toggle.js"></script>
+    <script src="navigation.js"></script>
+    <script src="performance-monitor.js"></script>
+    <script src="accessibility-enhancements.js"></script>
     <script src="user-profile.js"></script>
 </body>
 </html> 
