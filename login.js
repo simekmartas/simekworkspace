@@ -79,6 +79,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     userEmail: user.email || '',
                     userPhone: user.phone || '',
                     userProdejna: user.prodejna || 'Nezadáno',
+                    // DŮLEŽITÉ: Přenést customId jako sellerId pro správné filtrování dat
+                    sellerId: user.customId || null,
                     // Mobile specific
                     deviceType: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
                     loginTime: Date.now()

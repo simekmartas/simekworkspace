@@ -59,10 +59,11 @@ class UserProfileDataLoader {
                     const users = JSON.parse(localStorage.getItem('users') || '[]');
                     const user = users.find(u => u.username === username);
                     
-                    if (user && user.sellerId) {
-                        sellerId = user.sellerId;
+                    // Hledej customId (ID prodejce z user-management) místo sellerId
+                    if (user && user.customId) {
+                        sellerId = user.customId;
                         localStorage.setItem('sellerId', sellerId);
-                        console.log('📊 Nalezeno sellerId podle username:', username, '→', sellerId);
+                        console.log('📊 Nalezeno customId podle username:', username, '→', sellerId);
                     }
                 } catch (e) {
                     console.log('📊 Chyba při čtení tabulky uživatelů');

@@ -60,8 +60,9 @@ class UserProfile {
                     const user = users.find(u => u.id.toString() === userId);
                     
                     if (user) {
-                        if (user.sellerId) {
-                            localStorage.setItem('sellerId', user.sellerId);
+                        // Hledej customId (ID prodejce z user-management) místo sellerId
+                        if (user.customId) {
+                            localStorage.setItem('sellerId', user.customId);
                         }
                         if (user.username) {
                             localStorage.setItem('username', user.username);
@@ -114,9 +115,9 @@ class UserProfile {
         const sellerId = localStorage.getItem('sellerId');
         const username = localStorage.getItem('username');
         
-        // 1. Hledat podle sellerId
+        // 1. Hledat podle sellerId (ale ve skutečnosti hledá customId z user-management)
         if (sellerId) {
-            this.currentUser = this.users.find(u => u.sellerId === sellerId);
+            this.currentUser = this.users.find(u => u.customId === sellerId);
         }
         
         // 2. Hledat podle username
@@ -137,20 +138,20 @@ class UserProfile {
             this.currentUser = this.users[0];
         }
         
-        // Ujisti se, že uživatel má sellerId - pokud ne, přiřaď mu ho
-        if (!this.currentUser.sellerId) {
-            console.log('⚠️ Uživatel nemá sellerId, generuji nové...');
-            // Vygenuj sellerId na základě pozice v array nebo nějaké logiky
-            this.currentUser.sellerId = String(this.currentUser.id || '1');
+        // Ujisti se, že uživatel má customId (ID prodejce) - pokud ne, přiřaď mu ho
+        if (!this.currentUser.customId) {
+            console.log('⚠️ Uživatel nemá customId (ID prodejce), generuji nové...');
+            // Vygenuj customId na základě pozice v array nebo nějaké logiky
+            this.currentUser.customId = String(this.currentUser.id || '1');
             await this.saveUserData();
         }
         
-        // Synchronizuj sellerId do localStorage
-        localStorage.setItem('sellerId', this.currentUser.sellerId);
+        // Synchronizuj customId do localStorage jako sellerId
+        localStorage.setItem('sellerId', this.currentUser.customId);
         localStorage.setItem('username', this.currentUser.username);
         
         console.log('👤 Aktuální uživatel načten:', this.currentUser.username);
-        console.log('👤 ID prodejce:', this.currentUser.sellerId);
+        console.log('👤 ID prodejce (customId):', this.currentUser.customId);
         console.log('👤 Systémové ID:', this.currentUser.id);
         
         // Update profile title
@@ -504,16 +505,16 @@ function applyCrop() {
 
 // 🛠️ Admin Helper Functions - Globální funkce pro správu seller ID
 window.adminHelpers = {
-    // Nastavit seller ID pro uživatele
+    // Nastavit seller ID pro uživatele (ve skutečnosti customId)
     setSellerId: function(username, sellerId) {
         try {
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             const user = users.find(u => u.username === username);
             
             if (user) {
-                user.sellerId = String(sellerId);
+                user.customId = String(sellerId);
                 localStorage.setItem('users', JSON.stringify(users));
-                console.log(`✅ Nastaveno sellerId ${sellerId} pro uživatele ${username}`);
+                console.log(`✅ Nastaveno customId ${sellerId} pro uživatele ${username}`);
                 
                 // Pokud je to aktuálně přihlášený uživatel, aktualizuj i localStorage
                 if (localStorage.getItem('username') === username) {
@@ -527,12 +528,12 @@ window.adminHelpers = {
                 return false;
             }
         } catch (e) {
-            console.error('❌ Chyba při nastavování sellerId:', e);
+            console.error('❌ Chyba při nastavování customId:', e);
             return false;
         }
     },
     
-    // Zobrazit všechny uživatele a jejich seller ID
+    // Zobrazit všechny uživatele a jejich seller ID (customId)
     showAllUsers: function() {
         try {
             const users = JSON.parse(localStorage.getItem('users') || '[]');
@@ -540,7 +541,7 @@ window.adminHelpers = {
             console.table(users.map(u => ({
                 username: u.username,
                 fullName: `${u.firstName} ${u.lastName}`,
-                sellerId: u.sellerId || 'CHYBÍ',
+                customId: u.customId || 'CHYBÍ',
                 systemId: u.id
             })));
             return users;
