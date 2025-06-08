@@ -1114,7 +1114,7 @@ function createAvatarHTML(authorIdentifier, avatarClass = 'author-avatar') {
     const profileImage = getUserProfileImage(authorIdentifier);
     
     if (profileImage) {
-        return `<div class="${avatarClass}" style="background-image: url(${profileImage}); background-size: cover; background-position: center;"></div>`;
+        return `<div class="${avatarClass}" style="background-image: url(${profileImage}); background-size: cover; background-position: center; background-repeat: no-repeat;"></div>`;
     } else {
         return `<div class="${avatarClass}">${getInitials(authorIdentifier)}</div>`;
     }

@@ -575,31 +575,43 @@ function handleMouseMove(e) {
         
         let newSelection = { ...cropState.selection };
         
+        // Pro kruhový crop používáme pouze jednu velikost
+        const delta = Math.max(Math.abs(deltaX), Math.abs(deltaY));
+        const direction = (deltaX > 0 || deltaY > 0) ? 1 : -1;
+        
         switch (cropState.resizeHandle) {
-            case 'crop-handle-nw':
-                newSelection.x += deltaX;
-                newSelection.y += deltaY;
-                newSelection.width -= deltaX;
-                newSelection.height -= deltaY;
+            case 'crop-handle-nw': // Horní střed - změna velikosti nahoru/dolů
+                const topDelta = deltaY * direction;
+                newSelection.y -= topDelta / 2;
+                newSelection.x -= topDelta / 2;
+                newSelection.width += topDelta;
+                newSelection.height += topDelta;
                 break;
-            case 'crop-handle-ne':
-                newSelection.y += deltaY;
-                newSelection.width += deltaX;
-                newSelection.height -= deltaY;
+            case 'crop-handle-ne': // Pravý střed - změna velikosti doprava/vlevo  
+                const rightDelta = deltaX * direction;
+                newSelection.x -= rightDelta / 2;
+                newSelection.y -= rightDelta / 2;
+                newSelection.width += rightDelta;
+                newSelection.height += rightDelta;
                 break;
-            case 'crop-handle-sw':
-                newSelection.x += deltaX;
-                newSelection.width -= deltaX;
-                newSelection.height += deltaY;
+            case 'crop-handle-sw': // Dolní střed - změna velikosti dolů/nahoru
+                const bottomDelta = deltaY * direction;
+                newSelection.x -= bottomDelta / 2;
+                newSelection.y -= bottomDelta / 2;
+                newSelection.width += bottomDelta;
+                newSelection.height += bottomDelta;
                 break;
-            case 'crop-handle-se':
-                newSelection.width += deltaX;
-                newSelection.height += deltaY;
+            case 'crop-handle-se': // Levý střed - změna velikosti vlevo/vpravo
+                const leftDelta = deltaX * direction;
+                newSelection.x -= leftDelta / 2;
+                newSelection.y -= leftDelta / 2;
+                newSelection.width += leftDelta;
+                newSelection.height += leftDelta;
                 break;
         }
         
-        // Vynutit čtvercový tvar (pro kruhový profil)
-        const size = Math.min(newSelection.width, newSelection.height);
+        // Ujistit se, že je to kruh (čtverec)
+        const size = Math.max(newSelection.width, newSelection.height);
         newSelection.width = size;
         newSelection.height = size;
         
@@ -659,13 +671,26 @@ function updatePreview() {
     const relativeWidth = cropState.selection.width * scaleX;
     const relativeHeight = cropState.selection.height * scaleY;
     
-    // Vyčistit canvas a nakreslit náhled
+    // Vyčistit canvas a nakreslit náhled s kruhovým ořezem
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Uložit context
+    ctx.save();
+    
+    // Vytvořit kruhový clipping path
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, 2 * Math.PI);
+    ctx.clip();
+    
+    // Nakreslit obrázek
     ctx.drawImage(
         img,
         relativeX, relativeY, relativeWidth, relativeHeight,
         0, 0, canvas.width, canvas.height
     );
+    
+    // Obnovit context
+    ctx.restore();
 }
 
 function applyCrop() {
@@ -696,12 +721,23 @@ function applyCrop() {
     canvas.width = 200;
     canvas.height = 200;
     
+    // Uložit context
+    ctx.save();
+    
+    // Vytvořit kruhový clipping path
+    ctx.beginPath();
+    ctx.arc(canvas.width / 2, canvas.height / 2, canvas.width / 2, 0, 2 * Math.PI);
+    ctx.clip();
+    
     // Nakreslit oříznutý obrázek
     ctx.drawImage(
         img,
         relativeX, relativeY, relativeWidth, relativeHeight,
         0, 0, canvas.width, canvas.height
     );
+    
+    // Obnovit context
+    ctx.restore();
     
     // Uložit jako base64
     const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
