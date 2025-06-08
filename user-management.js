@@ -102,7 +102,8 @@ class UserManager {
                 phone: '+420777888999',
                 prodejna: 'Hlavní pobočka',
                 password: 'Admin123',
-                role: 'Administrator'
+                role: 'Administrator',
+                bio: 'Hlavní administrátor systému MobilMajak'
             },
             {
                 id: 2,
@@ -113,7 +114,8 @@ class UserManager {
                 phone: '+420777123456',
                 prodejna: 'Praha 1',
                 password: 'prodejce123',
-                role: 'Prodejce'
+                role: 'Prodejce',
+                bio: 'Prodejce mobilních telefonů a příslušenství'
             }
         ];
         
@@ -132,7 +134,8 @@ class UserManager {
             phone: '+420777888999',
             prodejna: 'Hlavní pobočka',
             password: 'Admin123',
-            role: 'Administrator'
+            role: 'Administrator',
+            bio: 'Hlavní administrátor systému MobilMajak'
         };
         
         // Najdi admin účet

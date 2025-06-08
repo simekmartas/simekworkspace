@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Můj profil - MobilMajak</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="progressive-enhancement.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196F3">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://via.placeholder.com/192x192/2196F3/white?text=MM">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card-background);
+            border-radius: 12px;
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+        
+        .profile-image-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        
+        .profile-image {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary-color);
+            background: var(--secondary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .profile-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+        }
+        
+        .profile-image-upload {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 35px;
+            height: 35px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid white;
+        }
+        
+        .profile-image-upload:hover {
+            background: var(--primary-dark);
+            transform: scale(1.1);
+        }
+        
+        .profile-image-upload svg {
+            width: 16px;
+            height: 16px;
+            fill: white;
+        }
+        
+        .profile-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--input-background);
+            color: var(--text-primary);
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        .password-section {
+            grid-column: 1 / -1;
+            background: var(--highlight-background);
+            padding: 2rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+        }
+        
+        .password-section h3 {
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        .password-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .action-buttons {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border-color);
+        }
+        
+        .btn-primary,
+        .btn-secondary {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            background: var(--hover-color);
+            transform: translateY(-2px);
+        }
+        
+        .success-message,
+        .error-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+            display: none;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden-file-input {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .profile-form,
+            .password-fields {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile-container {
+                margin: 1rem;
+                padding: 1rem;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html">📱 MobilMajak</a>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="index.html" class="nav-link">Domů</a>
+                <a href="novinky.html" class="nav-link">Novinky</a>
+                <a href="majak.html" class="nav-link">Majak</a>
+                <a href="prodejny.html" class="nav-link">Prodejny</a>
+                <a href="servis.html" class="nav-link">Servis</a>
+                <a href="bazar.html" class="nav-link">Bazar</a>
+                <a href="user-profile.html" class="nav-link active">Můj profil</a>
+                <button class="nav-link logout-btn" onclick="logout()">Odhlásit se</button>
+            </div>
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-image-container">
+                    <div class="profile-image" id="profileImage" onclick="triggerImageUpload()">
+                        👤
+                    </div>
+                    <div class="profile-image-upload" onclick="triggerImageUpload()">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                    </div>
+                    <input type="file" id="profileImageInput" class="hidden-file-input" accept="image/*" onchange="handleImageUpload(event)">
+                </div>
+                <h1>Můj profil</h1>
+                <p>Zde si můžete upravit své osobní údaje a nastavení</p>
+            </div>
+
+            <div class="success-message" id="successMessage"></div>
+            <div class="error-message" id="errorMessage"></div>
+
+            <form class="profile-form" id="profileForm">
+                <div class="form-group">
+                    <label for="firstName">Jméno *</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Příjmení *</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Uživatelské jméno *</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">E-mail *</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Telefon</label>
+                    <input type="tel" id="phone" name="phone">
+                </div>
+
+                <div class="form-group">
+                    <label for="prodejna">Prodejna</label>
+                    <input type="text" id="prodejna" name="prodejna">
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="bio">O mně</label>
+                    <textarea id="bio" name="bio" placeholder="Napište něco o sobě..."></textarea>
+                </div>
+
+                <div class="password-section">
+                    <h3>🔒 Změna hesla</h3>
+                    <div class="password-fields">
+                        <div class="form-group">
+                            <label for="currentPassword">Současné heslo</label>
+                            <input type="password" id="currentPassword" name="currentPassword">
+                        </div>
+                        <div class="form-group">
+                            <label for="newPassword">Nové heslo</label>
+                            <input type="password" id="newPassword" name="newPassword">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirmPassword">Potvrdit nové heslo</label>
+                            <input type="password" id="confirmPassword" name="confirmPassword">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="btn-primary">
+                        💾 Uložit změny
+                    </button>
+                    <a href="index.html" class="btn-secondary">
+                        ↶ Zpět na hlavní stránku
+                    </a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="navigation.js"></script>
+    <script src="theme-toggle.js"></script>
+    <script src="user-profile.js"></script>
+</body>
+</html> 
