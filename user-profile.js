@@ -424,6 +424,17 @@ function triggerImageUpload() {
     document.getElementById('profileImageInput').click();
 }
 
+// Crop modal a state
+let cropState = {
+    image: null,
+    selection: { x: 0, y: 0, width: 100, height: 100 },
+    imageElement: null,
+    isDragging: false,
+    isResizing: false,
+    resizeHandle: null,
+    startPos: { x: 0, y: 0 }
+};
+
 function handleImageUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -444,39 +455,272 @@ function handleImageUpload(event) {
     reader.onload = function(e) {
         const img = new Image();
         img.onload = function() {
-            // Vytvoř canvas pro změnu velikosti
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Nastavit rozměry (max 300x300)
-            const maxSize = 300;
-            let { width, height } = img;
-            
-            if (width > height) {
-                if (width > maxSize) {
-                    height = (height * maxSize) / width;
-                    width = maxSize;
-                }
-            } else {
-                if (height > maxSize) {
-                    width = (width * maxSize) / height;
-                    height = maxSize;
-                }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            
-            // Nakreslit zmenšený obrázek
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Uložit jako base64
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            userProfile.saveProfileImage(dataUrl);
+            // Zobrazit crop modal
+            showCropModal(img, e.target.result);
         };
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
+}
+
+function showCropModal(img, imageSrc) {
+    const modal = document.getElementById('cropModal');
+    const cropImage = document.getElementById('cropImage');
+    const cropSelection = document.getElementById('cropSelection');
+    
+    // Nastavit obrázek
+    cropImage.src = imageSrc;
+    cropState.imageElement = cropImage;
+    
+    // Zobrazit modal
+    modal.style.display = 'flex';
+    
+    // Počkat na načtení obrázku
+    cropImage.onload = function() {
+        initializeCropSelection();
+        updatePreview();
+        setupCropEventListeners();
+    };
+}
+
+function initializeCropSelection() {
+    const container = document.querySelector('.crop-container');
+    const cropSelection = document.getElementById('cropSelection');
+    const img = document.getElementById('cropImage');
+    
+    // Získat rozměry kontejneru a obrázku
+    const containerRect = container.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+    
+    // Relativní pozice obrázku v kontejneru
+    const imgLeft = imgRect.left - containerRect.left;
+    const imgTop = imgRect.top - containerRect.top;
+    
+    // Nastavit výchozí výběr na střed obrázku (čtverec)
+    const size = Math.min(imgRect.width, imgRect.height) * 0.6;
+    const x = imgLeft + (imgRect.width - size) / 2;
+    const y = imgTop + (imgRect.height - size) / 2;
+    
+    cropState.selection = { x, y, width: size, height: size };
+    
+    // Aplikovat pozici
+    cropSelection.style.left = x + 'px';
+    cropSelection.style.top = y + 'px';
+    cropSelection.style.width = size + 'px';
+    cropSelection.style.height = size + 'px';
+}
+
+function setupCropEventListeners() {
+    const cropSelection = document.getElementById('cropSelection');
+    const handles = document.querySelectorAll('.crop-handle');
+    
+    // Event listener pro táhnutí celého výběru
+    cropSelection.addEventListener('mousedown', startDragging);
+    
+    // Event listenery pro handles
+    handles.forEach(handle => {
+        handle.addEventListener('mousedown', startResizing);
+    });
+    
+    // Globální event listenery
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopDragResize);
+}
+
+function startDragging(e) {
+    if (e.target.classList.contains('crop-handle')) return;
+    
+    cropState.isDragging = true;
+    cropState.startPos = { x: e.clientX - cropState.selection.x, y: e.clientY - cropState.selection.y };
+    e.preventDefault();
+}
+
+function startResizing(e) {
+    cropState.isResizing = true;
+    cropState.resizeHandle = e.target.classList[1]; // crop-handle-nw, etc.
+    cropState.startPos = { x: e.clientX, y: e.clientY };
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function handleMouseMove(e) {
+    if (!cropState.isDragging && !cropState.isResizing) return;
+    
+    const container = document.querySelector('.crop-container');
+    const img = document.getElementById('cropImage');
+    const containerRect = container.getBoundingClientRect();
+    const imgRect = img.getBoundingClientRect();
+    
+    const imgLeft = imgRect.left - containerRect.left;
+    const imgTop = imgRect.top - containerRect.top;
+    const imgRight = imgLeft + imgRect.width;
+    const imgBottom = imgTop + imgRect.height;
+    
+    if (cropState.isDragging) {
+        // Táhnutí celého výběru
+        let newX = e.clientX - cropState.startPos.x;
+        let newY = e.clientY - cropState.startPos.y;
+        
+        // Omezit na hranice obrázku
+        newX = Math.max(imgLeft, Math.min(newX, imgRight - cropState.selection.width));
+        newY = Math.max(imgTop, Math.min(newY, imgBottom - cropState.selection.height));
+        
+        cropState.selection.x = newX;
+        cropState.selection.y = newY;
+        
+    } else if (cropState.isResizing) {
+        // Změna velikosti
+        const deltaX = e.clientX - cropState.startPos.x;
+        const deltaY = e.clientY - cropState.startPos.y;
+        
+        let newSelection = { ...cropState.selection };
+        
+        switch (cropState.resizeHandle) {
+            case 'crop-handle-nw':
+                newSelection.x += deltaX;
+                newSelection.y += deltaY;
+                newSelection.width -= deltaX;
+                newSelection.height -= deltaY;
+                break;
+            case 'crop-handle-ne':
+                newSelection.y += deltaY;
+                newSelection.width += deltaX;
+                newSelection.height -= deltaY;
+                break;
+            case 'crop-handle-sw':
+                newSelection.x += deltaX;
+                newSelection.width -= deltaX;
+                newSelection.height += deltaY;
+                break;
+            case 'crop-handle-se':
+                newSelection.width += deltaX;
+                newSelection.height += deltaY;
+                break;
+        }
+        
+        // Vynutit čtvercový tvar (pro kruhový profil)
+        const size = Math.min(newSelection.width, newSelection.height);
+        newSelection.width = size;
+        newSelection.height = size;
+        
+        // Omezit na minimální velikost
+        if (size >= 50) {
+            // Omezit na hranice obrázku
+            newSelection.x = Math.max(imgLeft, Math.min(newSelection.x, imgRight - size));
+            newSelection.y = Math.max(imgTop, Math.min(newSelection.y, imgBottom - size));
+            
+            if (newSelection.x + size <= imgRight && newSelection.y + size <= imgBottom) {
+                cropState.selection = newSelection;
+            }
+        }
+        
+        cropState.startPos = { x: e.clientX, y: e.clientY };
+    }
+    
+    updateCropSelection();
+    updatePreview();
+}
+
+function stopDragResize() {
+    cropState.isDragging = false;
+    cropState.isResizing = false;
+    cropState.resizeHandle = null;
+}
+
+function updateCropSelection() {
+    const cropSelection = document.getElementById('cropSelection');
+    cropSelection.style.left = cropState.selection.x + 'px';
+    cropSelection.style.top = cropState.selection.y + 'px';
+    cropSelection.style.width = cropState.selection.width + 'px';
+    cropSelection.style.height = cropState.selection.height + 'px';
+}
+
+function updatePreview() {
+    const canvas = document.getElementById('cropPreviewCanvas');
+    const ctx = canvas.getContext('2d');
+    const img = document.getElementById('cropImage');
+    
+    if (!img.complete) return;
+    
+    const container = document.querySelector('.crop-container');
+    const imgRect = img.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // Vypočítat poměr mezi skutečnou velikostí obrázku a zobrazenou velikostí
+    const scaleX = img.naturalWidth / imgRect.width;
+    const scaleY = img.naturalHeight / imgRect.height;
+    
+    // Pozice výběru relativně k obrázku
+    const imgLeft = imgRect.left - containerRect.left;
+    const imgTop = imgRect.top - containerRect.top;
+    
+    const relativeX = (cropState.selection.x - imgLeft) * scaleX;
+    const relativeY = (cropState.selection.y - imgTop) * scaleY;
+    const relativeWidth = cropState.selection.width * scaleX;
+    const relativeHeight = cropState.selection.height * scaleY;
+    
+    // Vyčistit canvas a nakreslit náhled
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(
+        img,
+        relativeX, relativeY, relativeWidth, relativeHeight,
+        0, 0, canvas.width, canvas.height
+    );
+}
+
+function applyCrop() {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = document.getElementById('cropImage');
+    
+    if (!img.complete) return;
+    
+    const container = document.querySelector('.crop-container');
+    const imgRect = img.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+    
+    // Vypočítat poměr
+    const scaleX = img.naturalWidth / imgRect.width;
+    const scaleY = img.naturalHeight / imgRect.height;
+    
+    // Pozice výběru
+    const imgLeft = imgRect.left - containerRect.left;
+    const imgTop = imgRect.top - containerRect.top;
+    
+    const relativeX = (cropState.selection.x - imgLeft) * scaleX;
+    const relativeY = (cropState.selection.y - imgTop) * scaleY;
+    const relativeWidth = cropState.selection.width * scaleX;
+    const relativeHeight = cropState.selection.height * scaleY;
+    
+    // Nastavit canvas na finální velikost (200x200 pro profil)
+    canvas.width = 200;
+    canvas.height = 200;
+    
+    // Nakreslit oříznutý obrázek
+    ctx.drawImage(
+        img,
+        relativeX, relativeY, relativeWidth, relativeHeight,
+        0, 0, canvas.width, canvas.height
+    );
+    
+    // Uložit jako base64
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+    userProfile.saveProfileImage(dataUrl);
+    
+    // Zavřít modal
+    closeCropModal();
+}
+
+function closeCropModal() {
+    const modal = document.getElementById('cropModal');
+    modal.style.display = 'none';
+    
+    // Vyčistit file input
+    document.getElementById('profileImageInput').value = '';
+    
+    // Odstranit event listenery
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', stopDragResize);
 }
 
 // Globální funkce pro odhlášení

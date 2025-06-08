@@ -155,7 +155,7 @@ function renderApp() {
                          .post { background: var(--bg-primary); border: 1px solid rgba(0,0,0,0.1); border-radius: 12px; padding: 1rem; position: relative; }
             .post-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
             .post-author { display: flex; align-items: center; gap: 0.75rem; }
-            .author-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85rem; }
+            .author-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85rem; overflow: hidden; }
             .author-info h4 { margin: 0; color: var(--text-primary); font-size: 0.9rem; font-weight: 600; }
             .author-info span { color: var(--text-secondary); font-size: 0.8rem; }
                          .menu-btn { background: none; border: none; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem; border-radius: 4px; transition: all 0.2s ease; font-size: 0.85rem; }
@@ -189,7 +189,7 @@ function renderApp() {
              .comments-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05); display: none; }
              .comments-section.show { display: block; }
              .comment-form { display: flex; gap: 0.75rem; margin-bottom: 1rem; }
-             .comment-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.7rem; flex-shrink: 0; }
+             .comment-avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.7rem; flex-shrink: 0; overflow: hidden; }
              .comment-input-wrapper { flex: 1; }
              .comment-input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; padding: 0.4rem 1rem; color: var(--text-primary); font-size: 0.8rem; outline: none; }
              .comment-input::placeholder { color: var(--text-secondary); }
@@ -932,7 +932,7 @@ function createPostHTML(post) {
         <div class="post">
             <div class="post-header">
                 <div class="post-author">
-                    <div class="author-avatar">${getInitials(post.author)}</div>
+                    ${createAvatarHTML(post.author)}
                     <div class="author-info">
                         <h4>${formatDisplayName(post.author)}</h4>
                         <span>${formatTime(post.timestamp)}</span>
@@ -1008,9 +1008,7 @@ function createPostHTML(post) {
              
              <div class="comments-section" id="comments-${post.id}">
                  <div class="comment-form">
-                     <div class="comment-avatar">
-                         ${getInitials(currentUser.role)}
-                     </div>
+                     ${createAvatarHTML(currentUser.username, 'comment-avatar')}
                      <div class="comment-input-wrapper">
                          <input 
                              type="text" 
@@ -1038,9 +1036,7 @@ function createPostHTML(post) {
                  <div class="comments-list">
                      ${post.comments.map(comment => `
                          <div class="comment">
-                             <div class="comment-avatar">
-                                 ${getInitials(comment.author)}
-                             </div>
+                             ${createAvatarHTML(comment.author, 'comment-avatar')}
                              <div class="comment-content">
                                  <div class="comment-author">${formatDisplayName(comment.author)}</div>
                                  <div class="comment-text">${comment.text || comment.content}</div>
@@ -1063,6 +1059,65 @@ function createPostHTML(post) {
 
 function getInitials(name) {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function getUserProfileImage(authorIdentifier) {
+    // Získej userId z autora
+    // Formát může být buď "role:username" nebo jen "username"
+    let username;
+    if (authorIdentifier.includes(':')) {
+        const [role, user] = authorIdentifier.split(':');
+        username = user;
+    } else {
+        username = authorIdentifier;
+    }
+    
+    // Najdi userId podle username ve stored users
+    try {
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        
+        // Různé způsoby hledání uživatele
+        let user = users.find(u => u.username === username);
+        if (!user) {
+            user = users.find(u => `${u.firstName} ${u.lastName}` === username);
+        }
+        if (!user) {
+            // Pokud je username ve formátu "Jméno Příjmení", zkus najít podle firstName a lastName
+            const nameParts = username.split(' ');
+            if (nameParts.length >= 2) {
+                user = users.find(u => u.firstName === nameParts[0] && u.lastName === nameParts[1]);
+            }
+        }
+        if (!user) {
+            // Pro aktuálního uživatele zkusit getCurrentUserId
+            if (username === currentUser.username) {
+                const currentUserId = localStorage.getItem('userId');
+                if (currentUserId) {
+                    const profileImage = localStorage.getItem(`profileImage_${currentUserId}`);
+                    return profileImage;
+                }
+            }
+        }
+        
+        if (user && user.id) {
+            const profileImage = localStorage.getItem(`profileImage_${user.id}`);
+            return profileImage;
+        }
+    } catch (error) {
+        console.log('Chyba při načítání profilové fotky:', error);
+    }
+    
+    return null;
+}
+
+function createAvatarHTML(authorIdentifier, avatarClass = 'author-avatar') {
+    const profileImage = getUserProfileImage(authorIdentifier);
+    
+    if (profileImage) {
+        return `<div class="${avatarClass}" style="background-image: url(${profileImage}); background-size: cover; background-position: center;"></div>`;
+    } else {
+        return `<div class="${avatarClass}">${getInitials(authorIdentifier)}</div>`;
+    }
 }
 
 function formatDisplayName(authorIdentifier) {

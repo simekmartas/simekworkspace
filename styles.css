@@ -121,6 +121,7 @@ nav a {
     padding: 0.5rem 0.75rem;
     border-radius: 0.5rem;
     transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
 nav a:hover {
@@ -135,8 +136,8 @@ nav a.active {
 
 /* Theme Toggle Button */
 .theme-toggle {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-light);
+    background: transparent;
+    border: none;
     border-radius: 0.5rem;
     padding: 0.5rem;
     cursor: pointer;
@@ -145,11 +146,71 @@ nav a.active {
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1.2rem;
 }
 
 .theme-toggle:hover {
-    background: var(--bg-tertiary);
     color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+/* Admin Settings Button */
+.admin-settings-button {
+    background: transparent;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.admin-settings-button:hover {
+    color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+/* Admin Menu Dropdown */
+.admin-menu {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-large);
+    min-width: 160px;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+}
+
+.admin-menu-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    font-size: 0.875rem;
+}
+
+.admin-menu-item:hover {
+    background: var(--bg-secondary);
+    color: var(--accent-blue);
+}
+
+.admin-menu-item:first-child {
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.admin-menu-item:last-child {
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.admin-menu-separator {
+    height: 1px;
+    background: var(--border-light);
+    margin: 0.25rem 0;
 }
 
 /* Hamburger Menu */
@@ -2820,6 +2881,17 @@ tr:hover td {
         order: 2;
         margin-left: auto;
         margin-right: 1rem;
+        background: transparent !important;
+        border: none !important;
+        font-size: 1.2rem !important;
+    }
+    
+    .admin-settings-button {
+        order: 1.5;
+        margin-right: 0.5rem;
+        background: transparent !important;
+        border: none !important;
+        font-size: 1.2rem !important;
     }
     
     nav {

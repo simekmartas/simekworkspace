@@ -361,10 +361,216 @@
                 font-size: 1.5rem;
             }
 
-            .stats-section h2 {
-                font-size: 1.25rem;
-            }
+                    .stats-section h2 {
+            font-size: 1.25rem;
         }
+    }
+
+    /* Image Crop Modal Styles */
+    .crop-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(5px);
+    }
+
+    .crop-modal-content {
+        background: var(--secondary-color, #fff);
+        border-radius: 16px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .crop-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color, #e0e0e0);
+    }
+
+    .crop-modal-header h3 {
+        margin: 0;
+        color: var(--text-primary, #333);
+        font-size: 1.25rem;
+    }
+
+    .crop-modal-close {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: var(--text-secondary, #666);
+        padding: 0;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.3s ease;
+    }
+
+    .crop-modal-close:hover {
+        background: var(--hover-color, #f5f5f5);
+        color: var(--text-primary, #333);
+    }
+
+    .crop-modal-body {
+        padding: 1.5rem;
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .crop-container {
+        position: relative;
+        flex: 1;
+        min-width: 300px;
+        max-width: 400px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .crop-container img {
+        width: 100%;
+        height: auto;
+        display: block;
+        max-height: 300px;
+        object-fit: contain;
+    }
+
+    .crop-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+    }
+
+    .crop-selection {
+        position: absolute;
+        border: 2px solid #2196F3;
+        background: transparent;
+        cursor: move;
+        min-width: 50px;
+        min-height: 50px;
+    }
+
+    .crop-handle {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: #2196F3;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        cursor: grab;
+    }
+
+    .crop-handle:active {
+        cursor: grabbing;
+    }
+
+    .crop-handle-nw {
+        top: -6px;
+        left: -6px;
+        cursor: nw-resize;
+    }
+
+    .crop-handle-ne {
+        top: -6px;
+        right: -6px;
+        cursor: ne-resize;
+    }
+
+    .crop-handle-sw {
+        bottom: -6px;
+        left: -6px;
+        cursor: sw-resize;
+    }
+
+    .crop-handle-se {
+        bottom: -6px;
+        right: -6px;
+        cursor: se-resize;
+    }
+
+    .crop-preview {
+        flex: 0 0 150px;
+        text-align: center;
+    }
+
+    .crop-preview p {
+        margin: 0 0 1rem 0;
+        font-weight: 600;
+        color: var(--text-primary, #333);
+    }
+
+    .crop-preview-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid var(--primary-color, #2196F3);
+        margin: 0 auto;
+        position: relative;
+    }
+
+    .crop-preview-circle canvas {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+    }
+
+    .crop-modal-actions {
+        padding: 1.5rem;
+        border-top: 1px solid var(--border-color, #e0e0e0);
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }
+
+    @media (max-width: 768px) {
+        .crop-modal-content {
+            width: 95%;
+            margin: 1rem;
+        }
+
+        .crop-modal-body {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .crop-container {
+            min-width: unset;
+            width: 100%;
+        }
+
+        .crop-preview {
+            flex: none;
+        }
+
+        .crop-modal-actions {
+            flex-direction: column-reverse;
+        }
+
+        .crop-modal-actions button {
+            width: 100%;
+        }
+    }
     </style>
 </head>
 <body>
@@ -526,6 +732,38 @@
             </form>
         </div>
     </main>
+
+    <!-- Image Crop Modal -->
+    <div id="cropModal" class="crop-modal" style="display: none;">
+        <div class="crop-modal-content">
+            <div class="crop-modal-header">
+                <h3>📷 Upravit profilovou fotku</h3>
+                <button type="button" class="crop-modal-close" onclick="closeCropModal()">&times;</button>
+            </div>
+            <div class="crop-modal-body">
+                <div class="crop-container">
+                    <img id="cropImage" src="" alt="Image to crop">
+                    <div class="crop-overlay"></div>
+                    <div class="crop-selection" id="cropSelection">
+                        <div class="crop-handle crop-handle-nw"></div>
+                        <div class="crop-handle crop-handle-ne"></div>
+                        <div class="crop-handle crop-handle-sw"></div>
+                        <div class="crop-handle crop-handle-se"></div>
+                    </div>
+                </div>
+                <div class="crop-preview">
+                    <p>Náhled:</p>
+                    <div class="crop-preview-circle">
+                        <canvas id="cropPreviewCanvas" width="120" height="120"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="crop-modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeCropModal()">Zrušit</button>
+                <button type="button" class="btn-primary" onclick="applyCrop()">Použít</button>
+            </div>
+        </div>
+    </div>
 
     <footer>
         <div class="container">
