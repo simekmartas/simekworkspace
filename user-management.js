@@ -145,22 +145,7 @@ class UserManager {
             this.users.unshift(adminUser);
         }
         
-        // Zkontroluj výchozího prodejce
-        const prodejceIndex = this.users.findIndex(u => u.username === 'prodejce');
-        if (prodejceIndex === -1) {
-            this.users.push({
-                id: 2,
-                firstName: 'Tomáš',
-                lastName: 'Novák',
-                username: 'prodejce',
-                email: 'tomas.novak@mobilmajak.cz',
-                phone: '+420777123456',
-                prodejna: 'Praha 1',
-                password: 'prodejce123',
-                role: 'Prodejce'
-            });
-        }
-        
+        // Uložíme změny pouze pokud jsme přidali/upravili admin účet
         await this.saveUsers();
     }
 
