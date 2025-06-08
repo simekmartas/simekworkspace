@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mobile Menu</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Debug styly */
+        .debug-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.8rem;
+            z-index: 9999;
+        }
+        
+        .hamburger {
+            border: 2px solid red !important;
+        }
+        
+        nav {
+            border: 2px solid blue !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-info">
+        <div>Šířka: <span id="width"></span>px</div>
+        <div>Hamburger: <span id="hamburger-status">-</span></div>
+        <div>Nav: <span id="nav-status">-</span></div>
+    </div>
+
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">Test Logo</a>
+            <nav>
+                <ul>
+                    <!-- Bude vyplněno JS -->
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Test Hamburger Menu</h1>
+                <p>Zkuste kliknout na hamburger menu na mobilu</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="navigation.js"></script>
+    <script>
+        function updateDebugInfo() {
+            document.getElementById('width').textContent = window.innerWidth;
+            
+            const hamburger = document.querySelector('.hamburger');
+            const nav = document.querySelector('nav');
+            
+            document.getElementById('hamburger-status').textContent = hamburger ? 
+                (hamburger.classList.contains('active') ? 'ACTIVE' : 'inactive') : 'NOT FOUND';
+                
+            document.getElementById('nav-status').textContent = nav ? 
+                (nav.classList.contains('active') ? 'ACTIVE' : 'inactive') : 'NOT FOUND';
+        }
+        
+        // Aktualizovat každou sekundu
+        setInterval(updateDebugInfo, 1000);
+        updateDebugInfo();
+        
+        // Debug click events
+        document.addEventListener('click', function(e) {
+            console.log('Click na:', e.target);
+            console.log('Classes:', e.target.className);
+            updateDebugInfo();
+        });
+    </script>
+</body>
+</html> 

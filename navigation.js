@@ -187,8 +187,13 @@ function updateNavigation() {
     // Hamburger menu funkcionalita
     const hamburger = document.querySelector('.hamburger');
     
+    console.log('🍔 Hamburger element:', hamburger);
+    console.log('📱 Window width:', window.innerWidth);
+    
     if (hamburger) {
+        console.log('✅ Hamburger nalezen, přidávám event listener');
         hamburger.addEventListener('click', function(e) {
+            console.log('🖱️ Klik na hamburger!');
             e.stopPropagation();
             hamburger.classList.toggle('active');
             nav.classList.toggle('active');
@@ -197,9 +202,17 @@ function updateNavigation() {
             const isActive = hamburger.classList.contains('active');
             hamburger.setAttribute('aria-label', isActive ? 'Zavřít menu' : 'Otevřít menu');
             
+            console.log('🔄 Menu stav:', isActive ? 'OTEVŘENÉ' : 'ZAVŘENÉ');
+            console.log('🧭 Nav classes:', nav.className);
+            
             // Prevent body scroll when menu is open
             document.body.style.overflow = isActive ? 'hidden' : '';
         });
+    } else {
+        console.error('❌ Hamburger element nebyl nalezen!');
+    }
+    
+    if (hamburger) {
         
         // Zavření menu při kliknutí mimo menu
         document.addEventListener('click', function(e) {
