@@ -200,7 +200,27 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
                                     '🚀 Plná AI funkcionalita + přístup k datům je k dispozici!' : 
                                     '⚠️ Momentálně běžím v základním režimu (API není nakonfigurováno)'
                                 }<br><br>
-                                Zkus se zeptat: "Kolik mám ALIGATOR telefonů?" nebo "Jak si vedu v žebříčku?"
+                                Zkus se zeptat: "Kolik mám ALIGATOR telefonů?" nebo "Jak si vedu v žebříčku?"<br><br>
+                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                    <button onclick="window.aiChatbot.testAPI()" style="
+                                        background: var(--accent-color, #007bff);
+                                        color: white;
+                                        border: none;
+                                        padding: 8px 12px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-size: 12px;
+                                    ">🔧 Test API</button>
+                                    <button onclick="window.location.reload()" style="
+                                        background: var(--success-color, #28a745);
+                                        color: white;
+                                        border: none;
+                                        padding: 8px 12px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-size: 12px;
+                                    ">🔄 Reload</button>
+                                </div>
                             </div>
                             <div class="message-time">${new Date().toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>
                         </div>
@@ -1043,8 +1063,14 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
 
     // === OPENAI API ===
     async callOpenAI(message) {
+        console.log('🤖 CallOpenAI called with message:', message);
+        console.log('🤖 API Key available:', this.apiKey ? 'YES' : 'NO');
+        console.log('🤖 API Key length:', this.apiKey ? this.apiKey.length : 0);
+        console.log('🤖 API Key starts with:', this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'NONE');
+        
         // Zkontroluj, zda je API klíč nastaven
         if (!this.apiKey || this.apiKey.includes('ReplaceWithRealKey')) {
+            console.log('🤖 Using fallback - no valid API key');
             return this.getFallbackResponse(message);
         }
 
@@ -1078,6 +1104,14 @@ Použij tato aktuální data k odpovědi na uživatelův dotaz. Pokud se ptá na
         ];
 
         try {
+            console.log('🤖 Making API request to OpenAI...');
+            console.log('🤖 Request payload:', {
+                model: this.settings.model,
+                max_tokens: this.settings.maxTokens,
+                temperature: this.settings.temperature,
+                messageCount: messages.length
+            });
+
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
                 headers: {
@@ -1093,20 +1127,44 @@ Použij tato aktuální data k odpovědi na uživatelův dotaz. Pokud se ptá na
                 })
             });
 
+            console.log('🤖 API Response status:', response.status);
+            console.log('🤖 API Response ok:', response.ok);
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.error('OpenAI API Error:', errorData);
+                console.error('🤖 OpenAI API Error Details:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    errorData: errorData
+                });
                 
-                // Fallback na lokální odpovědi při API problémech
-                return this.getFallbackResponse(message);
+                // Zobraz detailní chybu uživateli
+                let errorMessage = `API Error (${response.status}): `;
+                if (response.status === 401) {
+                    errorMessage += "Neplatný API klíč. Zkontrolujte nastavení.";
+                } else if (response.status === 429) {
+                    errorMessage += "Příliš mnoho požadavků. Zkuste později.";
+                } else if (response.status === 403) {
+                    errorMessage += "Nedostatečné oprávnění nebo kredity.";
+                } else {
+                    errorMessage += errorData.error?.message || response.statusText;
+                }
+                
+                return `❌ ${errorMessage}\n\nPřepínám na základní režim:\n\n${this.getFallbackResponse(message)}`;
             }
 
             const data = await response.json();
+            console.log('🤖 API Response successful, response length:', data.choices?.[0]?.message?.content?.length || 0);
             return data.choices[0].message.content;
             
         } catch (error) {
-            console.error('Network or API error:', error);
-            return this.getFallbackResponse(message);
+            console.error('🤖 Network or API error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
+            
+            return `❌ Chyba připojení: ${error.message}\n\nPřepínám na základní režim:\n\n${this.getFallbackResponse(message)}`;
         }
     }
 
@@ -1261,6 +1319,19 @@ Pro složitější dotazy kontaktujte prosím administrátora systému.
             </div>
         `;
         this.saveConversationHistory();
+    }
+
+    // === API TESTING ===
+    async testAPI() {
+        console.log('🔧 Testing API connection...');
+        this.addMessage('Testuji API připojení...', 'bot');
+        
+        try {
+            const testResponse = await this.callOpenAI('Test zpráva - odpověz pouze "API funguje správně"');
+            this.addMessage(`✅ API Test úspěšný!\n\nOdpověď: ${testResponse}`, 'bot');
+        } catch (error) {
+            this.addMessage(`❌ API Test neúspěšný!\n\nChyba: ${error.message}`, 'bot', true);
+        }
     }
 
     // === PUBLIC API ===
