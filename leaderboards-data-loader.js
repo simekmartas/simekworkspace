@@ -37,6 +37,7 @@ class LeaderboardsDataLoader {
 
     async loadLeaderboardData() {
         console.log('=== NAČÍTÁNÍ DAT PRO ŽEBŘÍČEK ===');
+        console.log('Vybrané historické datum:', this.selectedHistoryDate);
         
         try {
             this.showLoading();
@@ -45,14 +46,108 @@ class LeaderboardsDataLoader {
             console.log('🔄 Načítám uživatelská data ze serveru...');
             await this.loadUsersFromServer();
             
-            // 2. Načíst prodejní data z Google Sheets (vždy měsíční data)
-            console.log('🔄 Načítám prodejní data z Google Sheets...');
-            await this.loadSalesDataFromGoogleScript();
+            // 2. Zkontrolovat, zda načítat historická data
+            if (this.selectedHistoryDate && window.historyManager) {
+                console.log(`📚 Načítám historická data pro žebříček: ${this.selectedHistoryDate}`);
+                await this.loadHistoricalLeaderboardData(this.selectedHistoryDate);
+            } else {
+                // 2. Načíst aktuální prodejní data z Google Sheets (vždy měsíční data)
+                console.log('🔄 Načítám aktuální prodejní data z Google Sheets...');
+                await this.loadSalesDataFromGoogleScript();
+            }
             
         } catch (error) {
             console.error('❌ Chyba při načítání dat pro žebříček:', error);
             this.showError(error);
         }
+    }
+
+    // NOVÁ metoda - načítání historických dat pro žebříček
+    async loadHistoricalLeaderboardData(dateString) {
+        console.log(`📚 Načítám historická data pro žebříček k datu: ${dateString}`);
+        
+        try {
+            // Získat historická data
+            const historyData = window.historyManager.getDataForDate(dateString);
+            
+            if (!historyData) {
+                throw new Error(`Historická data pro datum ${dateString} nenalezena`);
+            }
+            
+            console.log('📊 Historická data pro žebříček načtena:', historyData.metadata);
+            
+            // Použít již zpracovaná data z historie
+            if (historyData.processed && historyData.processed.sellers) {
+                console.log('✅ Používám předpracované historické prodejce');
+                this.leaderboardData = historyData.processed.sellers.map((seller, index) => ({
+                    sellerId: seller.sellerId || `historic_${index}`,
+                    name: seller.name,
+                    username: seller.username || seller.name,
+                    prodejna: seller.prodejna,
+                    points: seller.points,
+                    breakdown: seller.breakdown || {},
+                    itemsCount: seller.items || 0
+                }));
+            } else {
+                // Fallback - zpracovat raw data
+                console.log('⚠️ Zpracovávám raw historická data pro žebříček');
+                const csvData = this.convertJsonToCsv(historyData.data);
+                this.parseAndProcessLeaderboardData(csvData, true); // true = isHistorical
+                return; // parseAndProcessLeaderboardData už zavolá displayLeaderboard
+            }
+            
+            // Seřadit podle bodů
+            this.leaderboardData.sort((a, b) => b.points - a.points);
+            
+            console.log(`🏆 Historický žebříček zpracován: ${this.leaderboardData.length} prodejců`);
+            
+            // Zobrazit žebříček s historical flag
+            this.displayLeaderboard(true);
+            
+        } catch (error) {
+            console.error('❌ Chyba při načítání historických dat pro žebříček:', error);
+            this.showHistoricalLeaderboardError(dateString, error);
+        }
+    }
+
+    // Error handler pro historické žebříčky
+    showHistoricalLeaderboardError(dateString, error) {
+        const formattedDate = this.formatDateForDisplay(dateString);
+        
+        this.container.innerHTML = `
+            <div class="error-state">
+                <div class="icon">📚</div>
+                <h3>Historický žebříček nenalezen</h3>
+                <p>Pro datum <strong>${formattedDate}</strong> nejsou dostupná žádná historická data.</p>
+                
+                <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; text-align: left; color: #856404;">
+                    <h5 style="margin-top: 0; color: #856404;">💡 Vysvětlení:</h5>
+                    <ul style="margin: 0; line-height: 1.6;">
+                        <li>Historické žebříčky se vytvářejí ze snapshotů dat</li>
+                        <li>Data se ukládají každý den ve 20:15</li>
+                        <li>Pro toto datum nebyl vytvořen snapshot dat</li>
+                    </ul>
+                </div>
+                
+                <button class="retro-refresh-btn" onclick="window.historyUI.selectDate('current')">
+                    📊 Zobrazit aktuální žebříček
+                </button>
+            </div>
+        `;
+    }
+
+    // Helper metoda pro formátování data
+    formatDateForDisplay(dateString) {
+        if (!dateString) return '';
+        
+        const [year, month, day] = dateString.split('-');
+        const date = new Date(year, month - 1, day);
+        
+        return date.toLocaleDateString('cs-CZ', { 
+            day: 'numeric', 
+            month: 'long',
+            year: 'numeric'
+        });
     }
 
     async loadUsersFromServer() {
@@ -83,20 +178,43 @@ class LeaderboardsDataLoader {
                 
                 console.log(`👥 Nalezeno ${sellers.length} prodejců (filtrováni administrátoři)`);
                 
+                // Zkontrolovat duplicitní ID prodejců
+                const sellerIds = sellers.map(user => String(user.customId));
+                const duplicateIds = sellerIds.filter((id, index) => sellerIds.indexOf(id) !== index);
+                if (duplicateIds.length > 0) {
+                    console.warn('⚠️ Nalezena duplicitní ID prodejců:', [...new Set(duplicateIds)]);
+                    console.warn('Toto může způsobit nesprávné výpočty bodů!');
+                }
+                
                 // Vytvořit mapping ID prodejce -> uživatelská data
                 this.usersData = {};
                 sellers.forEach(user => {
                     const sellerId = String(user.customId);
+                    
+                    // Složení celého jména - priorita: fullName, pak firstName + lastName, fallback username
+                    let displayName = user.fullName;
+                    if (!displayName || displayName.trim() === '') {
+                        if (user.firstName && user.lastName) {
+                            displayName = `${user.firstName} ${user.lastName}`.trim();
+                        } else if (user.firstName) {
+                            displayName = user.firstName;
+                        } else {
+                            displayName = user.username;
+                        }
+                    }
+                    
                     this.usersData[sellerId] = {
                         id: user.id,
                         username: user.username,
-                        fullName: user.fullName || user.username,
+                        fullName: displayName,
                         email: user.email,
                         phone: user.phone,
                         prodejna: user.prodejna,
                         role: user.role,
                         sellerId: sellerId
                     };
+                    
+                    console.log(`👤 Prodejce mapován: ID=${sellerId}, Jméno="${displayName}", Username="${user.username}"`);
                 });
                 
                 console.log('📊 Mapping uživatelů vytvořen:', Object.keys(this.usersData));
@@ -138,7 +256,7 @@ class LeaderboardsDataLoader {
                     if (data && data.data && Array.isArray(data.data)) {
                         const csvData = this.convertJsonToCsv(data.data);
                         console.log('CSV data pro leaderboard převedena, délka:', csvData.length);
-                        this.parseAndProcessLeaderboardData(csvData);
+                        this.parseAndProcessLeaderboardData(csvData, false); // false = není historické
                         resolve();
                     } else {
                         console.error('Neplatná struktura dat pro leaderboard:', data);
@@ -211,8 +329,9 @@ class LeaderboardsDataLoader {
         return csvLines.join('\n');
     }
 
-    parseAndProcessLeaderboardData(csvData) {
+    parseAndProcessLeaderboardData(csvData, isHistorical = false) {
         console.log('=== PARSOVÁNÍ A ZPRACOVÁNÍ DAT PRO ŽEBŘÍČEK ===');
+        console.log(`Zdroj dat: ${isHistorical ? 'HISTORICKÁ DATA' : 'AKTUÁLNÍ SERVER'}`);
         console.log('Délka CSV dat:', csvData.length);
         
         const lines = csvData.split('\n').filter(line => String(line || '').trim());
@@ -264,37 +383,66 @@ class LeaderboardsDataLoader {
         // Zpracovat data pro každého prodejce
         this.leaderboardData = [];
         
+        console.log('=== ZPRACOVÁNÍ DAT PRO KAŽDÉHO PRODEJCE ===');
+        console.log('Počet registrovaných prodejců:', Object.keys(this.usersData).length);
+        console.log('Dostupná ID v tabulce:', [...new Set(allRows.map(row => String(row[idProdejceIndex] || '').trim()).filter(id => id))]);
+        
         Object.keys(this.usersData).forEach(sellerId => {
             const userData = this.usersData[sellerId];
             
-            // Najít řádky pro tohoto prodejce
+            console.log(`\n🔍 Zpracovávám prodejce: ${userData.fullName} (ID: ${sellerId})`);
+            
+            // Najít řádky pro tohoto prodejce - robustnější matching
             const userRows = allRows.filter(row => {
                 const rowSellerId = String(row[idProdejceIndex] || '').trim();
-                return rowSellerId === sellerId || parseInt(rowSellerId) === parseInt(sellerId);
+                const userSellerIdStr = String(sellerId).trim();
+                
+                // Přesné string matching
+                const exactMatch = rowSellerId === userSellerIdStr;
+                
+                // Numerické matching (pokud jsou obě hodnoty čísla)
+                let numericMatch = false;
+                const rowIdNum = parseInt(rowSellerId);
+                const userIdNum = parseInt(userSellerIdStr);
+                if (!isNaN(rowIdNum) && !isNaN(userIdNum)) {
+                    numericMatch = rowIdNum === userIdNum;
+                }
+                
+                const matches = exactMatch || numericMatch;
+                
+                if (matches) {
+                    console.log(`  ✅ Nalezen řádek: "${rowSellerId}" → ${row[1] || 'neznámý prodejce'}`);
+                }
+                
+                return matches;
             });
             
-            console.log(`Prodejce ${userData.fullName} (ID: ${sellerId}): ${userRows.length} řádků`);
+            console.log(`  📊 Celkem řádků pro ${userData.fullName}: ${userRows.length}`);
             
             if (userRows.length > 0) {
                 // Spočítat body pro tohoto prodejce
                 const points = this.calculateUserPoints(userRows, headers);
                 
+                console.log(`  🏆 Vypočítané body: ${points.totalPoints} (položky: ${points.totalItems})`);
+                
                 this.leaderboardData.push({
                     sellerId: sellerId,
                     name: userData.fullName,
                     username: userData.username,
-                    prodejna: userData.prodejna,
+                    prodejna: userData.prodejna || 'Nespecifikována',
                     points: points.totalPoints,
                     breakdown: points.breakdown,
                     itemsCount: points.totalItems
                 });
             } else {
                 // Prodejce bez dat - 0 bodů
+                console.log(`  ⚠️ Žádná data pro ${userData.fullName} - přidávám s 0 body`);
+                
                 this.leaderboardData.push({
                     sellerId: sellerId,
                     name: userData.fullName,
                     username: userData.username,
-                    prodejna: userData.prodejna,
+                    prodejna: userData.prodejna || 'Nespecifikována',
                     points: 0,
                     breakdown: {},
                     itemsCount: 0
@@ -305,10 +453,21 @@ class LeaderboardsDataLoader {
         // Seřadit podle bodů (nejvíc na začátek)
         this.leaderboardData.sort((a, b) => b.points - a.points);
         
-        console.log('🏆 Finální žebříček:', this.leaderboardData);
+        console.log('\n=== FINÁLNÍ ŽEBŘÍČEK ===');
+        console.log(`📊 Celkem prodejců: ${this.leaderboardData.length}`);
+        console.log(`🏆 Prodejců s body: ${this.leaderboardData.filter(s => s.points > 0).length}`);
+        console.log(`💯 Nejvyšší skóre: ${this.leaderboardData.length > 0 ? this.leaderboardData[0].points : 0}`);
         
-        // Zobrazit žebříček
-        this.displayLeaderboard();
+        this.leaderboardData.forEach((seller, index) => {
+            console.log(`${index + 1}. ${seller.name}: ${seller.points} bodů (${seller.prodejna})`);
+        });
+        
+        // Ověření integrity dat
+        const totalCalculatedPoints = this.leaderboardData.reduce((sum, seller) => sum + seller.points, 0);
+        console.log(`💰 Celkem bodů všech prodejců: ${totalCalculatedPoints}`);
+        
+        // Zobrazit žebříček s historical flag
+        this.displayLeaderboard(isHistorical);
     }
 
     calculateUserPoints(rows, headers) {
@@ -399,17 +558,17 @@ class LeaderboardsDataLoader {
         return result;
     }
 
-    displayLeaderboard() {
-        console.log('🎯 Zobrazuji žebříček');
+    displayLeaderboard(isHistorical = false) {
+        console.log('🎯 Zobrazuji žebříček, historický:', isHistorical);
         
         // Aktualizovat statistiky
         this.updateStats();
         
         // Aktualizovat top 3 podium
-        this.updateTopThreePodium();
+        this.updateTopThreePodium(isHistorical);
         
         // Zobrazit hlavní tabulku
-        this.displayLeaderboardTable();
+        this.displayLeaderboardTable(isHistorical);
     }
 
     updateStats() {
@@ -425,20 +584,25 @@ class LeaderboardsDataLoader {
         document.getElementById('topPoints').textContent = topPoints;
     }
 
-    updateTopThreePodium() {
+    updateTopThreePodium(isHistorical = false) {
         const podium = document.getElementById('topThreePodium');
         const top3 = this.leaderboardData.slice(0, 3);
         
         if (top3.length === 0) {
-            podium.innerHTML = '<div class="empty-state"><div class="icon">🏆</div><p>Žádní prodejci s body</p></div>';
+            const emptyText = isHistorical ? 'Žádní prodejci v historických datech' : 'Žádní prodejci s body';
+            podium.innerHTML = `<div class="empty-state"><div class="icon">🏆</div><p>${emptyText}</p></div>`;
             return;
         }
 
         const medals = ['🥇', '🥈', '🥉'];
-        const rankLabels = ['1.', '2.', '3.'];
+        
+        // Přidat historický indikátor
+        const historicalBadge = isHistorical ? 
+            `<div class="historical-badge" style="position: absolute; top: -10px; right: -10px; background: #ff9800; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">📚</div>` : '';
         
         podium.innerHTML = top3.map((seller, index) => `
-            <div class="podium-place">
+            <div class="podium-place" style="position: relative;">
+                ${index === 0 ? historicalBadge : ''}
                 <div class="podium-rank">${medals[index]}</div>
                 <div class="podium-name">${this.escapeHtml(seller.name)}</div>
                 <div class="podium-points">${seller.points}</div>
@@ -447,13 +611,17 @@ class LeaderboardsDataLoader {
         `).join('');
     }
 
-    displayLeaderboardTable() {
+    displayLeaderboardTable(isHistorical = false) {
         if (this.leaderboardData.length === 0) {
+            const emptyText = isHistorical ? 
+                'V historických datech nejsou žádní prodejci.' : 
+                'V systému nejsou žádní prodejci s daty pro aktuální měsíc.';
+                
             this.container.innerHTML = `
                 <div class="empty-state">
                     <div class="icon">👥</div>
                     <h3>Žádní prodejci nenalezeni</h3>
-                    <p>V systému nejsou žádní prodejci s daty pro aktuální měsíc.</p>
+                    <p>${emptyText}</p>
                 </div>
             `;
             return;
@@ -487,7 +655,15 @@ class LeaderboardsDataLoader {
             `;
         }).join('');
 
+        // Přidat historický indikátor do tabulky
+        const historicalNotice = isHistorical && this.selectedHistoryDate ? `
+            <div class="historical-table-notice" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 0.75rem 1rem; text-align: center; font-size: 0.875rem; font-weight: 600;">
+                📚 Historický žebříček k ${this.formatDateForDisplay(this.selectedHistoryDate)}
+            </div>
+        ` : '';
+
         this.container.innerHTML = `
+            ${historicalNotice}
             <table class="leaderboard-table">
                 <thead>
                     <tr>

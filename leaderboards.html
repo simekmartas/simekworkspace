@@ -405,6 +405,9 @@
                 <p class="leaderboard-subtitle">Nejlepší prodejci podle bodového hodnocení za aktuální měsíc</p>
             </div>
 
+            <!-- Historie data picker -->
+            <div id="leaderboardHistoryPicker"></div>
+
             <!-- Celkové statistiky -->
             <div class="leaderboard-stats">
                 <div class="stat-item">
@@ -471,6 +474,8 @@
     <!-- Scripts -->
     <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
+    <script src="history-data-manager.js"></script>
+    <script src="history-ui-components.js"></script>
     <script src="leaderboards-data-loader.js"></script>
     <script src="performance-monitor.js"></script>
     <script src="accessibility-enhancements.js"></script>
@@ -488,9 +493,30 @@
                 return;
             }
             
+            // Inicializovat historický picker
+            setTimeout(() => {
+                if (window.historyUI) {
+                    window.historyUI.createDatePicker('leaderboardHistoryPicker', {
+                        includeToday: true,
+                        showStats: true,
+                        placeholder: 'Vyberte datum pro historický žebříček',
+                        onDateChanged: (selectedDate) => {
+                            console.log(`📅 Změna data žebříčku: ${selectedDate || 'aktuální'}`);
+                            
+                            // Předat vybrané datum loader-u
+                            if (window.leaderboardLoader) {
+                                window.leaderboardLoader.selectedHistoryDate = selectedDate;
+                                window.leaderboardLoader.loadLeaderboardData();
+                            }
+                        }
+                    });
+                    console.log('✅ Historický picker pro žebříček inicializován');
+                }
+            }, 200);
+
             // Načti žebříček
             if (window.LeaderboardsDataLoader) {
-                const loader = new window.LeaderboardsDataLoader('leaderboardContent');
+                window.leaderboardLoader = new window.LeaderboardsDataLoader('leaderboardContent');
                 console.log('✅ LeaderboardsDataLoader inicializován');
             } else {
                 console.error('❌ LeaderboardsDataLoader není dostupný');

@@ -29,6 +29,7 @@ class UserProfile {
             this.populateForm();
             this.setupEventListeners();
             this.initTabSwitching();
+            this.initHistoryPicker();
             this.loadStatistics();
             
             console.log('✅ User profile systém připraven');
@@ -319,6 +320,122 @@ class UserProfile {
         }
         
         console.log('🎯 Event listeners nastaveny');
+    }
+
+    // Inicializace historického date pickeru
+    initHistoryPicker() {
+        console.log('📅 Inicializuji historický date picker...');
+        
+        // Počkej až budou komponenty načtené
+        if (!window.historyUI) {
+            setTimeout(() => this.initHistoryPicker(), 100);
+            return;
+        }
+        
+        // Vytvoř historický date picker
+        window.historyUI.createDatePicker('historyPickerContainer', {
+            includeToday: true,
+            showStats: true,
+            placeholder: 'Vyberte datum pro zobrazení',
+            onDateChanged: (selectedDate) => this.handleHistoryDateChanged(selectedDate)
+        });
+        
+        // Poslouchej globální změny data
+        window.addEventListener('historyDateChanged', (e) => {
+            const selectedDate = e.detail.selectedDate;
+            this.handleHistoryDateChanged(selectedDate);
+        });
+        
+        console.log('✅ Historický date picker inicializován');
+    }
+
+    // Handler pro změnu historického data
+    handleHistoryDateChanged(selectedDate) {
+        console.log(`📅 Změna historického data: ${selectedDate || 'aktuální'}`);
+        
+        // Aktualizovat všechny aktivní data loadery s novým datem
+        this.selectedHistoryDate = selectedDate;
+        
+        // Aktualizovat labels na tabech
+        this.updateTabLabels(selectedDate);
+        
+        // Reload dat pro aktuální tab
+        const activeTab = document.querySelector('.tab.active');
+        if (activeTab) {
+            const tabType = activeTab.getAttribute('data-tab');
+            this.reloadDataForTabWithHistory(tabType, selectedDate);
+        }
+    }
+
+    // Aktualizovat texty na tabech podle vybraného data
+    updateTabLabels(selectedDate) {
+        const tabs = document.querySelectorAll('.tab');
+        const isHistorical = selectedDate !== null;
+        
+        tabs.forEach(tab => {
+            const tabType = tab.getAttribute('data-tab');
+            const textElement = tab.querySelector('.tab-text');
+            
+            if (textElement) {
+                if (isHistorical) {
+                    const displayDate = this.formatDateForDisplay(selectedDate);
+                    switch (tabType) {
+                        case 'current':
+                            textElement.textContent = `${displayDate}`;
+                            break;
+                        case 'monthly':
+                            textElement.textContent = `Měsíc k ${displayDate}`;
+                            break;
+                        case 'points':
+                            textElement.textContent = `Body k ${displayDate}`;
+                            break;
+                    }
+                } else {
+                    // Vrátit původní texty
+                    switch (tabType) {
+                        case 'current':
+                            textElement.textContent = 'Aktuální den';
+                            break;
+                        case 'monthly':
+                            textElement.textContent = 'Aktuální měsíc';
+                            break;
+                        case 'points':
+                            textElement.textContent = 'Aktuální body';
+                            break;
+                    }
+                }
+            }
+        });
+    }
+
+    // Formátování data pro zobrazení
+    formatDateForDisplay(dateString) {
+        if (!dateString) return '';
+        
+        const [year, month, day] = dateString.split('-');
+        const date = new Date(year, month - 1, day);
+        
+        return date.toLocaleDateString('cs-CZ', { 
+            day: 'numeric', 
+            month: 'short'
+        });
+    }
+
+    // Reload dat s historickým kontextem
+    reloadDataForTabWithHistory(tabType, selectedDate) {
+        console.log(`🔄 Reload ${tabType} dat s historickým datem: ${selectedDate}`);
+        
+        // Předat selectedDate všem data loaderům
+        if (tabType === 'current' && this.currentLoader) {
+            this.currentLoader.selectedHistoryDate = selectedDate;
+            this.currentLoader.reloadData();
+        } else if (tabType === 'monthly' && this.monthlyLoader) {
+            this.monthlyLoader.selectedHistoryDate = selectedDate;
+            this.monthlyLoader.reloadData();
+        } else if (tabType === 'points' && this.pointsLoader) {
+            this.pointsLoader.selectedHistoryDate = selectedDate;
+            this.pointsLoader.reloadData();
+        }
     }
 
     async handleFormSubmit(e) {

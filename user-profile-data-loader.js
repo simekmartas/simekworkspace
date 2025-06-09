@@ -125,6 +125,20 @@ class UserProfileDataLoader {
                         this.saveUserToServer(data.users);
                     }
                     
+                    // Zajistit správné zobrazování jména
+                    if (!user.displayName) {
+                        if (user.fullName && user.fullName.trim() !== '') {
+                            user.displayName = user.fullName;
+                        } else if (user.firstName && user.lastName) {
+                            user.displayName = `${user.firstName} ${user.lastName}`.trim();
+                        } else if (user.firstName) {
+                            user.displayName = user.firstName;
+                        } else {
+                            user.displayName = user.username;
+                        }
+                        console.log('✨ Nastaveno zobrazované jméno:', user.displayName);
+                    }
+                    
                     return user;
                 } else {
                     console.log('❌ Uživatel nenalezen na serveru:', username);
@@ -182,7 +196,7 @@ class UserProfileDataLoader {
         }
     }
 
-    // STEJNÁ metoda jako ProdejnyDataLoader
+    // UPRAVENÁ metoda s podporou historie
     async loadData(isMonthly = false) {
         console.log('=== NAČÍTÁNÍ PRODEJNÍCH DAT PRO PROFIL ===');
         console.log('Spreadsheet ID:', this.spreadsheetId);
@@ -190,6 +204,7 @@ class UserProfileDataLoader {
         console.log('Je měsíční:', isMonthly);
         console.log('Je bodové hodnocení:', this.isPoints);
         console.log('ID prodejce:', this.userSellerId);
+        console.log('Vybrané historické datum:', this.selectedHistoryDate);
         
         // Pro body načítáme vždy měsíční data
         if (this.isPoints) {
@@ -203,9 +218,16 @@ class UserProfileDataLoader {
         try {
             this.showLoading();
             
-            // Použij Google Apps Script endpoint pro načítání dat
+            // Zkontrolovat, zda načítat historická data
+            if (this.selectedHistoryDate && window.historyManager) {
+                console.log(`📚 Načítám historická data pro datum: ${this.selectedHistoryDate}`);
+                await this.loadHistoricalData(this.selectedHistoryDate, isMonthly);
+                return;
+            }
+            
+            // Standardní načítání aktuálních dat
             const gid = isMonthly ? this.monthlyGid : this.mainGid;
-            console.log(`🔄 Načítám data z GID: ${gid} (${isMonthly ? 'měsíční list "od 1"' : 'aktuální list'})`);
+            console.log(`🔄 Načítám aktuální data z GID: ${gid} (${isMonthly ? 'měsíční list "od 1"' : 'aktuální list'})`);
             
             await this.loadFromGoogleScript(gid, isMonthly);
             return;
@@ -324,10 +346,126 @@ class UserProfileDataLoader {
         return csvLines.join('\n');
     }
 
-    // UPRAVENÁ metoda z ProdejnyDataLoader - přidáno filtrování podle ID prodejce
-    parseAndDisplayData(csvData, isMonthly) {
+    // NOVÁ metoda - načítání historických dat
+    async loadHistoricalData(dateString, isMonthly) {
+        console.log(`📚 Načítám historická data pro ${dateString}, měsíční: ${isMonthly}`);
+        
+        try {
+            // Získat historická data
+            const historyData = window.historyManager.getDataForDate(dateString);
+            
+            if (!historyData) {
+                throw new Error(`Historická data pro datum ${dateString} nenalezena`);
+            }
+            
+            console.log('📊 Historická data načtena:', historyData.metadata);
+            
+            // Pro historická data používáme vždy raw data (která byla původně aktuální)
+            // Převést na CSV formát pro kompatibilitu
+            const csvData = this.convertHistoricalDataToCsv(historyData.data);
+            
+            // Standardní parsování a zobrazení - přidáme flag pro historická data
+            this.parseAndDisplayData(csvData, isMonthly, true); // třetí parametr označuje historická data
+            
+        } catch (error) {
+            console.error('❌ Chyba při načítání historických dat:', error);
+            this.showHistoricalDataError(dateString, error);
+        }
+    }
+
+    // Převést historická data na CSV formát
+    convertHistoricalDataToCsv(historicalData) {
+        if (!historicalData || !Array.isArray(historicalData) || historicalData.length === 0) {
+            return '';
+        }
+        
+        // Již jsou ve formátu array of arrays - jen převést na CSV string
+        const csvLines = historicalData.map(row => {
+            return Array.isArray(row) ? row.map(cell => String(cell || '')).join(',') : String(row);
+        });
+        
+        return csvLines.join('\n');
+    }
+
+    // Error handler pro historická data
+    showHistoricalDataError(dateString, error) {
+        const formattedDate = this.formatDateForDisplay(dateString);
+        
+        this.container.innerHTML = `
+            <div class="retro-data-container">
+                <div class="retro-data-header">
+                    <span class="retro-terminal-prompt">&gt; historical_data_${dateString}.csv_</span>
+                    <div class="retro-window-controls">
+                        <span class="control-dot red"></span>
+                        <span class="control-dot yellow"></span>
+                        <span class="control-dot green"></span>
+                    </div>
+                </div>
+                <div class="retro-data-content">
+                    <div style="padding: 2rem; text-align: center; color: var(--error-color, #e74c3c);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📚</div>
+                        <h3>Historická data nenalezena</h3>
+                        <p>Pro datum <strong>${formattedDate}</strong> nejsou dostupná žádná historická data.</p>
+                        
+                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; text-align: left; color: #856404;">
+                            <h5 style="margin-top: 0; color: #856404;">💡 Vysvětlení:</h5>
+                            <ul style="margin: 0; line-height: 1.6;">
+                                <li>Historická data se ukládají každý den ve 20:15</li>
+                                <li>Data jsou dostupná od ${this.getFirstAvailableDate() || 'budoucího'} ukládání</li>
+                                <li>Pro toto datum nebyl vytvořen snapshot dat</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="margin-top: 2rem;">
+                            <button class="retro-refresh-btn" onclick="window.historyUI.selectDate('current')" style="margin-right: 1rem;">
+                                📊 Zobrazit aktuální data
+                            </button>
+                            
+                            ${this.canCreateHistoricalSnapshot(dateString) ? `
+                                <button class="retro-refresh-btn" onclick="window.historyDebug.createTodaySnapshot()">
+                                    📸 Vytvořit snapshot (test)
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Helper metoda pro formátování data
+    formatDateForDisplay(dateString) {
+        if (!dateString) return '';
+        
+        const [year, month, day] = dateString.split('-');
+        const date = new Date(year, month - 1, day);
+        
+        return date.toLocaleDateString('cs-CZ', { 
+            day: 'numeric', 
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    // Zjistit první dostupné datum v historii
+    getFirstAvailableDate() {
+        if (!window.historyManager) return null;
+        
+        const dates = window.historyManager.getAvailableDates();
+        return dates.length > 0 ? this.formatDateForDisplay(dates[dates.length - 1]) : null;
+    }
+
+    // Zkontrolovat, zda lze vytvořit snapshot pro dané datum
+    canCreateHistoricalSnapshot(dateString) {
+        const today = new Date().toISOString().slice(0, 10);
+        return dateString === today;
+    }
+
+    // UPRAVENÁ metoda z ProdejnyDataLoader - přidáno filtrování podle ID prodejce a podpora historie
+    parseAndDisplayData(csvData, isMonthly, isHistorical = false) {
         console.log('=== PARSOVÁNÍ PRODEJNÍCH DAT PRO PROFIL ===');
         console.log(`Typ dat: ${isMonthly ? 'MĚSÍČNÍ (list "od 1")' : 'AKTUÁLNÍ (main list)'}`);
+        console.log(`Zdroj dat: ${isHistorical ? 'HISTORICKÁ DATA' : 'AKTUÁLNÍ SERVER'}`);
         console.log('Délka CSV dat:', csvData.length);
         console.log('První 500 znaků:', csvData.substring(0, 500));
         console.log('ID prodejce pro filtrování:', this.userSellerId);
@@ -445,11 +583,11 @@ class UserProfileDataLoader {
             this.updateUserMetrics(sortedRows, isMonthly, headers);
         }
 
-        // Zobrazit tabulku s použitím STEJNÉ logiky jako ProdejnyDataLoader
+        // Zobrazit tabulku s použitím STEJNÉ logiky jako ProdejnyDataLoader - předat isHistorical flag
         if (this.isPoints) {
-            this.displayPointsTable(headers, sortedRows);
+            this.displayPointsTable(headers, sortedRows, isHistorical);
         } else {
-            this.displayTable(headers, sortedRows, isMonthly);
+            this.displayTable(headers, sortedRows, isMonthly, isHistorical);
         }
     }
 
@@ -577,6 +715,39 @@ class UserProfileDataLoader {
         if (rankingElement) rankingElement.textContent = '1'; // Hardcodované zatím
     }
 
+    // Helper metoda pro získání správného jména uživatele
+    getUserDisplayName() {
+        const username = localStorage.getItem('username');
+        
+        if (!username) {
+            return 'Neznámý prodejce';
+        }
+        
+        try {
+            // Zkus najít v localStorage uživatelských dat
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const currentUser = users.find(u => u.username === username);
+            
+            if (currentUser) {
+                // Priorita: fullName -> firstName + lastName -> firstName -> username
+                if (currentUser.fullName && currentUser.fullName.trim() !== '') {
+                    return currentUser.fullName;
+                } else if (currentUser.firstName && currentUser.lastName) {
+                    return `${currentUser.firstName} ${currentUser.lastName}`.trim();
+                } else if (currentUser.firstName) {
+                    return currentUser.firstName;
+                } else {
+                    return currentUser.username;
+                }
+            }
+        } catch (e) {
+            console.log('Chyba při čtení uživatelských dat z localStorage:', e);
+        }
+        
+        // Fallback na username
+        return username;
+    }
+
     // NOVÁ metoda - výpočet bodů podle bodovacích pravidel
     updateUserPoints(rows, headers) {
         console.log('=== VÝPOČET BODŮ PRODEJCE ===');
@@ -692,18 +863,28 @@ class UserProfileDataLoader {
         };
     }
 
-    // UPRAVENÁ metoda z ProdejnyDataLoader - zobrazí filtrovaná data
-    displayTable(headers, rows, isMonthly) {
+    // UPRAVENÁ metoda z ProdejnyDataLoader - zobrazí filtrovaná data s podporou historie
+    displayTable(headers, rows, isMonthly, isHistorical = false) {
         // Zpracuj data pro zobrazení - PŘEDEJ headers jako třetí parametr
         const processedData = this.processDataForDisplay(rows, isMonthly, headers);
         
-        // Získej jméno uživatele z prvního řádku dat
-        const userName = rows.length > 0 ? (rows[0][1] || 'Neznámý prodejce') : 'Neznámý prodejce';
+        // Získej správné jméno uživatele
+        const userName = this.getUserDisplayName();
+        
+        // Připravit text pro hlavičku podle typu dat
+        let headerText, dateInfo;
+        if (isHistorical && this.selectedHistoryDate) {
+            headerText = `${this.escapeHtml(userName)} - Historická data`;
+            dateInfo = `📅 ${this.formatDateForDisplay(this.selectedHistoryDate)}`;
+        } else {
+            headerText = `${this.escapeHtml(userName)} - ${isMonthly ? 'Aktuální měsíc' : 'Aktuální den'}`;
+            dateInfo = null;
+        }
         
         this.container.innerHTML = `
             <div class="retro-data-container">
                 <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; profil_${isMonthly ? 'monthly' : 'current'}_${this.userSellerId}.csv_</span>
+                    <span class="retro-terminal-prompt">&gt; profil_${isHistorical ? 'historical' : (isMonthly ? 'monthly' : 'current')}_${this.userSellerId}.csv_</span>
                     <div class="retro-window-controls">
                         <span class="control-dot red"></span>
                         <span class="control-dot yellow"></span>
@@ -711,8 +892,16 @@ class UserProfileDataLoader {
                     </div>
                 </div>
                 <div class="retro-data-content">
+                    ${isHistorical ? `
+                        <div class="historical-notice" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
+                            <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">📚 Historická data</div>
+                            <div style="font-size: 0.875rem; opacity: 0.9;">${dateInfo}</div>
+                        </div>
+                    ` : ''}
+                    
                     <div class="user-info" style="margin-bottom: 2rem;">
-                        <h3>📊 ${this.escapeHtml(userName)} - ${isMonthly ? 'Aktuální měsíc' : 'Aktuální den'}</h3>
+                        <h3>📊 ${headerText}</h3>
+                        ${dateInfo && !isHistorical ? `<p><strong>Datum:</strong> ${dateInfo}</p>` : ''}
                         <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
                         <p><strong>Pozice v žebříčku:</strong> 🥇 #1</p>
                     </div>
@@ -754,20 +943,30 @@ class UserProfileDataLoader {
         this.setupEventListeners();
     }
 
-    // NOVÁ metoda - zobrazení bodové tabulky
-    displayPointsTable(headers, rows) {
+    // NOVÁ metoda - zobrazení bodové tabulky s podporou historie
+    displayPointsTable(headers, rows, isHistorical = false) {
         if (!this.pointsData) {
             console.error('❌ Chybí pointsData pro zobrazení');
             return;
         }
 
-        // Získej jméno uživatele z prvního řádku dat
-        const userName = rows.length > 0 ? (rows[0][1] || 'Neznámý prodejce') : 'Neznámý prodejce';
+        // Získej správné jméno uživatele
+        const userName = this.getUserDisplayName();
+        
+        // Připravit text pro hlavičku podle typu dat
+        let headerText, dateInfo;
+        if (isHistorical && this.selectedHistoryDate) {
+            headerText = `${this.escapeHtml(userName)} - Historické bodové hodnocení`;
+            dateInfo = `📅 ${this.formatDateForDisplay(this.selectedHistoryDate)}`;
+        } else {
+            headerText = `${this.escapeHtml(userName)} - Bodové hodnocení za měsíc`;
+            dateInfo = null;
+        }
         
         this.container.innerHTML = `
             <div class="retro-data-container">
                 <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; body_${this.userSellerId}.json_</span>
+                    <span class="retro-terminal-prompt">&gt; body_${isHistorical ? 'historical' : 'current'}_${this.userSellerId}.json_</span>
                     <div class="retro-window-controls">
                         <span class="control-dot red"></span>
                         <span class="control-dot yellow"></span>
@@ -775,8 +974,16 @@ class UserProfileDataLoader {
                     </div>
                 </div>
                 <div class="retro-data-content">
+                    ${isHistorical ? `
+                        <div class="historical-notice" style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; text-align: center;">
+                            <div style="font-size: 1.25rem; margin-bottom: 0.5rem;">📚 Historické bodové hodnocení</div>
+                            <div style="font-size: 0.875rem; opacity: 0.9;">${dateInfo}</div>
+                        </div>
+                    ` : ''}
+                    
                     <div class="user-info" style="margin-bottom: 2rem;">
-                        <h3>🏆 ${this.escapeHtml(userName)} - Bodové hodnocení za měsíc</h3>
+                        <h3>🏆 ${headerText}</h3>
+                        ${dateInfo && !isHistorical ? `<p><strong>Datum:</strong> ${dateInfo}</p>` : ''}
                         <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
                         <p><strong>Celkové body:</strong> <span style="color: #2196F3; font-weight: bold; font-size: 1.2em;">${this.pointsData.totalPoints} bodů</span></p>
                         <p><strong>Průměr na den:</strong> ${this.pointsData.averagePerDay} bodů (za ${this.pointsData.daysInMonth} dní)</p>

@@ -8,7 +8,8 @@ Chatbot nyní běží v **fallback režimu** s předdefinovanými odpověďmi pr
 ### Krok 1: Získání API klíče
 1. Jděte na https://platform.openai.com/
 2. Přihlaste se nebo vytvořte účet
-3. Přejděte na https://platform.openai.com/account/api-keys
+3. Přejděte na 
+
 4. Klikněte na "Create new secret key"
 5. Zkopírujte vygenerovaný klíč (začíná `sk-proj-` nebo `sk-`)
 

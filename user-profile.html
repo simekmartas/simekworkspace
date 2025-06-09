@@ -708,6 +708,9 @@
                 </div>
             </div>
 
+            <!-- Historie data picker -->
+            <div id="historyPickerContainer"></div>
+
             <!-- Tab switcher pro přepínání mezi aktuálními a měsíčními daty -->
             <div class="tab-container">
                 <button class="tab active" data-tab="current">
@@ -715,7 +718,7 @@
                         <circle cx="12" cy="12" r="10"></circle>
                         <polyline points="12,6 12,12 16,14"></polyline>
                     </svg>
-                    Aktuální den
+                    <span class="tab-text">Aktuální den</span>
                 </button>
                 <button class="tab" data-tab="monthly">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -724,7 +727,7 @@
                         <line x1="8" y1="2" x2="8" y2="6"></line>
                         <line x1="3" y1="10" x2="21" y2="10"></line>
                     </svg>
-                    Aktuální měsíc
+                    <span class="tab-text">Aktuální měsíc</span>
                 </button>
                 <button class="tab" data-tab="points">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -732,7 +735,7 @@
                         <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
                         <path d="m16.24 7.76-4.24 4.24m0 0L7.76 16.24M16.24 16.24 12 12 7.76 7.76"></path>
                     </svg>
-                    Aktuální body
+                    <span class="tab-text">Aktuální body</span>
                 </button>
             </div>
 
@@ -962,6 +965,8 @@
     <!-- Scripts -->
     <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
+    <script src="history-data-manager.js"></script>
+    <script src="history-ui-components.js"></script>
     <script src="performance-monitor.js"></script>
     <script src="accessibility-enhancements.js"></script>
     <script src="user-profile-data-loader.js"></script>
