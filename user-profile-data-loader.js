@@ -57,37 +57,21 @@ class UserProfileDataLoader {
             }
         }
         
-        // 3. Hledat v tabulce uživatelů podle username
+        // 3. Hledat v tabulce uživatelů ze SERVERU (ne localStorage)
         if (!sellerId && username) {
-            try {
-                const users = JSON.parse(localStorage.getItem('users') || '[]');
-                console.log('Počet uživatelů v localStorage:', users.length);
-                
-                const user = users.find(u => u.username === username);
-                console.log('Nalezený uživatel podle username:', user);
-                
-                if (user) {
-                    // Priorita 1: customId (ID prodejce z user-management)
-                    if (user.customId) {
-                        sellerId = user.customId;
-                        localStorage.setItem('sellerId', sellerId);
-                        console.log('✅ Nalezeno customId podle username:', username, '→', sellerId);
-                    } 
-                    // Priorita 2: systémové ID jako fallback
-                    else if (user.id) {
-                        sellerId = String(user.id);
-                        localStorage.setItem('sellerId', sellerId);
-                        console.log('⚠️ Použito systémové ID jako sellerId pro:', username, '→', sellerId);
-                        
-                        // Automaticky nastavit customId pro příště
-                        user.customId = sellerId;
-                        localStorage.setItem('users', JSON.stringify(users));
-                        console.log('✅ Automaticky nastaveno customId pro uživatele:', username);
+            console.log('🌐 Načítám uživatele ze serveru...');
+            // Synchronní volání - vrátíme fallback a načteme v pozadí
+            this.loadUserFromServer(username).then(user => {
+                if (user && user.customId) {
+                    localStorage.setItem('sellerId', user.customId);
+                    console.log('✅ Aktualizováno sellerId ze serveru:', user.customId);
+                    // Reload dat pokud se ID změnilo
+                    if (this.userSellerId !== user.customId) {
+                        this.userSellerId = user.customId;
+                        this.loadData(this.isMonthly);
                     }
                 }
-            } catch (e) {
-                console.log('📊 Chyba při čtení tabulky uživatelů:', e);
-            }
+            });
         }
         
         // 4. Fallback - default prodejce
@@ -100,6 +84,101 @@ class UserProfileDataLoader {
         console.log('📊 FINÁLNÍ ID prodejce:', sellerId);
         console.log('=== KONEC DIAGNOSTIKY ===');
         return String(sellerId);
+    }
+
+    // Nová metoda pro načtení uživatele ze serveru
+    async loadUserFromServer(username) {
+        try {
+            console.log('🌐 Volám server API pro uživatele...');
+            const response = await fetch('/api/users-github', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && Array.isArray(data.users)) {
+                console.log(`✅ Načteno ${data.users.length} uživatelů ze serveru`);
+                
+                // Najdi uživatele podle username
+                const user = data.users.find(u => u.username === username);
+                
+                if (user) {
+                    console.log('✅ Uživatel nalezen na serveru:', user);
+                    
+                    // Aktualizuj localStorage jako cache
+                    localStorage.setItem('users', JSON.stringify(data.users));
+                    
+                    // Pokud uživatel nemá customId, automaticky ho nastavíme
+                    if (!user.customId && user.id) {
+                        user.customId = String(user.id);
+                        console.log('⚠️ Doplněno chybějící customId:', user.customId);
+                        
+                        // Ulož zpět na server s doplněným customId
+                        this.saveUserToServer(data.users);
+                    }
+                    
+                    return user;
+                } else {
+                    console.log('❌ Uživatel nenalezen na serveru:', username);
+                    return null;
+                }
+            } else {
+                throw new Error('Neplatná odpověď ze serveru');
+            }
+            
+        } catch (error) {
+            console.error('❌ Chyba při načítání ze serveru:', error);
+            
+            // Fallback na localStorage
+            console.log('🔄 Fallback - čtu z localStorage...');
+            try {
+                const users = JSON.parse(localStorage.getItem('users') || '[]');
+                return users.find(u => u.username === username) || null;
+            } catch (e) {
+                console.error('❌ Chyba i při čtení z localStorage:', e);
+                return null;
+            }
+        }
+    }
+
+    // Nová metoda pro uložení uživatelů na server
+    async saveUserToServer(users) {
+        try {
+            console.log('💾 Ukládám uživatele na server...');
+            const response = await fetch('/api/users-github', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    users: users
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log('✅ Uživatelé úspěšně uloženi na server');
+                return true;
+            } else {
+                throw new Error(data.error || 'Nepodařilo se uložit');
+            }
+            
+        } catch (error) {
+            console.error('❌ Chyba při ukládání na server:', error);
+            return false;
+        }
     }
 
     // STEJNÁ metoda jako ProdejnyDataLoader
@@ -292,10 +371,23 @@ class UserProfileDataLoader {
         );
         
         console.log('Index sloupce id_prodejce:', idProdejceIndex);
+        console.log('Hledaný header pattern: "id_prodejce"');
+        console.log('Dostupné headers pro porovnání:');
+        headers.forEach((header, index) => {
+            console.log(`  Index ${index}: "${header}" (toLowerCase: "${(header || '').toLowerCase()}")"`);
+        });
         
         if (idProdejceIndex === -1) {
             console.error('❌ Sloupec "id_prodejce" nenalezen v headers!');
             console.log('Dostupné headers:', headers);
+            console.log('Zkouším alternativní hledání...');
+            
+            // Zkus najít sloupec obsahující "id" nebo "prodejce"
+            const altIndex1 = headers.findIndex(h => h && h.toLowerCase().includes('id'));
+            const altIndex2 = headers.findIndex(h => h && h.toLowerCase() === 'id_prodejce');
+            console.log('Alternativní hledání - obsahuje "id":', altIndex1);
+            console.log('Alternativní hledání - přesně "id_prodejce":', altIndex2);
+            
             this.showEmptyState(isMonthly);
             return;
         }
@@ -310,9 +402,13 @@ class UserProfileDataLoader {
         
         const userRows = allRows.filter((row, index) => {
             const rowSellerId = String(row[idProdejceIndex] || '').trim();
-            const matches = rowSellerId === this.userSellerId;
+            const userSellerIdStr = String(this.userSellerId || '').trim();
             
-            console.log(`Řádek ${index + 1}: "${rowSellerId}" === "${this.userSellerId}" → ${matches ? '✅ SHODA' : '❌ NESHODA'}`);
+            // Porovnávej jako stringy i jako čísla
+            const matches = rowSellerId === userSellerIdStr || 
+                           parseInt(rowSellerId) === parseInt(userSellerIdStr);
+            
+            console.log(`Řádek ${index + 1}: "${rowSellerId}" (type: ${typeof row[idProdejceIndex]}) === "${userSellerIdStr}" (type: ${typeof this.userSellerId}) → ${matches ? '✅ SHODA' : '❌ NESHODA'}`);
             
             if (matches) {
                 console.log(`✅ Nalezen řádek pro prodejce (${isMonthly ? 'měsíční' : 'aktuální'}):`, this.userSellerId, row);
@@ -605,16 +701,38 @@ class UserProfileDataLoader {
     showMockData(isMonthly) {
         console.log(`Zobrazuji mock data pro profil (${isMonthly ? 'měsíční' : 'aktuální'})`);
         
-        // Mock data podle skutečné struktury tabulky
+        // Mock data podle skutečné struktury tabulky - AKTUALIZOVÁNO podle printscreenu
         const mockData = isMonthly ? [
-            // Měsíční data (list "od 1") - Šimon Gabriel: 186 položek, 33 služeb, 1 ALIGATOR
+            // Měsíční data (list "od 1") - všichni prodejci
             ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'],
-            ['Globus', 'Šimon Gabriel', '2', '186', '33', '8', '7', '2', '0', '0', '10', '0', '1', '3', '1', '0', '1']
+            ['Hlavní sklad - Senimo', 'Tomáš Valenta', '4', '96', '17', '1', '0', '0', '0', '0', '9', '0', '0', '0', '2', '0', '0'],
+            ['Globus', 'Jan Létal', '5', '82', '12', '3', '2', '0', '0', '0', '2', '0', '0', '0', '2', '0', '0'],
+            ['Vsetín', 'Lukáš Krumpolc', '9', '56', '4', '2', '0', '0', '0', '0', '1', '0', '0', '0', '1', '0', '0'],
+            ['Čepkov', 'Tomáš Doležel', '10', '43', '9', '1', '0', '0', '2', '1', '2', '0', '0', '1', '1', '0', '0'],
+            ['Přerov', 'Nový Prodejce', '12', '25', '4', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '0', '0'],
+            ['Globus', 'Šimon Gabriel', '2', '186', '33', '8', '7', '2', '0', '0', '10', '0', '1', '3', '1', '0', '1'],
+            ['Šternberk', 'Jakub Králik', '7', '65', '9', '0', '1', '0', '1', '0', '3', '0', '0', '2', '1', '0', '0'],
+            ['Čepkov', 'Lukáš Kováčik', '1', '207', '55', '22', '2', '0', '3', '3', '18', '0', '0', '1', '1', '0', '0'],
+            ['Přerov', 'Jakub Málek', '3', '91', '13', '2', '0', '0', '0', '1', '8', '0', '0', '0', '1', '0', '0'],
+            ['Vsetín', 'Štěpán Kundera', '11', '27', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0', '0'],
+            ['Šternberk', 'Adam Kolarčík', '6', '72', '17', '3', '1', '0', '3', '0', '7', '0', '0', '1', '1', '0', '0']
         ] : [
-            // Aktuální data - Šimon Gabriel: 48 položek, 4 služby, 1 ALIGATOR
+            // Aktuální data - všichni prodejci
             ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'],
-            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1']
+            ['Hlavní sklad - Senimo', 'Tomáš Valenta', '4', '48', '8', '1', '0', '0', '0', '0', '4', '0', '0', '0', '1', '0', '0'],
+            ['Globus', 'Jan Létal', '5', '41', '6', '2', '1', '0', '0', '0', '1', '0', '0', '0', '1', '0', '0'],
+            ['Vsetín', 'Lukáš Krumpolc', '9', '28', '2', '1', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
+            ['Čepkov', 'Tomáš Doležel', '10', '22', '5', '1', '0', '0', '1', '0', '1', '0', '0', '0', '1', '0', '0'],
+            ['Přerov', 'Nový Prodejce', '12', '13', '2', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
+            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
+            ['Šternberk', 'Jakub Králik', '7', '33', '5', '0', '1', '0', '0', '0', '2', '0', '0', '1', '0', '0', '0'],
+            ['Čepkov', 'Lukáš Kováčik', '1', '52', '14', '6', '1', '0', '1', '1', '5', '0', '0', '0', '1', '0', '0'],
+            ['Přerov', 'Jakub Málek', '3', '23', '7', '1', '0', '0', '0', '0', '4', '0', '0', '0', '0', '0', '0'],
+            ['Vsetín', 'Štěpán Kundera', '11', '14', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
+            ['Šternberk', 'Adam Kolarčík', '6', '36', '8', '2', '0', '0', '1', '0', '4', '0', '0', '0', '1', '0', '0']
         ];
+        
+        console.log('🔧 MOCK DATA aktualizována - nyní obsahuje všechny prodejce včetně Jakuba Málka (ID 3)');
         
         const csvData = this.convertJsonToCsv(mockData);
         this.parseAndDisplayData(csvData, isMonthly);
@@ -711,4 +829,127 @@ class UserProfileDataLoader {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#39;');
     }
-} 
+}
+
+// 🛠️ ADMIN DEBUG FUNKCE - dostupné v konzoli
+window.userProfileDebug = {
+    // Zkontrolovat stav uživatele malek
+    checkMalekUser: async function() {
+        console.log('=== DEBUG UŽIVATELE MALEK ===');
+        
+        try {
+            // Načti ze serveru
+            console.log('🌐 Načítám uživatele ze serveru...');
+            const response = await fetch('/api/users-github');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    const users = data.users;
+                    console.log(`✅ Načteno ${users.length} uživatelů ze serveru`);
+                    
+                    const malek = users.find(u => u.username === 'malek');
+                    console.log('Uživatel malek:', malek);
+                    
+                    if (!malek) {
+                        console.log('❌ Uživatel malek nenalezen na serveru!');
+                        return false;
+                    }
+                    
+                    if (!malek.customId) {
+                        console.log('⚠️ Uživatel malek nemá customId, nastavujem ID 3...');
+                        malek.customId = '3';
+                        
+                        // Ulož zpět na server
+                        const saveResponse = await fetch('/api/users-github', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ users: users })
+                        });
+                        
+                        if (saveResponse.ok) {
+                            console.log('✅ CustomId uloženo na server');
+                        }
+                    }
+                    
+                    console.log('Finální stav malka:', malek);
+                    console.log('LocalStorage sellerId:', localStorage.getItem('sellerId'));
+                    console.log('LocalStorage username:', localStorage.getItem('username'));
+                    
+                    return true;
+                }
+            }
+            
+            throw new Error('Server nedostupný');
+            
+        } catch (error) {
+            console.error('❌ Chyba při načítání ze serveru:', error);
+            
+            // Fallback na localStorage
+            console.log('🔄 Fallback - čtu z localStorage...');
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const malek = users.find(u => u.username === 'malek');
+            
+            console.log('Uživatel malek z localStorage:', malek);
+            console.log('LocalStorage sellerId:', localStorage.getItem('sellerId'));
+            console.log('LocalStorage username:', localStorage.getItem('username'));
+            
+            return !!malek;
+        }
+    },
+    
+    // Nastavit seller ID pro aktuálně přihlášeného uživatele
+    setCurrentUserSellerId: function(newId) {
+        localStorage.setItem('sellerId', String(newId));
+        console.log(`✅ SellerId nastaven na: ${newId}`);
+        
+        // Reload profil data
+        if (window.reloadUserProfileData) {
+            window.reloadUserProfileData();
+        }
+    },
+    
+    // Zobrazit všechny uživatele ze serveru
+    showAllUsers: async function() {
+        try {
+            console.log('🌐 Načítám uživatele ze serveru...');
+            const response = await fetch('/api/users-github');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log(`✅ Načteno ${data.users.length} uživatelů ze serveru:`);
+                    console.table(data.users.map(u => ({
+                        username: u.username,
+                        fullName: `${u.firstName} ${u.lastName}`,
+                        customId: u.customId || 'NENÍ NASTAVENO',
+                        systemId: u.id
+                    })));
+                    return data.users;
+                }
+            }
+            
+            throw new Error('Server nedostupný');
+            
+        } catch (error) {
+            console.error('❌ Chyba při načítání ze serveru:', error);
+            
+            // Fallback na localStorage
+            console.log('🔄 Fallback - čtu z localStorage...');
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            console.table(users.map(u => ({
+                username: u.username,
+                fullName: `${u.firstName} ${u.lastName}`,
+                customId: u.customId || 'NENÍ NASTAVENO',
+                systemId: u.id
+            })));
+            return users;
+        }
+    }
+};
+
+// Dostupné v konzoli:
+console.log('🛠️ DEBUG FUNKCE (aktualizováno pro server):');
+console.log('userProfileDebug.checkMalekUser() - zkontroluje stav uživatele malek (ze serveru)');
+console.log('userProfileDebug.setCurrentUserSellerId("3") - nastaví seller ID');  
+console.log('userProfileDebug.showAllUsers() - zobrazí všechny uživatele (ze serveru)'); 

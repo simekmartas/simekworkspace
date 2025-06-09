@@ -82,31 +82,55 @@ class UserProfile {
     }
 
     async loadUsers() {
+        console.log('🌐 Načítám uživatele ze serveru...');
+        
         try {
-            const storedUsers = localStorage.getItem('users');
-            if (storedUsers) {
-                this.users = JSON.parse(storedUsers);
-                console.log('💾 Uživatelé načteni z localStorage');
-            } else {
-                // Fallback uživatelé pokud nejsou v localStorage
-                this.users = [
-                    {
-                        id: 1,
-                        username: 'testuser',
-                        firstName: 'Test',
-                        lastName: 'User',
-                        email: 'test@example.com',
-                        phone: '+420123456789',
-                        prodejna: 'Hlavní prodejna',
-                        bio: 'Testovací uživatel',
-                        sellerId: '1' // ID prodejce pro filtrování dat
-                    }
-                ];
-                localStorage.setItem('users', JSON.stringify(this.users));
+            // Primární - načti ze serveru
+            const response = await fetch('/api/users-github', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
             }
+            
+            const data = await response.json();
+            
+            if (data.success && Array.isArray(data.users)) {
+                this.users = data.users;
+                console.log(`✅ Načteno ${this.users.length} uživatelů ze serveru`);
+                
+                // Aktualizuj localStorage jako cache pro případ offline
+                localStorage.setItem('users', JSON.stringify(this.users));
+                
+                return this.users;
+            } else {
+                throw new Error('Neplatná odpověď ze serveru');
+            }
+            
         } catch (error) {
-            console.error('❌ Chyba při načítání uživatelů:', error);
-            throw error;
+            console.error('❌ Chyba při načítání ze serveru:', error);
+            
+            // Fallback - zkus localStorage jako cache
+            console.log('🔄 Fallback - čtu z localStorage cache...');
+            try {
+                const cachedUsers = localStorage.getItem('users');
+                if (cachedUsers) {
+                    this.users = JSON.parse(cachedUsers);
+                    console.log(`⚠️ Použity cached data - ${this.users.length} uživatelů`);
+                    return this.users;
+                }
+            } catch (e) {
+                console.error('❌ Chyba při čtení cache:', e);
+            }
+            
+            // Poslední fallback - prázdné pole
+            console.log('❌ Nelze načíst uživatele - používám prázdné pole');
+            this.users = [];
+            return this.users;
         }
     }
 

@@ -40,21 +40,9 @@ class UserManager {
     }
 
     async loadUsers() {
-        // Nejdřív načti z localStorage (spolehlivé)
-        try {
-            const savedUsers = localStorage.getItem('users');
-            if (savedUsers) {
-                this.users = JSON.parse(savedUsers);
-                console.log('📦 Načteno ' + this.users.length + ' uživatelů z localStorage');
-            } else {
-                this.users = [];
-            }
-        } catch (error) {
-            console.error('❌ Chyba při načítání z localStorage:', error);
-            this.users = [];
-        }
+        console.log('🌐 Načítám uživatele ze serveru jako primární zdroj...');
         
-        // Zkus načíst ze serveru na pozadí (ale nespoléhej na to)
+        // Primární - načti ze serveru
         try {
             const response = await fetch('/api/users-github', {
                 method: 'GET',
@@ -66,21 +54,45 @@ class UserManager {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && Array.isArray(data.users)) {
-                    // Pokud server má data, použij je
-                    if (data.users.length > 0) {
-                        this.users = data.users;
-                        localStorage.setItem('users', JSON.stringify(this.users));
-                        console.log('✅ Synchronizováno ' + this.users.length + ' uživatelů ze serveru');
-                    }
+                    this.users = data.users;
+                    console.log(`✅ Načteno ${this.users.length} uživatelů ze serveru`);
+                    
+                    // Aktualizuj localStorage jako cache
+                    localStorage.setItem('users', JSON.stringify(this.users));
+                    
+                    // Pokračuj ve zpracování
+                    await this.processLoadedUsers();
+                    return;
+                } else {
+                    throw new Error('Neplatná odpověď ze serveru');
                 }
             } else {
-                console.warn('⚠️ Server nedostupný, používám místní data');
+                throw new Error(`Server error: ${response.status}`);
             }
             
         } catch (error) {
-            console.warn('⚠️ Server nedostupný, používám místní data:', error.message);
+            console.warn('⚠️ Server nedostupný, používám localStorage jako fallback:', error.message);
+            
+            // Fallback na localStorage
+            try {
+                const savedUsers = localStorage.getItem('users');
+                if (savedUsers) {
+                    this.users = JSON.parse(savedUsers);
+                    console.log('📦 Načteno ' + this.users.length + ' uživatelů z localStorage cache');
+                } else {
+                    this.users = [];
+                    console.log('📦 Žádná cache data v localStorage');
+                }
+            } catch (error) {
+                console.error('❌ Chyba při načítání z localStorage:', error);
+                this.users = [];
+            }
         }
         
+        await this.processLoadedUsers();
+    }
+
+    async processLoadedUsers() {
         // Pokud nejsou žádní uživatelé, vytvoř výchozí
         if (this.users.length === 0) {
             await this.createDefaultUsers();
