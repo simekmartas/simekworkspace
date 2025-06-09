@@ -6,6 +6,17 @@ function updateNavigation() {
         return;
     }
     
+    // Přidej header-controls container pokud neexistuje
+    let headerControls = document.querySelector('.header-controls');
+    if (!headerControls) {
+        const headerContent = document.querySelector('.header-content');
+        if (headerContent) {
+            headerControls = document.createElement('div');
+            headerControls.className = 'header-controls';
+            headerContent.appendChild(headerControls);
+        }
+    }
+    
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     const userRole = localStorage.getItem('role');
     
@@ -56,8 +67,31 @@ function updateNavigation() {
         } else {
             nav.innerHTML = baseItems;
         }
+        // Odstranit login tlačítko
+        const existingLoginBtn = document.querySelector('.header-login-btn');
+        if (existingLoginBtn) existingLoginBtn.remove();
     } else {
+        // Menu pro nepřihlášené - bez login tlačítka v nav
         nav.innerHTML = baseItems;
+        
+        // Přidat login tlačítko do header-controls
+        const headerControls = document.querySelector('.header-controls');
+        let loginBtn = document.querySelector('.header-login-btn');
+        
+        if (!loginBtn && headerControls) {
+            loginBtn = document.createElement('a');
+            loginBtn.href = 'login.html';
+            loginBtn.className = 'header-login-btn';
+            loginBtn.textContent = 'Přihlásit';
+            
+            // Vložit před hamburger nebo na začátek
+            const hamburger = document.querySelector('.hamburger');
+            if (hamburger) {
+                headerControls.insertBefore(loginBtn, hamburger);
+            } else {
+                headerControls.appendChild(loginBtn);
+            }
+        }
     }
     
     // Logout funkcionalita
@@ -129,7 +163,18 @@ function setupDropdownMenus() {
 
 // Jednoduché hamburger menu
 function setupHamburgerMenu() {
-    const hamburger = document.querySelector('.hamburger');
+    // Přidej hamburger tlačítko, pokud neexistuje
+    let hamburger = document.querySelector('.hamburger');
+    if (!hamburger) {
+        const headerControls = document.querySelector('.header-controls');
+        if (headerControls) {
+            hamburger = document.createElement('button');
+            hamburger.className = 'hamburger';
+            hamburger.innerHTML = '<span></span><span></span><span></span>';
+            headerControls.appendChild(hamburger);
+        }
+    }
+    
     const nav = document.querySelector('nav');
     
     if (!hamburger || !nav) return;

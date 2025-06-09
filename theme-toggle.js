@@ -210,21 +210,32 @@ class ThemeToggle {
 // CSS styly pro přepínač témat a admin nastavení
 const themeStyles = `
 .theme-toggle {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    font-size: 1.5rem;
-    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-radius: 0.375rem;
     padding: 0.5rem;
-    border-radius: 50%;
-    transition: all 0.3s ease;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s ease;
     display: flex !important;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    margin-left: 0.5rem;
-    position: relative;
-    z-index: 10;
+    font-size: 1.2rem;
+    text-decoration: none;
+}
+
+.dark-theme .theme-toggle {
+    color: #94a3b8;
+}
+
+.theme-toggle:hover {
+    color: #1e293b;
+    background: rgba(100, 116, 139, 0.1);
+}
+
+.dark-theme .theme-toggle:hover {
+    color: #f8fafc;
+    background: rgba(148, 163, 184, 0.1);
 }
 
 .admin-settings-button {
@@ -248,17 +259,12 @@ const themeStyles = `
 
 .admin-settings-button:hover {
     color: #1e293b;
-    background: #f1f5f9;
+    background: rgba(100, 116, 139, 0.1);
 }
 
 .dark-theme .admin-settings-button:hover {
     color: #f8fafc;
-    background: #334155;
-}
-
-.theme-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.1);
+    background: rgba(148, 163, 184, 0.1);
 }
 
 .theme-toggle:active, .admin-settings-button:active {
