@@ -410,7 +410,7 @@ class UserProfileDataLoader {
                         <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; text-align: left; color: #856404;">
                             <h5 style="margin-top: 0; color: #856404;">💡 Vysvětlení:</h5>
                             <ul style="margin: 0; line-height: 1.6;">
-                                <li>Historická data se ukládají každý den ve 20:15</li>
+                                <li>Historická data se ukládají každý den ve 22:35</li>
                                 <li>Data jsou dostupná od ${this.getFirstAvailableDate() || 'budoucího'} ukládání</li>
                                 <li>Pro toto datum nebyl vytvořen snapshot dat</li>
                             </ul>

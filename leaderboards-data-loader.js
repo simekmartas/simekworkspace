@@ -124,7 +124,7 @@ class LeaderboardsDataLoader {
                     <h5 style="margin-top: 0; color: #856404;">💡 Vysvětlení:</h5>
                     <ul style="margin: 0; line-height: 1.6;">
                         <li>Historické žebříčky se vytvářejí ze snapshotů dat</li>
-                        <li>Data se ukládají každý den ve 20:15</li>
+                        <li>Data se ukládají každý den ve 22:35</li>
                         <li>Pro toto datum nebyl vytvořen snapshot dat</li>
                     </ul>
                 </div>

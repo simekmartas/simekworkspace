@@ -7,7 +7,7 @@ class HistoryUIComponents {
         console.log('🎨 HistoryUIComponents inicializovány');
     }
 
-    // Vytvořit date picker pro výběr historického data
+    // Vytvořit kompaktní historický picker za tlačítkem
     createDatePicker(containerId, options = {}) {
         const container = document.getElementById(containerId);
         if (!container) {
@@ -27,49 +27,78 @@ class HistoryUIComponents {
         // Získat dostupná data
         const availableDates = window.historyManager ? window.historyManager.getAvailableDates() : [];
         const todayString = this.getTodayString();
+        
+        // Zkontrolovat oprávnění pro administrátorské funkce
+        const currentUser = this.getCurrentUser();
+        const isAdmin = currentUser && currentUser.role && currentUser.role.toLowerCase() === 'administrator';
 
         container.innerHTML = `
-            <div class="history-date-picker">
-                <div class="date-picker-header">
-                    <span class="date-picker-icon">📅</span>
-                    <span class="date-picker-label">Historická data</span>
-                    ${showStats ? `<span class="date-picker-stats" id="datePickerStats">${availableDates.length} dní</span>` : ''}
-                </div>
+            <div class="compact-history-picker">
+                <button class="history-toggle-btn" id="historyToggleBtn" onclick="window.historyUI.toggleHistoryPanel('${containerId}')">
+                    📅 Historie (${availableDates.length})
+                </button>
                 
-                <div class="date-picker-controls">
-                    <select class="date-picker-select" id="historyDateSelect">
-                        ${includeToday ? `<option value="current">📊 Aktuální data</option>` : ''}
-                        ${availableDates.length > 0 ? '<optgroup label="Historická data">' : ''}
-                        ${availableDates.map(date => `
-                            <option value="${date}">
-                                ${this.formatDateForDisplay(date)} ${date === todayString ? '(dnes)' : ''}
-                            </option>
-                        `).join('')}
-                        ${availableDates.length > 0 ? '</optgroup>' : ''}
-                        ${availableDates.length === 0 ? `<option disabled>Žádná historická data</option>` : ''}
-                    </select>
-                    
-                    <button class="date-picker-refresh-btn" onclick="this.parentElement.parentElement.querySelector('.date-picker-select').dispatchEvent(new Event('change'))" title="Obnovit">
-                        🔄
-                    </button>
-                    
-                    ${availableDates.length > 0 ? `
-                        <button class="date-picker-export-btn" onclick="window.historyDebug.exportHistory()" title="Export dat">
-                            💾
-                        </button>
-                    ` : ''}
-                </div>
-                
-                ${availableDates.length === 0 ? `
-                    <div class="date-picker-empty">
-                        <div class="empty-icon">📂</div>
-                        <p>Zatím nejsou dostupná žádná historická data.</p>
-                        <p><small>Data se ukládají každý den ve 20:15</small></p>
-                        <button class="create-snapshot-btn" onclick="window.historyDebug.createTodaySnapshot()">
-                            Vytvořit snapshot pro testování
-                        </button>
+                <div class="history-panel" id="historyPanel_${containerId}" style="display: none;">
+                    <div class="history-panel-header">
+                        <span class="history-panel-title">📅 Historická data</span>
+                        <button class="history-panel-close" onclick="window.historyUI.closeHistoryPanel('${containerId}')">&times;</button>
                     </div>
-                ` : ''}
+                    
+                    <div class="history-panel-content">
+                        <div class="date-selector">
+                            <select class="date-picker-select" id="historyDateSelect">
+                                ${includeToday ? `<option value="current">📊 Aktuální data</option>` : ''}
+                                ${availableDates.length > 0 ? '<optgroup label="Historická data">' : ''}
+                                ${availableDates.map(date => `
+                                    <option value="${date}">
+                                        ${this.formatDateForDisplay(date)} ${date === todayString ? '(dnes)' : ''}
+                                    </option>
+                                `).join('')}
+                                ${availableDates.length > 0 ? '</optgroup>' : ''}
+                                ${availableDates.length === 0 ? `<option disabled>Žádná historická data</option>` : ''}
+                            </select>
+                        </div>
+                        
+                        ${showStats ? `
+                            <div class="history-stats">
+                                <div class="stat">
+                                    <span class="stat-label">Dostupných dní:</span>
+                                    <span class="stat-value">${availableDates.length}</span>
+                                </div>
+                                ${availableDates.length > 0 ? `
+                                    <div class="stat">
+                                        <span class="stat-label">Od:</span>
+                                        <span class="stat-value">${this.formatDateForDisplay(availableDates[availableDates.length - 1])}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        ${availableDates.length === 0 ? `
+                            <div class="history-empty">
+                                <p>📂 Zatím nejsou dostupná žádná historická data.</p>
+                                <p><small>Data se ukládají každý den ve 22:35</small></p>
+                                ${isAdmin ? `
+                                    <button class="create-snapshot-btn" onclick="window.historyDebug.createTodaySnapshot()">
+                                        📸 Vytvořit snapshot (admin)
+                                    </button>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        ${isAdmin && availableDates.length > 0 ? `
+                            <div class="admin-controls">
+                                <h5>🔧 Administrátorské funkce</h5>
+                                <button class="admin-btn" onclick="window.historyDebug.exportHistory()" title="Export dat">
+                                    💾 Export historie
+                                </button>
+                                <button class="admin-btn" onclick="window.historyDebug.showStats()" title="Statistiky">
+                                    📊 Statistiky
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
             </div>
         `;
 
@@ -85,7 +114,37 @@ class HistoryUIComponents {
             });
         }
 
-        return container.querySelector('.history-date-picker');
+        return container.querySelector('.compact-history-picker');
+    }
+
+    // Toggle historie panelu
+    toggleHistoryPanel(containerId) {
+        const panel = document.getElementById(`historyPanel_${containerId}`);
+        const isVisible = panel.style.display !== 'none';
+        
+        if (isVisible) {
+            panel.style.display = 'none';
+        } else {
+            panel.style.display = 'block';
+            panel.style.animation = 'slideDown 0.3s ease-out';
+        }
+    }
+
+    // Zavřít historie panel
+    closeHistoryPanel(containerId) {
+        const panel = document.getElementById(`historyPanel_${containerId}`);
+        panel.style.display = 'none';
+    }
+
+    // Získat aktuálního uživatele
+    getCurrentUser() {
+        try {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const username = localStorage.getItem('username');
+            return users.find(u => u.username === username) || null;
+        } catch (e) {
+            return null;
+        }
     }
 
     // Vytvořit kompaktní date switcher pro menší prostory
@@ -150,7 +209,7 @@ class HistoryUIComponents {
                 <div class="history-timeline-empty">
                     <div class="empty-icon">📈</div>
                     <h3>Žádná historická data</h3>
-                    <p>Historie se začne ukládat od dnešního dne ve 20:15</p>
+                    <p>Historie se začne ukládat od dnešního dne ve 22:35</p>
                 </div>
             `;
             return null;
@@ -264,61 +323,91 @@ class HistoryUIComponents {
         return date.toLocaleDateString('cs-CZ', options);
     }
 
-    // CSS styly pro date picker
+    // CSS styly pro kompaktní historický picker
     injectDatePickerStyles() {
         if (document.getElementById('historyDatePickerStyles')) return;
         
         const styles = document.createElement('style');
         styles.id = 'historyDatePickerStyles';
         styles.textContent = `
-            .history-date-picker {
-                background: var(--card-background, #ffffff);
-                border: 2px solid var(--border-color, #e0e0e0);
-                border-radius: 12px;
-                padding: 1rem;
-                margin-bottom: 1.5rem;
-                transition: all 0.3s ease;
-            }
-
-            .history-date-picker:hover {
-                border-color: var(--primary-color, #2196F3);
-                box-shadow: 0 4px 12px rgba(33, 150, 243, 0.1);
-            }
-
-            .date-picker-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
+            .compact-history-picker {
+                position: relative;
                 margin-bottom: 1rem;
             }
 
-            .date-picker-icon {
-                font-size: 1.25rem;
-                margin-right: 0.5rem;
+            .history-toggle-btn {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                padding: 0.5rem 1rem;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 0.875rem;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             }
 
-            .date-picker-label {
+            .history-toggle-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            }
+
+            .history-panel {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--card-background, #ffffff);
+                border: 2px solid var(--border-color, #e0e0e0);
+                border-radius: 12px;
+                box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+                z-index: 1000;
+                margin-top: 0.5rem;
+                min-width: 320px;
+            }
+
+            .history-panel-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 1rem;
+                border-bottom: 1px solid var(--border-color, #e0e0e0);
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                border-radius: 10px 10px 0 0;
+            }
+
+            .history-panel-title {
                 font-weight: 600;
                 color: var(--text-primary, #333);
-                flex-grow: 1;
             }
 
-            .date-picker-stats {
-                font-size: 0.875rem;
+            .history-panel-close {
+                background: none;
+                border: none;
+                font-size: 1.5rem;
+                cursor: pointer;
                 color: var(--text-secondary, #666);
-                background: var(--highlight-background, #f8f9fa);
-                padding: 0.25rem 0.75rem;
-                border-radius: 20px;
+                padding: 0.25rem;
+                border-radius: 4px;
+                transition: all 0.3s ease;
             }
 
-            .date-picker-controls {
-                display: flex;
-                gap: 0.5rem;
-                align-items: center;
+            .history-panel-close:hover {
+                background: var(--hover-color, #f5f5f5);
+                color: var(--text-primary, #333);
+            }
+
+            .history-panel-content {
+                padding: 1rem;
+            }
+
+            .date-selector {
+                margin-bottom: 1rem;
             }
 
             .date-picker-select {
-                flex-grow: 1;
+                width: 100%;
                 padding: 0.75rem;
                 border: 2px solid var(--border-color, #e0e0e0);
                 border-radius: 8px;
@@ -335,51 +424,103 @@ class HistoryUIComponents {
                 box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
             }
 
-            .date-picker-refresh-btn,
-            .date-picker-export-btn {
+            .history-stats {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                margin-bottom: 1rem;
                 padding: 0.75rem;
-                border: 2px solid var(--border-color, #e0e0e0);
+                background: var(--highlight-background, #f8f9fa);
                 border-radius: 8px;
-                background: var(--input-background, #ffffff);
-                cursor: pointer;
-                transition: all 0.3s ease;
-                font-size: 1rem;
             }
 
-            .date-picker-refresh-btn:hover,
-            .date-picker-export-btn:hover {
-                border-color: var(--primary-color, #2196F3);
-                background: var(--primary-color, #2196F3);
-                color: white;
-            }
-
-            .date-picker-empty {
+            .history-stats .stat {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
                 text-align: center;
-                padding: 2rem;
+            }
+
+            .history-stats .stat-label {
+                font-size: 0.75rem;
+                color: var(--text-secondary, #666);
+                margin-bottom: 0.25rem;
+            }
+
+            .history-stats .stat-value {
+                font-weight: 600;
+                color: var(--primary-color, #2196F3);
+                font-size: 0.875rem;
+            }
+
+            .history-empty {
+                text-align: center;
+                padding: 1.5rem;
                 color: var(--text-secondary, #666);
             }
 
-            .empty-icon {
-                font-size: 3rem;
-                margin-bottom: 1rem;
-                opacity: 0.6;
+            .history-empty p {
+                margin: 0.5rem 0;
+                font-size: 0.875rem;
             }
 
+            .admin-controls {
+                border-top: 1px solid var(--border-color, #e0e0e0);
+                padding-top: 1rem;
+                margin-top: 1rem;
+            }
+
+            .admin-controls h5 {
+                margin: 0 0 0.75rem 0;
+                font-size: 0.875rem;
+                color: var(--text-primary, #333);
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+            }
+
+            .admin-btn,
             .create-snapshot-btn {
                 background: var(--primary-color, #2196F3);
                 color: white;
                 border: none;
-                padding: 0.75rem 1.5rem;
-                border-radius: 8px;
+                padding: 0.5rem 1rem;
+                border-radius: 6px;
                 cursor: pointer;
+                font-size: 0.75rem;
                 font-weight: 600;
                 transition: all 0.3s ease;
-                margin-top: 1rem;
+                margin-right: 0.5rem;
+                margin-bottom: 0.5rem;
             }
 
+            .admin-btn:hover,
             .create-snapshot-btn:hover {
                 background: var(--primary-dark, #1976D2);
-                transform: translateY(-2px);
+                transform: translateY(-1px);
+            }
+
+            @keyframes slideDown {
+                from {
+                    opacity: 0;
+                    transform: translateY(-10px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Responzivní design */
+            @media (max-width: 768px) {
+                .history-panel {
+                    left: -50px;
+                    right: -50px;
+                }
+                
+                .history-stats {
+                    grid-template-columns: 1fr;
+                }
             }
         `;
         
