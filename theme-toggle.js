@@ -125,6 +125,10 @@ class ThemeToggle {
             return;
         }
 
+        // Najít settings tlačítko pro správné pozicování
+        const settingsButton = document.querySelector('.admin-settings-button');
+        if (!settingsButton) return;
+
         // Zjistit roli uživatele
         const userRole = localStorage.getItem('role');
         const isAdmin = userRole === 'Administrator' || userRole === 'Administrátor';
@@ -135,7 +139,7 @@ class ThemeToggle {
         
         let menuContent = `
             <div class="admin-menu-item" data-action="user-profile">
-                👤 Můj profil
+                Můj profil
             </div>
         `;
         
@@ -144,17 +148,18 @@ class ThemeToggle {
             menuContent += `
                 <div class="admin-menu-separator"></div>
                 <div class="admin-menu-item" data-action="user-management">
-                    👥 Správa uživatelů
+                    Správa uživatelů
                 </div>
             `;
         }
         
         menu.innerHTML = menuContent;
 
-        // Pozicovat menu vpravo nahoře
+        // Pozicovat menu relativně k settings tlačítku
+        const buttonRect = settingsButton.getBoundingClientRect();
         menu.style.position = 'fixed';
-        menu.style.top = '60px';
-        menu.style.right = '20px';
+        menu.style.top = (buttonRect.bottom + 5) + 'px';
+        menu.style.right = (window.innerWidth - buttonRect.right) + 'px';
         menu.style.zIndex = '1000';
 
         document.body.appendChild(menu);
@@ -171,12 +176,14 @@ class ThemeToggle {
         });
 
         // Zavřít menu při kliknutí mimo
-        document.addEventListener('click', function closeMenu(e) {
-            if (!menu.contains(e.target) && !settingsButton.contains(e.target)) {
-                menu.remove();
-                document.removeEventListener('click', closeMenu);
-            }
-        });
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu(e) {
+                if (!menu.contains(e.target) && !settingsButton.contains(e.target)) {
+                    menu.remove();
+                    document.removeEventListener('click', closeMenu);
+                }
+            });
+        }, 10);
     }
 
     toggleTheme() {
@@ -221,23 +228,32 @@ const themeStyles = `
 }
 
 .admin-settings-button {
-    background: none;
+    background: transparent;
     border: none;
-    font-size: 1.2rem;
+    border-radius: 0.375rem;
+    padding: 0.5rem;
     cursor: pointer;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    transition: all 0.3s ease;
+    color: #64748b;
+    transition: all 0.2s ease;
     display: inline-flex !important;
     align-items: center;
     justify-content: center;
-    color: inherit;
+    font-size: 1rem;
     text-decoration: none;
 }
 
+.dark-theme .admin-settings-button {
+    color: #94a3b8;
+}
+
 .admin-settings-button:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05);
+    color: #1e293b;
+    background: #f1f5f9;
+}
+
+.dark-theme .admin-settings-button:hover {
+    color: #f8fafc;
+    background: #334155;
 }
 
 .theme-toggle:hover {
@@ -250,25 +266,30 @@ const themeStyles = `
 }
 
 .admin-menu {
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    min-width: 180px;
-    padding: 8px 0;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+    min-width: 160px;
+    padding: 0.5rem 0;
+    backdrop-filter: blur(10px);
+    font-family: inherit;
+}
+
+.dark-theme .admin-menu {
+    background: rgba(15, 23, 42, 0.98);
+    border: 1px solid #334155;
 }
 
 .admin-menu-item {
-    padding: 12px 16px;
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    color: #333;
-    font-size: 14px;
+    color: #64748b;
+    font-size: 0.875rem;
     font-weight: 500;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
-    gap: 8px;
     white-space: nowrap;
     border: none;
     background: none;
@@ -276,15 +297,28 @@ const themeStyles = `
     text-align: left;
 }
 
+.dark-theme .admin-menu-item {
+    color: #94a3b8;
+}
+
 .admin-menu-item:hover {
-    background: #f5f5f5;
-    color: #333;
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.dark-theme .admin-menu-item:hover {
+    background: #334155;
+    color: #f8fafc;
 }
 
 .admin-menu-separator {
     height: 1px;
-    background: #e0e0e0;
-    margin: 8px 0;
+    background: #e5e7eb;
+    margin: 0.25rem 0;
+}
+
+.dark-theme .admin-menu-separator {
+    background: #334155;
 }
 
 /* Světlý režim */

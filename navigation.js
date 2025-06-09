@@ -78,7 +78,6 @@ function updateNavigation() {
         <li><a href="prodejny.html">Prodejny</a></li>
         <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
         <li><a href="novinky.html">Novinky</a></li>
-        <li><a href="user-profile.html">Profil</a></li>
         <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
     
@@ -102,7 +101,6 @@ function updateNavigation() {
         </li>
         <li><a href="novinky.html">Novinky</a></li>
         <li><a href="user-management.html">Správa uživatelů</a></li>
-        <li><a href="user-profile.html">Profil</a></li>
         <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
     
