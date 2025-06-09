@@ -4,8 +4,8 @@ class AIChatbot {
     constructor() {
         // ⚠️ VAROVÁNÍ: V produkci NIKDY API klíč do frontend kódu!
         // Vytvořte backend endpoint pro bezpečnost
-        this.apiKey = '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';
-        this.apiUrl = 'https://api.openai.com/v1/chat/completions';
+        this.apiKey = 'AIzaSyAjrUIvmXkB2lZr1HOtswyz92YSaKpuTkc';
+        this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
         
         this.isOpen = false;
         this.isTyping = false;
@@ -14,7 +14,7 @@ class AIChatbot {
         
         // Nastavení chatbota
         this.settings = {
-            model: 'gpt-3.5-turbo',
+            model: 'gemini-pro',
             maxTokens: 1000,
             temperature: 0.7,
             systemPrompt: `Jsi pokročilý AI asistent pro systém Mobil Maják - systém pro správu prodejních dat mobilních operátorů. 
@@ -197,7 +197,7 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
                                 • **Odpověďmi na dotazy** o konkrétních číslech 🔢<br>
                                 • **Radami pro zlepšení** prodeje 💡<br><br>
                                 ${this.apiKey && !this.apiKey.includes('ReplaceWithRealKey') ? 
-                                    '🚀 Plná AI funkcionalita + přístup k datům je k dispozici!' : 
+                                    '🚀 Powered by Google Gemini AI + přístup k datům!' : 
                                     '⚠️ Momentálně běžím v základním režimu (API není nakonfigurováno)'
                                 }<br><br>
                                 Zkus se zeptat: "Kolik mám ALIGATOR telefonů?" nebo "Jak si vedu v žebříčku?"<br><br>
@@ -1061,9 +1061,9 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
         };
     }
 
-    // === OPENAI API ===
-    async callOpenAI(message) {
-        console.log('🤖 CallOpenAI called with message:', message);
+    // === GOOGLE GEMINI API ===
+    async callGemini(message) {
+        console.log('🤖 CallGemini called with message:', message);
         console.log('🤖 API Key available:', this.apiKey ? 'YES' : 'NO');
         console.log('🤖 API Key length:', this.apiKey ? this.apiKey.length : 0);
         console.log('🤖 API Key starts with:', this.apiKey ? this.apiKey.substring(0, 10) + '...' : 'NONE');
@@ -1077,8 +1077,8 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
         // Získej aktuální data ze stránky
         const currentPageData = this.getCurrentPageData();
         
-        // Vytvoř rozšířený systémový prompt s aktuálními daty
-        const enhancedSystemPrompt = `${this.settings.systemPrompt}
+        // Vytvoř kontext s aktuálními daty
+        const contextualMessage = `${this.settings.systemPrompt}
 
 AKTUÁLNÍ KONTEXT:
 - Stránka: ${currentPageData.title}
@@ -1088,64 +1088,66 @@ AKTUÁLNÍ KONTEXT:
 AKTUÁLNÍ DATA ZE STRÁNKY:
 ${JSON.stringify(currentPageData.data, null, 2)}
 
-Použij tato aktuální data k odpovědi na uživatelův dotaz. Pokud se ptá na konkrétní číselné údaje, vždy je vezmi z AKTUÁLNÍCH DAT ZE STRÁNKY.`;
+UŽIVATELŮV DOTAZ: ${message}
 
-        const messages = [
-            {
-                role: 'system',
-                content: enhancedSystemPrompt
-            },
-            // Include last 5 messages for context (reduced to save tokens)
-            ...this.conversationHistory.slice(-5),
-            {
-                role: 'user',
-                content: message
+Odpověz v češtině na základě aktuálních dat ze stránky. Pokud se ptá na konkrétní číselné údaje, vždy je vezmi z AKTUÁLNÍCH DAT ZE STRÁNKY.`;
+
+        // Gemini API formát - jiný než OpenAI
+        const requestBody = {
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: contextualMessage
+                        }
+                    ]
+                }
+            ],
+            generationConfig: {
+                temperature: this.settings.temperature,
+                maxOutputTokens: this.settings.maxTokens,
             }
-        ];
+        };
 
         try {
-            console.log('🤖 Making API request to OpenAI...');
+            console.log('🤖 Making API request to Google Gemini...');
             console.log('🤖 Request payload:', {
                 model: this.settings.model,
-                max_tokens: this.settings.maxTokens,
+                maxOutputTokens: this.settings.maxTokens,
                 temperature: this.settings.temperature,
-                messageCount: messages.length
+                messageLength: contextualMessage.length
             });
 
-            const response = await fetch(this.apiUrl, {
+            // Gemini používá API klíč v URL parametrech
+            const urlWithKey = `${this.apiUrl}?key=${this.apiKey}`;
+
+            const response = await fetch(urlWithKey, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.apiKey}`
                 },
-                body: JSON.stringify({
-                    model: this.settings.model,
-                    messages: messages,
-                    max_tokens: this.settings.maxTokens,
-                    temperature: this.settings.temperature,
-                    stream: false
-                })
+                body: JSON.stringify(requestBody)
             });
 
-            console.log('🤖 API Response status:', response.status);
-            console.log('🤖 API Response ok:', response.ok);
+            console.log('🤖 Gemini API Response status:', response.status);
+            console.log('🤖 Gemini API Response ok:', response.ok);
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                console.error('🤖 OpenAI API Error Details:', {
+                console.error('🤖 Gemini API Error Details:', {
                     status: response.status,
                     statusText: response.statusText,
                     errorData: errorData
                 });
                 
                 // Zobraz detailní chybu uživateli
-                let errorMessage = `API Error (${response.status}): `;
-                if (response.status === 401) {
-                    errorMessage += "Neplatný API klíč. Zkontrolujte nastavení.";
+                let errorMessage = `Gemini API Error (${response.status}): `;
+                if (response.status === 401 || response.status === 403) {
+                    errorMessage += "Neplatný API klíč nebo nedostatečné oprávnění.";
                 } else if (response.status === 429) {
                     errorMessage += "Příliš mnoho požadavků. Zkuste později.";
-                } else if (response.status === 403) {
-                    errorMessage += "Nedostatečné oprávnění nebo kredity.";
+                } else if (response.status === 400) {
+                    errorMessage += "Neplatný formát požadavku.";
                 } else {
                     errorMessage += errorData.error?.message || response.statusText;
                 }
@@ -1154,8 +1156,18 @@ Použij tato aktuální data k odpovědi na uživatelův dotaz. Pokud se ptá na
             }
 
             const data = await response.json();
-            console.log('🤖 API Response successful, response length:', data.choices?.[0]?.message?.content?.length || 0);
-            return data.choices[0].message.content;
+            console.log('🤖 Gemini API Response:', data);
+            
+            // Gemini má jiný formát odpovědi než OpenAI
+            const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            if (!responseText) {
+                console.error('🤖 Neočekávaný formát odpovědi:', data);
+                return `❌ Neočekávaný formát odpovědi z Gemini API\n\nPřepínám na základní režim:\n\n${this.getFallbackResponse(message)}`;
+            }
+
+            console.log('🤖 Gemini API Response successful, response length:', responseText.length);
+            return responseText;
             
         } catch (error) {
             console.error('🤖 Network or API error details:', {
@@ -1166,6 +1178,11 @@ Použij tato aktuální data k odpovědi na uživatelův dotaz. Pokud se ptá na
             
             return `❌ Chyba připojení: ${error.message}\n\nPřepínám na základní režim:\n\n${this.getFallbackResponse(message)}`;
         }
+    }
+
+    // Kompatibilita - alias pro původní název
+    async callOpenAI(message) {
+        return this.callGemini(message);
     }
 
     // === FALLBACK RESPONSES ===
@@ -1323,14 +1340,14 @@ Pro složitější dotazy kontaktujte prosím administrátora systému.
 
     // === API TESTING ===
     async testAPI() {
-        console.log('🔧 Testing API connection...');
-        this.addMessage('Testuji API připojení...', 'bot');
+        console.log('🔧 Testing Gemini API connection...');
+        this.addMessage('Testuji Google Gemini API připojení...', 'bot');
         
         try {
-            const testResponse = await this.callOpenAI('Test zpráva - odpověz pouze "API funguje správně"');
-            this.addMessage(`✅ API Test úspěšný!\n\nOdpověď: ${testResponse}`, 'bot');
+            const testResponse = await this.callGemini('Test zpráva - odpověz pouze "Gemini API funguje správně! 🚀"');
+            this.addMessage(`✅ Gemini API Test úspěšný!\n\nOdpověď: ${testResponse}`, 'bot');
         } catch (error) {
-            this.addMessage(`❌ API Test neúspěšný!\n\nChyba: ${error.message}`, 'bot', true);
+            this.addMessage(`❌ Gemini API Test neúspěšný!\n\nChyba: ${error.message}`, 'bot', true);
         }
     }
 
