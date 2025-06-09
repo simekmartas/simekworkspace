@@ -503,7 +503,8 @@ class UserProfileDataLoader {
             'KOP250', 
             'KOP500', 
             'PZ1', 
-            'KNZ'
+            'KNZ',
+            'ALIGATOR'
         ];
         
         // Zpracované řádky - odstraň sloupec ID prodejce (index 2)
@@ -560,13 +561,13 @@ class UserProfileDataLoader {
         
         // Mock data podle skutečné struktury tabulky
         const mockData = isMonthly ? [
-            // Měsíční data (list "od 1") - Šimon Gabriel: 186 položek, 32 služeb
-            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'],
-            ['Globus', 'Šimon Gabriel', '2', '186', '32', '8', '7', '2', '0', '0', '10', '0', '1', '3', '1', '0']
+            // Měsíční data (list "od 1") - Šimon Gabriel: 186 položek, 33 služeb, 1 ALIGATOR
+            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'],
+            ['Globus', 'Šimon Gabriel', '2', '186', '33', '8', '7', '2', '0', '0', '10', '0', '1', '3', '1', '0', '1']
         ] : [
             // Aktuální data - Šimon Gabriel: 48 položek, 4 služby, 1 ALIGATOR
-            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ'],
-            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0']
+            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'],
+            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1']
         ];
         
         const csvData = this.convertJsonToCsv(mockData);
