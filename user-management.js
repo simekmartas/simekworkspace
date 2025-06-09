@@ -27,6 +27,7 @@ class UserManager {
         await this.loadUsers();
         this.setupEventListeners();
         this.startAutoSync();
+        this.checkServerStatus();
         
         // Sleduj změny v localStorage (při změnách uživatelů v jiném tabu)
         window.addEventListener('storage', async (e) => {
@@ -347,19 +348,74 @@ class UserManager {
 
     async deleteUser(userId) {
         const user = this.users.find(u => u.id === userId);
-        if (!user) return;
+        if (!user) {
+            alert('Uživatel nenalezen');
+            return;
+        }
 
-        if (!confirm(`Opravdu chcete smazat uživatele ${user.firstName} ${user.lastName}?`)) {
+        if (user.role === 'Administrator' || user.role === 'Administrátor') {
+            alert('Nelze smazat administratorský účet');
+            return;
+        }
+
+        if (!confirm(`Opravdu chcete smazat uživatele ${user.firstName} ${user.lastName}?\n\nTato akce je nevratná!`)) {
             return;
         }
 
         try {
+            console.log(`🗑️ Mazání uživatele ${user.firstName} ${user.lastName} (ID: ${userId})`);
+            
+            // Nejprve odstraň z pole
             this.users = this.users.filter(u => u.id !== userId);
-            await this.saveUsers();
-            alert('Uživatel byl úspěšně smazán');
+            
+            // Okamžitě ulož do localStorage
+            localStorage.setItem('users', JSON.stringify(this.users));
+            console.log('📦 Lokální záloha aktualizována');
+            
+            // Ihned aktualizuj zobrazení
             this.displayUsers();
+            
+            // Synchronizace se serverem s lepším error handlingem
+            try {
+                console.log('🔄 Synchronizuji smazání se serverem...');
+                const response = await fetch('/api/users-github', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        users: this.users,
+                        timestamp: Date.now(),
+                        action: 'delete',
+                        deletedUserId: userId
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('✅ Smazání synchronizováno se serverem');
+                        alert(`Uživatel ${user.firstName} ${user.lastName} byl úspěšně smazán a synchronizován`);
+                    } else {
+                        console.warn('⚠️ Server odmítl synchronizaci:', data.error);
+                        alert(`Uživatel ${user.firstName} ${user.lastName} byl smazán lokálně, ale synchronizace se serverem selhala: ${data.error}`);
+                    }
+                } else {
+                    const errorText = await response.text();
+                    console.error(`❌ Server error ${response.status}:`, errorText);
+                    alert(`Uživatel ${user.firstName} ${user.lastName} byl smazán lokálně. Server error: ${response.status}`);
+                }
+            } catch (syncError) {
+                console.error('❌ Chyba při synchronizaci se serverem:', syncError);
+                alert(`Uživatel ${user.firstName} ${user.lastName} byl smazán lokálně, ale nepodařilo se synchronizovat se serverem: ${syncError.message}`);
+            }
+            
         } catch (error) {
-            alert('Chyba při mazání: ' + error.message);
+            console.error('❌ Chyba při mazání uživatele:', error);
+            alert('Kritická chyba při mazání uživatele: ' + error.message);
+            // Obnov data ze serveru
+            await this.loadUsers();
+            this.displayUsers();
         }
     }
 
@@ -391,6 +447,8 @@ class UserManager {
             localStorage.setItem('users', JSON.stringify(this.users));
             console.log('📦 Backup uložen do localStorage');
             
+            let serverSyncSuccess = false;
+            
             // Zkus synchronizovat se serverem na pozadí (ale nespoléhej na to)
             try {
                 const response = await fetch('/api/users-github', {
@@ -408,21 +466,30 @@ class UserManager {
                     const data = await response.json();
                     if (data.success) {
                         console.log('✅ Uživatelé synchronizováni se serverem');
+                        serverSyncSuccess = true;
+                    } else {
+                        console.warn('⚠️ Server odmítl data:', data.error || 'Neznámá chyba');
                     }
+                } else if (response.status === 500) {
+                    const errorData = await response.json().catch(() => null);
+                    console.error('❌ Server error 500:', errorData?.error || 'Vnitřní chyba serveru');
+                    console.warn('💡 Zkontrolujte GitHub token v environment variables');
                 } else {
-                    console.warn('⚠️ Synchronizace se serverem selhala, používám pouze localStorage');
+                    console.warn(`⚠️ Synchronizace selhala (${response.status}):`, response.statusText);
                 }
                 
             } catch (error) {
-                console.warn('⚠️ Synchronizace se serverem selhala, používám pouze localStorage:', error.message);
+                console.warn('⚠️ Síťová chyba při synchronizaci se serverem:', error.message);
             }
             
+            // Vrať true pokud se alespoň localStorage povedlo
             return true;
         } catch (error) {
             if (error.name === 'QuotaExceededError') {
-                console.error('localStorage QuotaExceededError - nutno vyčistit cache');
+                console.error('❌ localStorage QuotaExceededError - nutno vyčistit cache');
+                alert('Nedostatek místa v prohlížeči - vymažte cache a zkuste to znovu');
             } else {
-                console.error('Chyba při backup ukládání:', error);
+                console.error('❌ Chyba při ukládání:', error);
             }
             return false;
         }
