@@ -23,14 +23,13 @@ function updateNavigation() {
     // Čisté minimalistické menu - bez emoji
     const baseItems = `
         <li><a href="index.html">Domů</a></li>
-        <li><a href="index.html#o-nas">O nás</a></li>
-        <li><a href="index.html#kontakt">Kontakt</a></li>
     `;
     
     // Prodejce menu - čisté a jednoduché
     const prodejceItems = `
         <li><a href="prodejny.html">Prodejny</a></li>
         <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
+        <li><a href="leaderboards.html">Žebříček</a></li>
         <li><a href="novinky.html">Novinky</a></li>
         <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
@@ -53,6 +52,7 @@ function updateNavigation() {
                 <li><a href="celkem.html">Celkem</a></li>
             </ul>
         </li>
+        <li><a href="leaderboards.html">Žebříček</a></li>
         <li><a href="novinky.html">Novinky</a></li>
         <li><a href="user-management.html">Správa uživatelů</a></li>
         <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
