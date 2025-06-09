@@ -5,7 +5,7 @@ class AIChatbot {
         // ⚠️ VAROVÁNÍ: V produkci NIKDY API klíč do frontend kódu!
         // Vytvořte backend endpoint pro bezpečnost
         this.apiKey = 'AIzaSyAjrUIvmXkB2lZr1HOtswyz92YSaKpuTkc';
-        this.apiUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+        this.apiUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
         
         this.isOpen = false;
         this.isTyping = false;
@@ -14,7 +14,7 @@ class AIChatbot {
         
         // Nastavení chatbota
         this.settings = {
-            model: 'gemini-pro',
+            model: 'gemini-1.5-flash',
             maxTokens: 1000,
             temperature: 0.7,
             systemPrompt: `Jsi pokročilý AI asistent pro systém Mobil Maják - systém pro správu prodejních dat mobilních operátorů. 
@@ -1092,7 +1092,7 @@ UŽIVATELŮV DOTAZ: ${message}
 
 Odpověz v češtině na základě aktuálních dat ze stránky. Pokud se ptá na konkrétní číselné údaje, vždy je vezmi z AKTUÁLNÍCH DAT ZE STRÁNKY.`;
 
-        // Gemini API formát - jiný než OpenAI
+        // Gemini API formát - jednodušší přístup
         const requestBody = {
             contents: [
                 {
@@ -1102,32 +1102,58 @@ Odpověz v češtině na základě aktuálních dat ze stránky. Pokud se ptá n
                         }
                     ]
                 }
-            ],
-            generationConfig: {
-                temperature: this.settings.temperature,
-                maxOutputTokens: this.settings.maxTokens,
-            }
+            ]
         };
 
         try {
             console.log('🤖 Making API request to Google Gemini...');
             console.log('🤖 Request payload:', {
                 model: this.settings.model,
-                maxOutputTokens: this.settings.maxTokens,
-                temperature: this.settings.temperature,
                 messageLength: contextualMessage.length
             });
 
-            // Gemini používá API klíč v URL parametrech
-            const urlWithKey = `${this.apiUrl}?key=${this.apiKey}`;
+            // Seznam možných endpointů pro Gemini
+            const possibleUrls = [
+                'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent',
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent',
+                'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent',
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+            ];
 
-            const response = await fetch(urlWithKey, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody)
-            });
+            let response = null;
+            let lastError = null;
+
+            // Zkusit jednotlivé endpointy
+            for (const url of possibleUrls) {
+                try {
+                    console.log(`🤖 Trying endpoint: ${url}`);
+                    const urlWithKey = `${url}?key=${this.apiKey}`;
+
+                    response = await fetch(urlWithKey, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+
+                    if (response.ok) {
+                        console.log(`🤖 Success with endpoint: ${url}`);
+                        this.apiUrl = url; // Uložit funkční endpoint
+                        break;
+                    } else {
+                        console.log(`🤖 Failed with endpoint: ${url}, status: ${response.status}`);
+                        lastError = await response.text();
+                    }
+                } catch (err) {
+                    console.log(`🤖 Error with endpoint: ${url}`, err);
+                    lastError = err;
+                }
+            }
+
+            if (!response || !response.ok) {
+                throw new Error(`All endpoints failed. Last error: ${lastError}`);
+            }
 
             console.log('🤖 Gemini API Response status:', response.status);
             console.log('🤖 Gemini API Response ok:', response.ok);
