@@ -20,8 +20,8 @@ class UserProfileDataLoader {
         
         this.refreshInterval = null;
         
-        // Google Apps Script URL - STEJNÝ jako ProdejnyDataLoader
-        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyrD0f_pWkPIaowVclG3zdzgfceYGjyqWin5-2jKKwadFb1e3itg6OMoeZdRxfX0Qk4xg/exec';
+        // Google Apps Script URL - AKTUALIZOVANÉ funkční URL
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyGPiyfiPMn1yvZFoYuiFwFiCXJ7u3vBLlmiEqXLXSuzuDvDCcKqm6uUyDIRbcH4Ftk5g/exec';
         
         console.log(`📊 UserProfileDataLoader vytvořen pro ${this.isMonthly ? 'MĚSÍČNÍ' : 'AKTUÁLNÍ'} data`);
         console.log(`📊 ID prodejce: ${this.userSellerId}, GID: ${this.isMonthly ? this.monthlyGid : this.mainGid}`);

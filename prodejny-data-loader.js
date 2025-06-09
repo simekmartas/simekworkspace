@@ -16,7 +16,7 @@ class ProdejnyDataLoader {
         this.refreshInterval = null;
         
         // Google Apps Script URL - nejnovější nasazení  
-        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyrD0f_pWkPIaowVclG3zdzgfceYGjyqWin5-2jKKwadFb1e3itg6OMoeZdRxfX0Qk4xg/exec';
+        this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyGPiyfiPMn1yvZFoYuiFwFiCXJ7u3vBLlmiEqXLXSuzuDvDCcKqm6uUyDIRbcH4Ftk5g/exec';
         
         // Automaticky načte data po vytvoření instance
         setTimeout(() => {
