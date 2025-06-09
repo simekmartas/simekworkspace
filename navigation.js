@@ -20,17 +20,21 @@ function updateNavigation() {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
     const userRole = localStorage.getItem('role');
     
+    // Získat jméno uživatele pro profil
+    const userDisplayName = getUserDisplayName();
+    
     // Čisté minimalistické menu - bez emoji
     const baseItems = `
         <li><a href="index.html">Domů</a></li>
+        <li><a href="novinky.html">Novinky</a></li>
+        <li><a href="leaderboards.html">Žebříček</a></li>
+        <li><a href="prodejny.html">Prodejny</a></li>
     `;
     
     // Prodejce menu - čisté a jednoduché
     const prodejceItems = `
-        <li><a href="prodejny.html">Prodejny</a></li>
         <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
-        <li><a href="leaderboards.html">Žebříček</a></li>
-        <li><a href="novinky.html">Novinky</a></li>
+        <li><a href="user-profile.html">${userDisplayName}</a></li>
         <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
     
@@ -52,8 +56,7 @@ function updateNavigation() {
                 <li><a href="celkem.html">Celkem</a></li>
             </ul>
         </li>
-        <li><a href="leaderboards.html">Žebříček</a></li>
-        <li><a href="novinky.html">Novinky</a></li>
+        <li><a href="user-profile.html">${userDisplayName}</a></li>
         <li><a href="user-management.html">Správa uživatelů</a></li>
         <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
@@ -114,6 +117,39 @@ function updateNavigation() {
     setupDropdownMenus();
     setupHamburgerMenu();
     markActivePage();
+}
+
+// Funkce pro získání zobrazovaného jména uživatele
+function getUserDisplayName() {
+    const username = localStorage.getItem('username');
+    
+    if (!username) {
+        return 'Můj profil';
+    }
+    
+    try {
+        // Zkus najít v localStorage uživatelských dat
+        const users = JSON.parse(localStorage.getItem('users') || '[]');
+        const currentUser = users.find(u => u.username === username);
+        
+        if (currentUser) {
+            // Priorita: fullName -> firstName + lastName -> firstName -> username
+            if (currentUser.fullName && currentUser.fullName.trim() !== '') {
+                return currentUser.fullName;
+            } else if (currentUser.firstName && currentUser.lastName) {
+                return `${currentUser.firstName} ${currentUser.lastName}`.trim();
+            } else if (currentUser.firstName) {
+                return currentUser.firstName;
+            } else {
+                return currentUser.username;
+            }
+        }
+    } catch (e) {
+        console.log('Chyba při čtení uživatelských dat z localStorage:', e);
+    }
+    
+    // Fallback na username
+    return username;
 }
 
 // Jednoduché dropdown menu
