@@ -4,7 +4,7 @@ class AIChatbot {
     constructor() {
         // ⚠️ VAROVÁNÍ: V produkci NIKDY API klíč do frontend kódu!
         // Vytvořte backend endpoint pro bezpečnost
-        this.apiKey = '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';
+        this.apiKey = process.env.OPENAI_API_KEY || 'sk-proj-iVkAReplaceWithRealKey2024';
         this.apiUrl = 'https://api.openai.com/v1/chat/completions';
         
         this.isOpen = false;
@@ -178,8 +178,12 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
                                 <br><br>
                                 • Vysvětlením funkcí systému<br>
                                 • Analýzou prodejních dat<br>  
-                                • Tipy pro optimalizaci prodeje<br>
-                                • Odpovědi na dotazy<br><br>
+                                • Řešením základních problémů<br>
+                                • Odpovědi na dotazy o ALIGATOR telefonech<br><br>
+                                ${this.apiKey && !this.apiKey.includes('ReplaceWithRealKey') ? 
+                                    'Plná AI funkcionalita je k dispozici! 🚀' : 
+                                    '⚠️ Momentálně běžím v základním režimu (API není nakonfigurováno)'
+                                }<br><br>
                                 Na co se chceš zeptat?
                             </div>
                             <div class="message-time">${new Date().toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>
@@ -823,6 +827,11 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
 
     // === OPENAI API ===
     async callOpenAI(message) {
+        // Zkontroluj, zda je API klíč nastaven
+        if (!this.apiKey || this.apiKey.includes('ReplaceWithRealKey')) {
+            return this.getFallbackResponse(message);
+        }
+
         const messages = [
             {
                 role: 'system',
@@ -836,28 +845,101 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
             }
         ];
 
-        const response = await fetch(this.apiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.apiKey}`
-            },
-            body: JSON.stringify({
-                model: this.settings.model,
-                messages: messages,
-                max_tokens: this.settings.maxTokens,
-                temperature: this.settings.temperature,
-                stream: false
-            })
-        });
+        try {
+            const response = await fetch(this.apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: this.settings.model,
+                    messages: messages,
+                    max_tokens: this.settings.maxTokens,
+                    temperature: this.settings.temperature,
+                    stream: false
+                })
+            });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(`OpenAI API Error: ${errorData.error?.message || response.statusText}`);
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('OpenAI API Error:', errorData);
+                
+                // Fallback na lokální odpovědi při API problémech
+                return this.getFallbackResponse(message);
+            }
+
+            const data = await response.json();
+            return data.choices[0].message.content;
+            
+        } catch (error) {
+            console.error('Network or API error:', error);
+            return this.getFallbackResponse(message);
         }
+    }
 
-        const data = await response.json();
-        return data.choices[0].message.content;
+    // === FALLBACK RESPONSES ===
+    getFallbackResponse(message) {
+        console.log('🤖 Using fallback response system');
+        
+        const lowerMessage = message.toLowerCase();
+        
+        // Předdefinované odpovědi pro časté dotazy
+        if (lowerMessage.includes('jak funguje') || lowerMessage.includes('jak používat')) {
+            return `Systém Mobil Maják slouží ke správě prodejních dat mobilních operátorů. Můžete zde:
+
+• Sledovat prodejní statistiky
+• Analyzovat výkonnost prodejců
+• Zobrazit údaje o prodeji telefonů a služeb
+• Prohlížet žebříčky nejlepších prodejců
+
+Pro více informací kontaktujte administrátora systému.`;
+        }
+        
+        if (lowerMessage.includes('statistik') || lowerMessage.includes('data')) {
+            return `Pro analýzu dat použijte:
+
+• **Prodejny** - celkový přehled všech prodejen
+• **Můj profil** - vaše osobní statistiky
+• **Bazar** - prodané položky v bazaru
+• **Servis** - servisní služby
+
+Data se automaticky aktualizují z Google Sheets tabulky.`;
+        }
+        
+        if (lowerMessage.includes('aligator')) {
+            return `ALIGATOR telefony jsou speciální kategorie produktů. Můžete si prohlédnout:
+
+• Počet prodaných ALIGATOR telefonů v měsíčním přehledu
+• Porovnání s ostatními prodejci
+• Celkové statistiky na stránce Prodejny
+
+Pokud se vám ALIGATOR telefony nezobrazují správně, zkontrolujte nastavení profilu.`;
+        }
+        
+        if (lowerMessage.includes('problém') || lowerMessage.includes('nefunguje')) {
+            return `Při problémech zkuste:
+
+1. **Obnovit stránku** (F5 nebo Ctrl+R)
+2. **Vymazat cache** prohlížeče
+3. **Zkontrolovat připojení** k internetu
+4. **Kontaktovat podporu** pokud problém přetrvává
+
+Většina problémů se vyřeší obnovením stránky.`;
+        }
+        
+        // Obecná odpověď
+        return `Děkuji za vaši zprávu! Bohužel momentálně není k dispozici plná AI funkcionalita.
+
+Můžu vám pomoci s:
+• **Vysvětlením funkcí** systému Mobil Maják
+• **Navigací** po rozhraní
+• **Řešením základních problémů**
+• **Informacemi o prodejních datech**
+
+Pro složitější dotazy kontaktujte prosím administrátora systému.
+
+*Váš dotaz: "${message}"*`;
     }
 
     // === CONVERSATION PERSISTENCE ===
