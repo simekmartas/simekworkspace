@@ -12,6 +12,18 @@ class AIChatbot {
         this.conversationHistory = [];
         this.isAuthenticated = false;
         
+        // Cache pro data ze všech stránek
+        this.allPagesData = {
+            'user-profile': null,
+            'prodejny': null,
+            'bazar': null,
+            'servis': null,
+            'celkem': null,
+            'index': null,
+            loaded: false,
+            loading: false
+        };
+        
         // Nastavení chatbota
         this.settings = {
             model: 'gemini-1.5-flash',
@@ -53,7 +65,259 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
         if (this.isAuthenticated) {
             this.createChatbotUI();
             this.loadConversationHistory();
+            this.preloadAllPagesData(); // Načti data ze všech stránek
             console.log('🤖 AI Chatbot inicializován');
+        }
+    }
+
+    // === PRE-LOADING VŠECH DAT ===
+    async preloadAllPagesData() {
+        if (this.allPagesData.loading || this.allPagesData.loaded) {
+            return;
+        }
+
+        console.log('🚀 Pre-loading dat ze všech stránek...');
+        this.allPagesData.loading = true;
+
+        const pages = [
+            { name: 'user-profile', url: 'user-profile.html' },
+            { name: 'prodejny', url: 'prodejny.html' },
+            { name: 'bazar', url: 'bazar.html' },
+            { name: 'servis', url: 'servis.html' },
+            { name: 'celkem', url: 'celkem.html' }
+        ];
+
+        // Načti data ze všech stránek paralelně
+        const loadPromises = pages.map(page => this.loadPageData(page.name, page.url));
+        
+        try {
+            await Promise.allSettled(loadPromises);
+            this.allPagesData.loaded = true;
+            console.log('✅ Všechna data načtena!', this.allPagesData);
+            
+            // Aktualizuj uvítací zprávu
+            this.updateWelcomeMessage();
+        } catch (error) {
+            console.warn('⚠️ Některá data se nepodařilo načíst:', error);
+        } finally {
+            this.allPagesData.loading = false;
+        }
+    }
+
+    async loadPageData(pageName, url) {
+        try {
+            console.log(`📄 Načítám data z ${pageName}...`);
+            
+            // Vytvoř iframe pro načtení stránky
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = url;
+            document.body.appendChild(iframe);
+
+            // Počkej až se iframe načte
+            await new Promise((resolve, reject) => {
+                iframe.onload = resolve;
+                iframe.onerror = reject;
+                setTimeout(reject, 10000); // timeout 10s
+            });
+
+            // Extrahuj data z iframe
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            const pageData = this.extractDataFromDocument(iframeDoc, pageName);
+            
+            this.allPagesData[pageName] = {
+                data: pageData,
+                timestamp: new Date().toISOString(),
+                url: url
+            };
+
+            console.log(`✅ Data z ${pageName} načtena`);
+            
+            // Vyčisti iframe
+            document.body.removeChild(iframe);
+            
+        } catch (error) {
+            console.warn(`❌ Nepodařilo se načíst data z ${pageName}:`, error);
+            this.allPagesData[pageName] = {
+                data: null,
+                error: error.message,
+                timestamp: new Date().toISOString()
+            };
+        }
+    }
+
+    extractDataFromDocument(doc, pageType) {
+        // Použij stejné funkce jako pro aktuální stránku, ale na jiném dokumentu
+        const originalDocument = document;
+        
+        try {
+            // Dočasně nahraď globální document
+            global.document = doc;
+            
+            switch (pageType) {
+                case 'user-profile':
+                    return this.getUserProfileDataFromDoc(doc);
+                case 'prodejny':
+                    return this.getProdejnyDataFromDoc(doc);
+                case 'bazar':
+                    return this.getBazarDataFromDoc(doc);
+                case 'servis':
+                    return this.getServisDataFromDoc(doc);
+                default:
+                    return this.getGeneralPageDataFromDoc(doc);
+            }
+        } finally {
+            // Obnov původní document
+            global.document = originalDocument;
+        }
+    }
+
+    getUserProfileDataFromDoc(doc) {
+        const data = {};
+        
+        // Čti hlavní metriky
+        const totalItems = doc.getElementById('totalItemsSold')?.textContent || '0';
+        const totalServices = doc.getElementById('totalServicesSold')?.textContent || '0';
+        
+        data.overview = {
+            totalItemsSold: totalItems,
+            totalServicesSold: totalServices
+        };
+        
+        // Čti tabulky
+        const table = doc.querySelector('#userProfileTable, .retro-sales-table');
+        if (table) {
+            data.tableData = this.parseTableDataFromDoc(table);
+        }
+        
+        return data;
+    }
+
+    getProdejnyDataFromDoc(doc) {
+        const data = {};
+        
+        // Čti králové/žebříčky
+        const kings = doc.querySelectorAll('.king-card');
+        data.kings = [];
+        
+        kings.forEach(king => {
+            const label = king.querySelector('.king-label')?.textContent || '';
+            const name = king.querySelector('.king-name')?.textContent || '';
+            const value = king.querySelector('.king-value')?.textContent || '';
+            
+            data.kings.push({
+                category: label,
+                name: name,
+                value: value
+            });
+        });
+        
+        // Čti hlavní tabulku
+        const table = doc.querySelector('.retro-sales-table');
+        if (table) {
+            data.tableData = this.parseTableDataFromDoc(table);
+        }
+        
+        return data;
+    }
+
+    getBazarDataFromDoc(doc) {
+        const data = {};
+        
+        // Čti celkové statistiky
+        const totalCards = doc.querySelectorAll('.summary-card');
+        data.summary = [];
+        
+        totalCards.forEach(card => {
+            const label = card.querySelector('.summary-label')?.textContent || '';
+            const value = card.querySelector('.summary-value')?.textContent || '';
+            
+            data.summary.push({
+                label: label,
+                value: value
+            });
+        });
+        
+        return data;
+    }
+
+    getServisDataFromDoc(doc) {
+        const data = {};
+        
+        const table = doc.querySelector('.servis-table, .retro-sales-table');
+        if (table) {
+            data.services = this.parseTableDataFromDoc(table);
+        }
+        
+        return data;
+    }
+
+    getGeneralPageDataFromDoc(doc) {
+        const data = {};
+        
+        const title = doc.querySelector('h1')?.textContent || '';
+        const stats = doc.querySelectorAll('.stat-value');
+        
+        data.title = title;
+        data.stats = [];
+        
+        stats.forEach(stat => {
+            const label = stat.previousElementSibling?.textContent || '';
+            const value = stat.textContent || '';
+            
+            data.stats.push({
+                label: label,
+                value: value
+            });
+        });
+        
+        return data;
+    }
+
+    parseTableDataFromDoc(table) {
+        const headers = [];
+        const rows = [];
+        
+        // Čti hlavičky
+        const headerCells = table.querySelectorAll('thead th');
+        headerCells.forEach(cell => {
+            headers.push(cell.textContent.trim());
+        });
+        
+        // Čti řádky dat (max 20 pro všechna data)
+        const dataRows = table.querySelectorAll('tbody tr');
+        for (let i = 0; i < Math.min(20, dataRows.length); i++) {
+            const row = [];
+            const cells = dataRows[i].querySelectorAll('td');
+            cells.forEach(cell => {
+                row.push(cell.textContent.trim());
+            });
+            rows.push(row);
+        }
+        
+        return {
+            headers: headers,
+            rows: rows,
+            totalRows: dataRows.length
+        };
+    }
+
+    updateWelcomeMessage() {
+        const welcomeMessage = document.querySelector('.welcome-message .message-text');
+        if (welcomeMessage && this.allPagesData.loaded) {
+            const loadedPages = Object.keys(this.allPagesData).filter(key => 
+                key !== 'loaded' && key !== 'loading' && this.allPagesData[key]?.data
+            ).length;
+            
+            // Přidej info o načtených datech
+            const infoElement = welcomeMessage.querySelector('.loaded-data-info');
+            if (!infoElement) {
+                const info = document.createElement('div');
+                info.className = 'loaded-data-info';
+                info.style.cssText = 'margin-top: 8px; padding: 8px; background: rgba(34, 197, 94, 0.1); border-radius: 6px; font-size: 12px;';
+                info.innerHTML = `📊 <strong>Načtena data z ${loadedPages} stránek</strong> - mohu odpovídat na dotazy o všech sekcích systému!`;
+                welcomeMessage.appendChild(info);
+            }
         }
     }
 
@@ -201,24 +465,34 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
                                     '⚠️ Momentálně běžím v základním režimu (API není nakonfigurováno)'
                                 }<br><br>
                                 Zkus se zeptat: "Kolik mám ALIGATOR telefonů?" nebo "Jak si vedu v žebříčku?"<br><br>
-                                <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
                                     <button onclick="window.aiChatbot.testAPI()" style="
                                         background: var(--accent-color, #007bff);
                                         color: white;
                                         border: none;
-                                        padding: 8px 12px;
+                                        padding: 6px 10px;
                                         border-radius: 6px;
                                         cursor: pointer;
-                                        font-size: 12px;
+                                        font-size: 11px;
                                     ">🔧 Test API</button>
+                                    <button onclick="window.aiChatbot.newChat()" style="
+                                        background: var(--warning-color, #ffc107);
+                                        color: #212529;
+                                        border: none;
+                                        padding: 6px 10px;
+                                        border-radius: 6px;
+                                        cursor: pointer;
+                                        font-size: 11px;
+                                        font-weight: 500;
+                                    ">💬 Nový chat</button>
                                     <button onclick="window.location.reload()" style="
                                         background: var(--success-color, #28a745);
                                         color: white;
                                         border: none;
-                                        padding: 8px 12px;
+                                        padding: 6px 10px;
                                         border-radius: 6px;
                                         cursor: pointer;
-                                        font-size: 12px;
+                                        font-size: 11px;
                                     ">🔄 Reload</button>
                                 </div>
                             </div>
@@ -1077,20 +1351,30 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ
         // Získej aktuální data ze stránky
         const currentPageData = this.getCurrentPageData();
         
-        // Vytvoř kontext s aktuálními daty
-        const contextualMessage = `${this.settings.systemPrompt}
-
-AKTUÁLNÍ KONTEXT:
+        // Připrav všechna dostupná data
+        let allDataContext = `AKTUÁLNÍ STRÁNKA:
 - Stránka: ${currentPageData.title}
 - URL: ${currentPageData.url}
 - Typ: ${currentPageData.currentPage}
+- Data: ${JSON.stringify(currentPageData.data, null, 2)}`;
 
-AKTUÁLNÍ DATA ZE STRÁNKY:
-${JSON.stringify(currentPageData.data, null, 2)}
+        if (this.allPagesData.loaded) {
+            allDataContext += `\n\nDATA ZE VŠECH STRÁNEK SYSTÉMU:`;
+            Object.keys(this.allPagesData).forEach(pageName => {
+                if (pageName !== 'loaded' && pageName !== 'loading' && this.allPagesData[pageName]?.data) {
+                    allDataContext += `\n\n=== ${pageName.toUpperCase()} ===\n${JSON.stringify(this.allPagesData[pageName].data, null, 2)}`;
+                }
+            });
+        }
+        
+        // Vytvoř kontext s všemi daty
+        const contextualMessage = `${this.settings.systemPrompt}
+
+${allDataContext}
 
 UŽIVATELŮV DOTAZ: ${message}
 
-Odpověz v češtině na základě aktuálních dat ze stránky. Pokud se ptá na konkrétní číselné údaje, vždy je vezmi z AKTUÁLNÍCH DAT ZE STRÁNKY.`;
+Odpověz v češtině na základě všech dostupných dat ze systému. Pokud se ptá na data z jiných stránek než aktuální, použij data ze sekce "DATA ZE VŠECH STRÁNEK SYSTÉMU".`;
 
         // Gemini API formát - jednodušší přístup
         const requestBody = {
@@ -1348,20 +1632,7 @@ Pro složitější dotazy kontaktujte prosím administrátora systému.
     }
 
     clearConversation() {
-        this.conversationHistory = [];
-        this.messagesContainer.innerHTML = `
-            <div class="welcome-message">
-                <div class="message bot-message">
-                    <div class="message-avatar">🤖</div>
-                    <div class="message-content">
-                        <div class="message-text">
-                            Konverzace byla vymazána. Jak ti mohu pomoci?
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-        this.saveConversationHistory();
+        this.newChat(); // Použij novou funkci
     }
 
     // === API TESTING ===
@@ -1375,6 +1646,90 @@ Pro složitější dotazy kontaktujte prosím administrátora systému.
         } catch (error) {
             this.addMessage(`❌ Gemini API Test neúspěšný!\n\nChyba: ${error.message}`, 'bot', true);
         }
+    }
+
+    // === NOVÝ CHAT ===
+    newChat() {
+        console.log('💬 Starting new chat...');
+        
+        // Vymaž conversation history
+        this.conversationHistory = [];
+        this.saveConversationHistory();
+        
+        // Vymaž UI zprávy
+        this.messagesContainer.innerHTML = '';
+        
+        // Přidej novou uvítací zprávu
+        this.showWelcomeMessage();
+        
+        // Info zpráva o novém chatu
+        setTimeout(() => {
+            this.addMessage('✨ Nový chat spuštěn! Historie konverzace byla vymazána.', 'bot');
+        }, 500);
+    }
+
+    showWelcomeMessage() {
+        const welcomeDiv = document.createElement('div');
+        welcomeDiv.className = 'welcome-message';
+        welcomeDiv.innerHTML = `
+            <div class="message bot-message">
+                <div class="message-avatar">🤖</div>
+                <div class="message-content">
+                    <div class="message-text">
+                        Ahoj! Jsem pokročilý AI asistent systému Mobil Maják. Mohu ti pomoci s:
+                        <br><br>
+                        • **Analýzou aktuálních dat** z této stránky 📊<br>
+                        • **Čtením statistik** z tabulek a grafů 📈<br>  
+                        • **Porovnáním výkonnosti** prodejců 🏆<br>
+                        • **Odpověďmi na dotazy** o konkrétních číslech 🔢<br>
+                        • **Radami pro zlepšení** prodeje 💡<br><br>
+                        ${this.apiKey && !this.apiKey.includes('ReplaceWithRealKey') ? 
+                            '🚀 Powered by Google Gemini AI + přístup k datům!' : 
+                            '⚠️ Momentálně běžím v základním režimu (API není nakonfigurováno)'
+                        }<br><br>
+                        Zkus se zeptat: "Kolik mám ALIGATOR telefonů?" nebo "Jak si vedu v žebříčku?"<br><br>
+                        <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+                            <button onclick="window.aiChatbot.testAPI()" style="
+                                background: var(--accent-color, #007bff);
+                                color: white;
+                                border: none;
+                                padding: 6px 10px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 11px;
+                            ">🔧 Test API</button>
+                            <button onclick="window.aiChatbot.newChat()" style="
+                                background: var(--warning-color, #ffc107);
+                                color: #212529;
+                                border: none;
+                                padding: 6px 10px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 11px;
+                                font-weight: 500;
+                            ">💬 Nový chat</button>
+                            <button onclick="window.location.reload()" style="
+                                background: var(--success-color, #28a745);
+                                color: white;
+                                border: none;
+                                padding: 6px 10px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 11px;
+                            ">🔄 Reload</button>
+                        </div>
+                    </div>
+                    <div class="message-time">${new Date().toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>
+                </div>
+            </div>
+        `;
+        
+        this.messagesContainer.appendChild(welcomeDiv);
+        
+        // Aktualizuj info o načtených datech
+        setTimeout(() => {
+            this.updateWelcomeMessage();
+        }, 100);
     }
 
     // === PUBLIC API ===

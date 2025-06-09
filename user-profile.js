@@ -192,6 +192,7 @@ class UserProfile {
         window.reloadUserProfileData = () => {
             if (this.currentLoader) this.currentLoader.reloadData();
             if (this.monthlyLoader) this.monthlyLoader.reloadData();
+            if (this.pointsLoader) this.pointsLoader.reloadData();
         };
         
         // Načti data pro aktuální tab (current je defaultní)
@@ -207,6 +208,8 @@ class UserProfile {
             this.currentLoader = new UserProfileDataLoader(containerId, tabType);
         } else if (tabType === 'monthly' && !this.monthlyLoader) {
             this.monthlyLoader = new UserProfileDataLoader(containerId, tabType);
+        } else if (tabType === 'points' && !this.pointsLoader) {
+            this.pointsLoader = new UserProfileDataLoader(containerId, tabType);
         }
         
         // Reload existujícího loaderu
@@ -214,6 +217,8 @@ class UserProfile {
             this.currentLoader.reloadData();
         } else if (tabType === 'monthly' && this.monthlyLoader) {
             this.monthlyLoader.reloadData();
+        } else if (tabType === 'points' && this.pointsLoader) {
+            this.pointsLoader.reloadData();
         }
     }
 

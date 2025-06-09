@@ -140,7 +140,7 @@
 
         /* Tab switcher podobný prodejnám */
         .tab-container {
-            max-width: 400px;
+            max-width: 600px;
             margin: 2rem auto;
             display: flex;
             background: var(--card-background, #ffffff);
@@ -726,6 +726,14 @@
                     </svg>
                     Aktuální měsíc
                 </button>
+                <button class="tab" data-tab="points">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"></path>
+                        <path d="m16.24 7.76-4.24 4.24m0 0L7.76 16.24M16.24 16.24 12 12 7.76 7.76"></path>
+                    </svg>
+                    Aktuální body
+                </button>
             </div>
 
             <!-- Data section -->
@@ -795,6 +803,40 @@
                     </div>
                     <div id="monthly-table-container">
                         <!-- Tabulka bude načtena JavaScriptem -->
+                    </div>
+                </div>
+                
+                <!-- Data container pro bodové hodnocení -->
+                <div id="points-data" class="tab-content">
+                    <!-- Bodové statistiky -->
+                    <div class="additional-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">🏆</div>
+                            <div class="stat-content">
+                                <div class="stat-label">CELKOVÉ BODY</div>
+                                <div class="stat-value" id="totalPoints">0</div>
+                                <div class="stat-subtitle">za aktuální měsíc</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-content">
+                                <div class="stat-label">PRŮMĚR NA DEN</div>
+                                <div class="stat-value" id="averagePointsPerDay">0</div>
+                                <div class="stat-subtitle">bodů denně</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🎯</div>
+                            <div class="stat-content">
+                                <div class="stat-label">POZICE V ŽEBŘÍČKU</div>
+                                <div class="stat-value" id="pointsRanking">-</div>
+                                <div class="stat-subtitle">podle bodů</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="points-table-container">
+                        <!-- Bodová tabulka bude načtena JavaScriptem -->
                     </div>
                 </div>
             </section>

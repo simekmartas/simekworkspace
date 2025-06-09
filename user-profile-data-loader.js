@@ -5,6 +5,7 @@ class UserProfileDataLoader {
         this.container = document.getElementById(containerId);
         this.tabType = tabType;
         this.isMonthly = tabType === 'monthly';
+        this.isPoints = tabType === 'points';
         
         // ID přihlášeného uživatele - získáme z localStorage (pouze ID, ne data)
         this.userSellerId = this.getCurrentUserSellerId();
@@ -185,10 +186,19 @@ class UserProfileDataLoader {
     async loadData(isMonthly = false) {
         console.log('=== NAČÍTÁNÍ PRODEJNÍCH DAT PRO PROFIL ===');
         console.log('Spreadsheet ID:', this.spreadsheetId);
+        console.log('Tab type:', this.tabType);
         console.log('Je měsíční:', isMonthly);
+        console.log('Je bodové hodnocení:', this.isPoints);
         console.log('ID prodejce:', this.userSellerId);
         
-        this.isMonthly = isMonthly;
+        // Pro body načítáme vždy měsíční data
+        if (this.isPoints) {
+            this.isMonthly = true;
+            isMonthly = true;
+            console.log('🏆 Bodové hodnocení - force načítání měsíčních dat');
+        } else {
+            this.isMonthly = isMonthly;
+        }
         
         try {
             this.showLoading();
@@ -215,14 +225,14 @@ class UserProfileDataLoader {
         
         // Použij JSONP jako hlavní metodu kvůli CORS problémům
         try {
-            console.log('🔄 Používám JSONP metodu jako hlavní...');
+            console.log('🔄 Používám JSONP metodu pro načtení ze serveru...');
             await this.loadWithJsonp(gid, isMonthly);
             return;
             
         } catch (error) {
             console.error('❌ JSONP metoda selhala:', error);
-            console.log('🔄 Používám fallback mock data...');
-            this.showMockData(isMonthly);
+            console.log('❌ ŽÁDNÁ FALLBACK DATA - zobrazuji chybu');
+            this.showError(error);
         }
     }
 
@@ -326,8 +336,8 @@ class UserProfileDataLoader {
         console.log('Počet řádků po filtrování:', lines.length);
         
         if (lines.length === 0) {
-            console.log('Žádné řádky v CSV, zobrazujem mock data');
-            this.showMockData(isMonthly);
+            console.log('❌ Žádné řádky v CSV datech ze serveru');
+            this.showError(new Error('Tabulka ze serveru neobsahuje žádná data'));
             return;
         }
 
@@ -380,15 +390,8 @@ class UserProfileDataLoader {
         if (idProdejceIndex === -1) {
             console.error('❌ Sloupec "id_prodejce" nenalezen v headers!');
             console.log('Dostupné headers:', headers);
-            console.log('Zkouším alternativní hledání...');
             
-            // Zkus najít sloupec obsahující "id" nebo "prodejce"
-            const altIndex1 = headers.findIndex(h => h && h.toLowerCase().includes('id'));
-            const altIndex2 = headers.findIndex(h => h && h.toLowerCase() === 'id_prodejce');
-            console.log('Alternativní hledání - obsahuje "id":', altIndex1);
-            console.log('Alternativní hledání - přesně "id_prodejce":', altIndex2);
-            
-            this.showEmptyState(isMonthly);
+            this.showError(new Error('Sloupec "id_prodejce" neexistuje v tabulce ze serveru'));
             return;
         }
         
@@ -423,7 +426,8 @@ class UserProfileDataLoader {
             console.log('❌ Žádné řádky pro tohoto prodejce v', isMonthly ? 'měsíčních' : 'aktuálních', 'datech');
             console.log('Dostupná ID prodejců:', availableIds.filter(id => id));
             console.log('Zkontrolujte, zda má uživatel správně nastavené customId v user-management.html');
-            this.showEmptyState(isMonthly);
+            
+            this.showError(new Error(`Uživatel s ID prodejce "${this.userSellerId}" není v tabulce ze serveru. Dostupná ID: ${availableIds.filter(id => id).join(', ')}`));
             return;
         }
 
@@ -435,10 +439,18 @@ class UserProfileDataLoader {
         console.log(`Po seřazení podle sloupce ${sortColumnIndex}: ${sortedRows.length} řádků`);
 
         // Aktualizovat metriky před zobrazením
-        this.updateUserMetrics(sortedRows, isMonthly, headers);
+        if (this.isPoints) {
+            this.updateUserPoints(sortedRows, headers);
+        } else {
+            this.updateUserMetrics(sortedRows, isMonthly, headers);
+        }
 
         // Zobrazit tabulku s použitím STEJNÉ logiky jako ProdejnyDataLoader
-        this.displayTable(headers, sortedRows, isMonthly);
+        if (this.isPoints) {
+            this.displayPointsTable(headers, sortedRows);
+        } else {
+            this.displayTable(headers, sortedRows, isMonthly);
+        }
     }
 
     // STEJNÁ metoda jako ProdejnyDataLoader
@@ -565,6 +577,121 @@ class UserProfileDataLoader {
         if (rankingElement) rankingElement.textContent = '1'; // Hardcodované zatím
     }
 
+    // NOVÁ metoda - výpočet bodů podle bodovacích pravidel
+    updateUserPoints(rows, headers) {
+        console.log('=== VÝPOČET BODŮ PRODEJCE ===');
+        console.log('Headers:', headers);
+        
+        // Bodovací pravidla
+        const pointsRules = {
+            basePoints: 15,      // Za každou položku nad 100 korun
+            CT600: 35,           // Navíc za CT600
+            CT1200: 85,          // Navíc za CT1200
+            NAP: 35,             // Navíc za NAP
+            AKT: 15,             // Navíc za AKT
+            PZ1: 85,             // Navíc za PZ1
+            ZAH250: 15,          // Navíc za ZAH250
+            ZAH500: 35,          // Navíc za ZAH500
+            KOP250: 15,          // Navíc za KOP250
+            KOP500: 35           // Navíc za KOP500
+        };
+
+        // Najít indexy sloupců
+        const polozkyIndex = headers.findIndex(h => h.toLowerCase().includes('polozky_nad_100'));
+        const ct600Index = headers.findIndex(h => h.toLowerCase() === 'ct600');
+        const ct1200Index = headers.findIndex(h => h.toLowerCase() === 'ct1200');
+        const napIndex = headers.findIndex(h => h.toLowerCase() === 'nap');
+        const aktIndex = headers.findIndex(h => h.toLowerCase() === 'akt');
+        const pz1Index = headers.findIndex(h => h.toLowerCase() === 'pz1');
+        const zah250Index = headers.findIndex(h => h.toLowerCase() === 'zah250');
+        const zah500Index = headers.findIndex(h => h.toLowerCase() === 'zah500');
+        const kop250Index = headers.findIndex(h => h.toLowerCase() === 'kop250');
+        const kop500Index = headers.findIndex(h => h.toLowerCase() === 'kop500');
+
+        console.log('Indexy sloupců:', {
+            polozky: polozkyIndex,
+            CT600: ct600Index,
+            CT1200: ct1200Index,
+            NAP: napIndex,
+            AKT: aktIndex,
+            PZ1: pz1Index,
+            ZAH250: zah250Index,
+            ZAH500: zah500Index,
+            KOP250: kop250Index,
+            KOP500: kop500Index
+        });
+
+        let totalPoints = 0;
+        let totalItems = 0;
+        let breakdown = {};
+
+        rows.forEach((row, index) => {
+            console.log(`📊 Zpracovávám řádek ${index + 1}:`, row);
+            
+            // Základní body za položky nad 100 Kč
+            const polozkyCount = parseInt(row[polozkyIndex]) || 0;
+            const basePoints = polozkyCount * pointsRules.basePoints;
+            totalPoints += basePoints;
+            totalItems += polozkyCount;
+            
+            console.log(`  📱 Položky nad 100 Kč: ${polozkyCount} × ${pointsRules.basePoints} = ${basePoints} bodů`);
+            breakdown['Základní body'] = (breakdown['Základní body'] || 0) + basePoints;
+
+            // Bonusové body za specifické produkty
+            const bonuses = [
+                { name: 'CT600', index: ct600Index, points: pointsRules.CT600 },
+                { name: 'CT1200', index: ct1200Index, points: pointsRules.CT1200 },
+                { name: 'NAP', index: napIndex, points: pointsRules.NAP },
+                { name: 'AKT', index: aktIndex, points: pointsRules.AKT },
+                { name: 'PZ1', index: pz1Index, points: pointsRules.PZ1 },
+                { name: 'ZAH250', index: zah250Index, points: pointsRules.ZAH250 },
+                { name: 'ZAH500', index: zah500Index, points: pointsRules.ZAH500 },
+                { name: 'KOP250', index: kop250Index, points: pointsRules.KOP250 },
+                { name: 'KOP500', index: kop500Index, points: pointsRules.KOP500 }
+            ];
+
+            bonuses.forEach(bonus => {
+                if (bonus.index >= 0) {
+                    const count = parseInt(row[bonus.index]) || 0;
+                    const bonusPoints = count * bonus.points;
+                    if (bonusPoints > 0) {
+                        totalPoints += bonusPoints;
+                        console.log(`  🎯 ${bonus.name}: ${count} × ${bonus.points} = ${bonusPoints} bodů`);
+                        breakdown[bonus.name] = (breakdown[bonus.name] || 0) + bonusPoints;
+                    }
+                }
+            });
+        });
+
+        console.log(`🏆 CELKOVÉ BODY: ${totalPoints}`);
+        console.log('📊 Rozpis bodů:', breakdown);
+
+        // Výpočet průměru bodů na den (předpokládáme aktuální měsíc)
+        const currentDate = new Date();
+        const daysInMonth = currentDate.getDate(); // Počet dní od začátku měsíce
+        const averagePerDay = daysInMonth > 0 ? Math.round(totalPoints / daysInMonth) : 0;
+
+        console.log(`📅 Průměr na den: ${totalPoints} / ${daysInMonth} = ${averagePerDay} bodů`);
+
+        // Aktualizovat UI prvky pro bodové hodnocení
+        const totalPointsElement = document.getElementById('totalPoints');
+        const averagePointsElement = document.getElementById('averagePointsPerDay');
+        const pointsRankingElement = document.getElementById('pointsRanking');
+
+        if (totalPointsElement) totalPointsElement.textContent = totalPoints;
+        if (averagePointsElement) averagePointsElement.textContent = averagePerDay;
+        if (pointsRankingElement) pointsRankingElement.textContent = '1'; // Hardcodované zatím
+
+        // Uložit data pro zobrazení v tabulce
+        this.pointsData = {
+            totalPoints,
+            totalItems,
+            averagePerDay,
+            breakdown,
+            daysInMonth
+        };
+    }
+
     // UPRAVENÁ metoda z ProdejnyDataLoader - zobrazí filtrovaná data
     displayTable(headers, rows, isMonthly) {
         // Zpracuj data pro zobrazení - PŘEDEJ headers jako třetí parametr
@@ -627,6 +754,141 @@ class UserProfileDataLoader {
         this.setupEventListeners();
     }
 
+    // NOVÁ metoda - zobrazení bodové tabulky
+    displayPointsTable(headers, rows) {
+        if (!this.pointsData) {
+            console.error('❌ Chybí pointsData pro zobrazení');
+            return;
+        }
+
+        // Získej jméno uživatele z prvního řádku dat
+        const userName = rows.length > 0 ? (rows[0][1] || 'Neznámý prodejce') : 'Neznámý prodejce';
+        
+        this.container.innerHTML = `
+            <div class="retro-data-container">
+                <div class="retro-data-header">
+                    <span class="retro-terminal-prompt">&gt; body_${this.userSellerId}.json_</span>
+                    <div class="retro-window-controls">
+                        <span class="control-dot red"></span>
+                        <span class="control-dot yellow"></span>
+                        <span class="control-dot green"></span>
+                    </div>
+                </div>
+                <div class="retro-data-content">
+                    <div class="user-info" style="margin-bottom: 2rem;">
+                        <h3>🏆 ${this.escapeHtml(userName)} - Bodové hodnocení za měsíc</h3>
+                        <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
+                        <p><strong>Celkové body:</strong> <span style="color: #2196F3; font-weight: bold; font-size: 1.2em;">${this.pointsData.totalPoints} bodů</span></p>
+                        <p><strong>Průměr na den:</strong> ${this.pointsData.averagePerDay} bodů (za ${this.pointsData.daysInMonth} dní)</p>
+                    </div>
+
+                    <!-- Tabulka rozpisu bodů -->
+                    <div class="table-scroll">
+                        <h4 style="margin-bottom: 1rem; color: var(--primary-color);">📊 Rozpis bodového hodnocení</h4>
+                        <table class="retro-sales-table" id="pointsBreakdownTable">
+                            <thead>
+                                <tr>
+                                    <th>Kategorie</th>
+                                    <th>Body za jednotku</th>
+                                    <th>Získané body</th>
+                                    <th>Podíl z celku</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${this.generatePointsBreakdownRows()}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Popis bodového systému -->
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: var(--highlight-background, #f8f9fa); border-radius: 8px;">
+                        <h4 style="margin-top: 0; color: var(--primary-color);">🎯 Bodovací systém</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.875rem;">
+                            <div><strong>Základní body:</strong> 15 bodů za každou položku nad 100 Kč</div>
+                            <div><strong>CT600:</strong> +35 bodů navíc</div>
+                            <div><strong>CT1200:</strong> +85 bodů navíc</div>
+                            <div><strong>NAP:</strong> +35 bodů navíc</div>
+                            <div><strong>AKT:</strong> +15 bodů navíc</div>
+                            <div><strong>PZ1:</strong> +85 bodů navíc</div>
+                            <div><strong>ZAH250:</strong> +15 bodů navíc</div>
+                            <div><strong>ZAH500:</strong> +35 bodů navíc</div>
+                            <div><strong>KOP250:</strong> +15 bodů navíc</div>
+                            <div><strong>KOP500:</strong> +35 bodů navíc</div>
+                        </div>
+                    </div>
+                    
+                    <div class="refresh-controls" style="margin-top: 2rem;">
+                        <button class="retro-refresh-btn" onclick="window.reloadUserProfileData && window.reloadUserProfileData()">
+                            🔄 OBNOVIT DATA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        this.setupEventListeners();
+    }
+
+    // Pomocná metoda pro generování řádků rozpisu bodů
+    generatePointsBreakdownRows() {
+        if (!this.pointsData || !this.pointsData.breakdown) {
+            return '<tr><td colspan="4">Žádná data k zobrazení</td></tr>';
+        }
+
+        const { breakdown, totalPoints } = this.pointsData;
+        
+        // Mapování kategorií na body za jednotku
+        const pointsPerUnit = {
+            'Základní body': 15,
+            'CT600': 35,
+            'CT1200': 85,
+            'NAP': 35,
+            'AKT': 15,
+            'PZ1': 85,
+            'ZAH250': 15,
+            'ZAH500': 35,
+            'KOP250': 15,
+            'KOP500': 35
+        };
+
+        let rows = '';
+        
+        // Seřadit podle počtu bodů (nejvíce bodů nahoru)
+        const sortedBreakdown = Object.entries(breakdown)
+            .sort(([,a], [,b]) => b - a)
+            .filter(([,points]) => points > 0);
+
+        if (sortedBreakdown.length === 0) {
+            return '<tr><td colspan="4">Žádné body získány</td></tr>';
+        }
+
+        sortedBreakdown.forEach(([category, points]) => {
+            const percentage = totalPoints > 0 ? Math.round((points / totalPoints) * 100) : 0;
+            const unitPoints = pointsPerUnit[category] || '?';
+            
+            rows += `
+                <tr>
+                    <td><strong>${this.escapeHtml(category)}</strong></td>
+                    <td class="numeric">${unitPoints}</td>
+                    <td class="numeric" style="color: var(--primary-color); font-weight: bold;">${points}</td>
+                    <td class="numeric">${percentage}%</td>
+                </tr>
+            `;
+        });
+
+        // Řádek s celkem
+        rows += `
+            <tr style="border-top: 2px solid var(--primary-color); background: var(--highlight-background, #f8f9fa); font-weight: bold;">
+                <td><strong>CELKEM</strong></td>
+                <td>-</td>
+                <td class="numeric" style="color: var(--primary-color); font-size: 1.1em;">${totalPoints}</td>
+                <td class="numeric">100%</td>
+            </tr>
+        `;
+
+        return rows;
+    }
+
     // UPRAVENÁ metoda - dynamicky najde a odstraní sloupec ID prodejce
     processDataForDisplay(rows, isMonthly, originalHeaders) {
         // Zpracování pro uživatelský profil - SKRÝT sloupec ID prodejce
@@ -670,7 +932,9 @@ class UserProfileDataLoader {
     // Ostatní metody zůstávají stejné...
     async reloadData() {
         console.log('🔄 Reload dat profilu uživatele...');
-        await this.loadData(this.isMonthly);
+        // Pro body vždy načítáme měsíční data
+        const shouldLoadMonthly = this.isPoints ? true : this.isMonthly;
+        await this.loadData(shouldLoadMonthly);
     }
 
     setupEventListeners() {
@@ -698,45 +962,7 @@ class UserProfileDataLoader {
         `;
     }
 
-    showMockData(isMonthly) {
-        console.log(`Zobrazuji mock data pro profil (${isMonthly ? 'měsíční' : 'aktuální'})`);
-        
-        // Mock data podle skutečné struktury tabulky - AKTUALIZOVÁNO podle printscreenu
-        const mockData = isMonthly ? [
-            // Měsíční data (list "od 1") - všichni prodejci
-            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'],
-            ['Hlavní sklad - Senimo', 'Tomáš Valenta', '4', '96', '17', '1', '0', '0', '0', '0', '9', '0', '0', '0', '2', '0', '0'],
-            ['Globus', 'Jan Létal', '5', '82', '12', '3', '2', '0', '0', '0', '2', '0', '0', '0', '2', '0', '0'],
-            ['Vsetín', 'Lukáš Krumpolc', '9', '56', '4', '2', '0', '0', '0', '0', '1', '0', '0', '0', '1', '0', '0'],
-            ['Čepkov', 'Tomáš Doležel', '10', '43', '9', '1', '0', '0', '2', '1', '2', '0', '0', '1', '1', '0', '0'],
-            ['Přerov', 'Nový Prodejce', '12', '25', '4', '0', '0', '0', '1', '0', '1', '0', '0', '1', '1', '0', '0'],
-            ['Globus', 'Šimon Gabriel', '2', '186', '33', '8', '7', '2', '0', '0', '10', '0', '1', '3', '1', '0', '1'],
-            ['Šternberk', 'Jakub Králik', '7', '65', '9', '0', '1', '0', '1', '0', '3', '0', '0', '2', '1', '0', '0'],
-            ['Čepkov', 'Lukáš Kováčik', '1', '207', '55', '22', '2', '0', '3', '3', '18', '0', '0', '1', '1', '0', '0'],
-            ['Přerov', 'Jakub Málek', '3', '91', '13', '2', '0', '0', '0', '1', '8', '0', '0', '0', '1', '0', '0'],
-            ['Vsetín', 'Štěpán Kundera', '11', '27', '2', '1', '0', '0', '0', '0', '0', '0', '0', '0', '1', '0', '0'],
-            ['Šternberk', 'Adam Kolarčík', '6', '72', '17', '3', '1', '0', '3', '0', '7', '0', '0', '1', '1', '0', '0']
-        ] : [
-            // Aktuální data - všichni prodejci
-            ['prodejna', 'prodejce', 'id_prodejce', 'polozky_nad_100', 'sluzby_celkem', 'CT300', 'CT600', 'CT1200', 'AKT', 'ZAH250', 'NAP', 'ZAH500', 'KOP250', 'KOP500', 'PZ1', 'KNZ', 'ALIGATOR'],
-            ['Hlavní sklad - Senimo', 'Tomáš Valenta', '4', '48', '8', '1', '0', '0', '0', '0', '4', '0', '0', '0', '1', '0', '0'],
-            ['Globus', 'Jan Létal', '5', '41', '6', '2', '1', '0', '0', '0', '1', '0', '0', '0', '1', '0', '0'],
-            ['Vsetín', 'Lukáš Krumpolc', '9', '28', '2', '1', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
-            ['Čepkov', 'Tomáš Doležel', '10', '22', '5', '1', '0', '0', '1', '0', '1', '0', '0', '0', '1', '0', '0'],
-            ['Přerov', 'Nový Prodejce', '12', '13', '2', '0', '0', '0', '0', '0', '1', '0', '0', '0', '0', '0', '0'],
-            ['Globus', 'Šimon Gabriel', '2', '48', '4', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1'],
-            ['Šternberk', 'Jakub Králik', '7', '33', '5', '0', '1', '0', '0', '0', '2', '0', '0', '1', '0', '0', '0'],
-            ['Čepkov', 'Lukáš Kováčik', '1', '52', '14', '6', '1', '0', '1', '1', '5', '0', '0', '0', '1', '0', '0'],
-            ['Přerov', 'Jakub Málek', '3', '23', '7', '1', '0', '0', '0', '0', '4', '0', '0', '0', '0', '0', '0'],
-            ['Vsetín', 'Štěpán Kundera', '11', '14', '1', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0'],
-            ['Šternberk', 'Adam Kolarčík', '6', '36', '8', '2', '0', '0', '1', '0', '4', '0', '0', '0', '1', '0', '0']
-        ];
-        
-        console.log('🔧 MOCK DATA aktualizována - nyní obsahuje všechny prodejce včetně Jakuba Málka (ID 3)');
-        
-        const csvData = this.convertJsonToCsv(mockData);
-        this.parseAndDisplayData(csvData, isMonthly);
-    }
+    // Mock data metoda odstraněna - data se načítají pouze ze serveru
 
     showEmptyState(isMonthly) {
         // Získej username pro diagnostiku
@@ -758,7 +984,7 @@ class UserProfileDataLoader {
                         <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">📈</div>
                             <h4>Data nenalezena</h4>
-                            <p>Pro uživatele <strong>${this.escapeHtml(username)}</strong> s ID prodejce <strong>${this.escapeHtml(this.userSellerId)}</strong> nejsou v tabulce žádná ${isMonthly ? 'měsíční' : 'aktuální'} data.</p>
+                            <p>Pro uživatele <strong>${this.escapeHtml(username)}</strong> s ID prodejce <strong>${this.escapeHtml(this.userSellerId)}</strong> nejsou v Google Sheets tabulce žádná ${isMonthly ? 'měsíční' : 'aktuální'} data.</p>
                             
                             <div style="background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; text-align: left;">
                                 <h5 style="margin-top: 0; color: #495057;">🔧 Možné řešení:</h5>
@@ -766,8 +992,9 @@ class UserProfileDataLoader {
                                     <li>Zkontrolujte, zda má uživatel v <strong>Správě uživatelů</strong> vyplněné <strong>ID prodejce</strong></li>
                                     <li>Ověřte, zda ID prodejce odpovídá sloupci <strong>"id_prodejce"</strong> v Google Sheets tabulce</li>
                                     <li>Ujistěte se, že v tabulce existuje sloupec s názvem <strong>"id_prodejce"</strong></li>
-                                    <li>Ujistěte se, že v tabulce existují data pro tento měsíc</li>
-                                    <li>Pro nového prodejce je potřeba přidat řádek do Google Sheets</li>
+                                    <li>Ujistěte se, že Google Sheets tabulka obsahuje data pro tento měsíc</li>
+                                    <li>Pro nového prodejce je potřeba přidat řádek do Google Sheets tabulky</li>
+                                    <li><strong>Data se načítají pouze ze serveru</strong> - žádná lokální záložní data</li>
                                 </ul>
                             </div>
                             
@@ -792,10 +1019,29 @@ class UserProfileDataLoader {
     }
 
     showError(error) {
+        console.log('=== DIAGNOSTIKA CHYBY NAČÍTÁNÍ ZE SERVERU ===');
+        console.log('🔗 Google Apps Script URL:', this.scriptUrl);
+        console.log('📋 Spreadsheet ID:', this.spreadsheetId);
+        console.log('🆔 ID prodejce:', this.userSellerId);
+        console.log('❌ Chyba:', error.message);
+        console.log('');
+        console.log('🔧 MOŽNÉ PŘÍČINY A ŘEŠENÍ:');
+        console.log('1. Google Apps Script není nasazený nebo má špatnou URL');
+        console.log('2. Google Sheets tabulka není veřejně přístupná');
+        console.log('3. Sloupec "id_prodejce" neexistuje v tabulce');
+        console.log('4. Uživatel s ID', this.userSellerId, 'není v tabulce');
+        console.log('5. CORS problém - Google Apps Script musí povolit všechny domény');
+        console.log('');
+        console.log('✅ KONTROLNÍ SEZNAM:');
+        console.log('- Otevřete Google Sheets tabulku ručně a zkontrolujte data');
+        console.log('- Ověřte, že existuje sloupec "id_prodejce"');
+        console.log('- Ověřte, že existuje řádek s ID prodejce:', this.userSellerId);
+        console.log('- Zkontrolujte Google Apps Script deployment');
+        
         this.container.innerHTML = `
             <div class="retro-data-container">
                 <div class="retro-data-header">
-                    <span class="retro-terminal-prompt">&gt; error_profile_${this.userSellerId}.log_</span>
+                    <span class="retro-terminal-prompt">&gt; error_server_connection_${this.userSellerId}.log_</span>
                     <div class="retro-window-controls">
                         <span class="control-dot red"></span>
                         <span class="control-dot yellow"></span>
@@ -804,16 +1050,45 @@ class UserProfileDataLoader {
                 </div>
                 <div class="retro-data-content">
                     <div style="padding: 2rem; text-align: center; color: var(--error-color, #ff3333);">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-                        <h3>Chyba při načítání dat</h3>
-                        <p>Nepodařilo se načíst data z tabulky.</p>
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🚫</div>
+                        <h3>Chyba při načítání dat ze serveru</h3>
+                        <p>Nepodařilo se načíst data z Google Sheets tabulky.</p>
                         <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
+                        
+                        <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; text-align: left; color: #856404;">
+                            <h5 style="margin-top: 0; color: #856404;">🔧 Možné příčiny problému:</h5>
+                            <ul style="margin: 0; line-height: 1.6;">
+                                <li><strong>Google Apps Script:</strong> Není nasazený nebo má špatnou URL</li>
+                                <li><strong>Google Sheets:</strong> Tabulka není veřejně přístupná</li>
+                                <li><strong>Sloupec "id_prodejce":</strong> Neexistuje v tabulce</li>
+                                <li><strong>Data uživatele:</strong> ID prodejce ${this.escapeHtml(this.userSellerId)} není v tabulce</li>
+                                <li><strong>CORS:</strong> Google Apps Script nepovoluje přístup z této domény</li>
+                            </ul>
+                        </div>
+                        
+                        <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 1.5rem; margin: 2rem 0; text-align: left; color: #155724;">
+                            <h5 style="margin-top: 0; color: #155724;">✅ Kontrolní seznam:</h5>
+                            <ul style="margin: 0; line-height: 1.6;">
+                                <li>Otevřete Google Sheets tabulku ručně a zkontrolujte data</li>
+                                <li>Ověřte, že existuje sloupec <strong>"id_prodejce"</strong></li>
+                                <li>Ověřte, že existuje řádek s ID prodejce: <strong>${this.escapeHtml(this.userSellerId)}</strong></li>
+                                <li>Zkontrolujte Google Apps Script deployment</li>
+                                <li>Otevřite konzoli (F12) pro detailní informace</li>
+                            </ul>
+                        </div>
+                        
                         <p style="font-size: 0.875rem; opacity: 0.7; margin-top: 1rem;">
-                            Chyba: ${this.escapeHtml(error.message)}
+                            <strong>Technická chyba:</strong> ${this.escapeHtml(error.message)}
                         </p>
-                        <button class="retro-refresh-btn" onclick="window.reloadUserProfileData && window.reloadUserProfileData()" style="margin-top: 1rem;">
-                            🔄 ZKUSIT ZNOVU
-                        </button>
+                        
+                        <div style="margin-top: 2rem;">
+                            <button class="retro-refresh-btn" onclick="window.reloadUserProfileData && window.reloadUserProfileData()" style="margin-right: 1rem;">
+                                🔄 ZKUSIT ZNOVU
+                            </button>
+                            <button class="retro-refresh-btn" onclick="window.open('https://sheets.google.com/d/${this.spreadsheetId}', '_blank')">
+                                📊 OTEVŘÍT TABULKU
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -949,7 +1224,8 @@ window.userProfileDebug = {
 };
 
 // Dostupné v konzoli:
-console.log('🛠️ DEBUG FUNKCE (aktualizováno pro server):');
+console.log('🛠️ DEBUG FUNKCE (aktualizováno pro server + body):');
 console.log('userProfileDebug.checkMalekUser() - zkontroluje stav uživatele malek (ze serveru)');
 console.log('userProfileDebug.setCurrentUserSellerId("3") - nastaví seller ID');  
-console.log('userProfileDebug.showAllUsers() - zobrazí všechny uživatele (ze serveru)'); 
+console.log('userProfileDebug.showAllUsers() - zobrazí všechny uživatele (ze serveru)');
+console.log('🏆 NOVÉ BODOVÁNÍ: Přidán tab "Aktuální body" s detailním rozpočtem bodů podle pravidel'); 
