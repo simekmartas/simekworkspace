@@ -66,44 +66,44 @@ function updateNavigation() {
         }
     }
     
-    // 📱 Navigation Menu Content
+    // Čisté minimalistické menu - bez emoji
     const baseItems = `
-        <li><a href="index.html">🏠 <span>Domů</span></a></li>
-        <li><a href="index.html#o-nas">ℹ️ <span>O nás</span></a></li>
-        <li><a href="index.html#kontakt">📞 <span>Kontakt</span></a></li>
+        <li><a href="index.html">Domů</a></li>
+        <li><a href="index.html#o-nas">O nás</a></li>
+        <li><a href="index.html#kontakt">Kontakt</a></li>
     `;
     
-    // 👨‍💼 Prodejce Menu Items
+    // Prodejce menu - čisté a jednoduché
     const prodejceItems = `
-        <li><a href="prodejny.html">📊 <span>Prodejny</span></a></li>
-        <li><a href="bazar.html" onclick="openNewBazarForm(event)">➕ <span>Přidat výkup</span></a></li>
-        <li><a href="novinky.html">📢 <span>Novinky</span></a></li>
-        <li><a href="user-profile.html">👤 <span>Profil</span></a></li>
-        <li><a href="#" id="logout" class="logout-btn">🚪 <span>Odhlásit</span></a></li>
+        <li><a href="prodejny.html">Prodejny</a></li>
+        <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
+        <li><a href="novinky.html">Novinky</a></li>
+        <li><a href="user-profile.html">Profil</a></li>
+        <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
     
-    // 👨‍💻 Admin Menu Items
+    // Admin menu - minimalistické
     const adminItems = `
         <li class="dropdown">
-            <a href="#" class="dropdown-toggle">📱 <span>Mobil Maják</span></a>
+            <a href="#" class="dropdown-toggle">Mobil Maják</a>
             <ul class="dropdown-menu">
-                <li><a href="prodejny.html">📊 Prodejny</a></li>
-                <li><a href="servis.html">🔧 Servis</a></li>
-                <li><a href="eshop.html">🛒 Eshop</a></li>
+                <li><a href="prodejny.html">Prodejny</a></li>
+                <li><a href="servis.html">Servis</a></li>
+                <li><a href="eshop.html">Eshop</a></li>
                 <li class="dropdown-submenu">
-                    <a href="bazar.html" class="dropdown-submenu-toggle">💼 Bazar</a>
+                    <a href="bazar.html" class="dropdown-submenu-toggle">Bazar</a>
                     <ul class="dropdown-submenu-menu">
-                        <li><a href="bazar.html">📋 Přehled bazaru</a></li>
-                        <li><a href="bazar.html" onclick="openNewBazarForm(event)">➕ Přidat výkup</a></li>
+                        <li><a href="bazar.html">Přehled bazaru</a></li>
+                        <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
                     </ul>
                 </li>
-                <li><a href="celkem.html">📈 Celkem</a></li>
+                <li><a href="celkem.html">Celkem</a></li>
             </ul>
         </li>
-        <li><a href="novinky.html">📢 <span>Novinky</span></a></li>
-        <li><a href="user-management.html">👥 <span>Správa uživatelů</span></a></li>
-        <li><a href="user-profile.html">👤 <span>Profil</span></a></li>
-        <li><a href="#" id="logout" class="logout-btn">🚪 <span>Odhlásit</span></a></li>
+        <li><a href="novinky.html">Novinky</a></li>
+        <li><a href="user-management.html">Správa uživatelů</a></li>
+        <li><a href="user-profile.html">Profil</a></li>
+        <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
     
     // 🔄 Update Navigation Based on User Role
