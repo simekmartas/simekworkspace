@@ -4,7 +4,7 @@ class AIChatbot {
     constructor() {
         // ⚠️ VAROVÁNÍ: V produkci NIKDY API klíč do frontend kódu!
         // Vytvořte backend endpoint pro bezpečnost
-        this.apiKey = process.env.OPENAI_API_KEY || 'sk-proj-iVkAReplaceWithRealKey2024';
+        this.apiKey = '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';
         this.apiUrl = 'https://api.openai.com/v1/chat/completions';
         
         this.isOpen = false;
@@ -17,16 +17,31 @@ class AIChatbot {
             model: 'gpt-3.5-turbo',
             maxTokens: 1000,
             temperature: 0.7,
-            systemPrompt: `Jsi pomocný AI asistent pro systém Mobil Maják - systém pro správu prodejních dat mobilních operátorů. 
+            systemPrompt: `Jsi pokročilý AI asistent pro systém Mobil Maják - systém pro správu prodejních dat mobilních operátorů. 
 
-Můžeš pomoci s:
-- Vysvětlením funkcí systému
-- Analýzou prodejních dat  
-- Tipy pro optimalizaci prodeje
-- Odpovědi na otázky o statistikách
-- Obecné dotazy související s prodejem mobilních služeb
+STRUKTURA SYSTÉMU:
+- **index.html** - Hlavní stránka s přehledem
+- **prodejny.html** - Celkový přehled všech prodejen a prodejců s žebříčky
+- **user-profile.html** - Osobní profil prodejce s individuálními statistikami  
+- **bazar.html** - Seznam prodaných položek v bazaru
+- **servis.html** - Přehled servisních služeb
+- **celkem.html** - Celkové statistiky systému
 
-Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpověď, přiznej to a navrhni alternativní řešení.`
+DATOVÉ SLOUPCE:
+- **Položky nad 100** - počet prodaných položek nad 100 Kč
+- **Služby celkem** - celkový počet prodaných služeb
+- **CT300, CT600, CT1200** - různé typy služeb/produktů
+- **ALIGATOR** - speciální kategorie ALIGATOR telefonů
+- **AKT, ZAH250, NAP, ZAH500** - různé typy aktivací a záruk
+- **KOP250, KOP500** - kopie SIM karet
+- **PZ1, KNZ** - další služby
+
+FUNKCE, které máš k dispozici:
+- Můžeš číst aktuální data ze stránky pomocí DOM
+- Můžeš analyzovat viditelné statistiky
+- Můžeš poskytovat kontextové rady na základě dat
+
+Odpovídej v češtině, buď přátelský a profesionální. Pokud potřebuješ aktuální data ze stránky, požádej o jejich načtení.`
         };
         
         this.init();
@@ -174,17 +189,18 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
                         <div class="message-avatar">🤖</div>
                         <div class="message-content">
                             <div class="message-text">
-                                Ahoj! Jsem AI asistent systému Mobil Maják. Mohu ti pomoci s:
+                                Ahoj! Jsem pokročilý AI asistent systému Mobil Maják. Mohu ti pomoci s:
                                 <br><br>
-                                • Vysvětlením funkcí systému<br>
-                                • Analýzou prodejních dat<br>  
-                                • Řešením základních problémů<br>
-                                • Odpovědi na dotazy o ALIGATOR telefonech<br><br>
+                                • **Analýzou aktuálních dat** z této stránky 📊<br>
+                                • **Čtením statistik** z tabulek a grafů 📈<br>  
+                                • **Porovnáním výkonnosti** prodejců 🏆<br>
+                                • **Odpověďmi na dotazy** o konkrétních číslech 🔢<br>
+                                • **Radami pro zlepšení** prodeje 💡<br><br>
                                 ${this.apiKey && !this.apiKey.includes('ReplaceWithRealKey') ? 
-                                    'Plná AI funkcionalita je k dispozici! 🚀' : 
+                                    '🚀 Plná AI funkcionalita + přístup k datům je k dispozici!' : 
                                     '⚠️ Momentálně běžím v základním režimu (API není nakonfigurováno)'
                                 }<br><br>
-                                Na co se chceš zeptat?
+                                Zkus se zeptat: "Kolik mám ALIGATOR telefonů?" nebo "Jak si vedu v žebříčku?"
                             </div>
                             <div class="message-time">${new Date().toLocaleTimeString('cs-CZ', {hour: '2-digit', minute: '2-digit'})}</div>
                         </div>
@@ -825,6 +841,206 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
         this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
     }
 
+    // === DATA READING FUNCTIONS ===
+    getCurrentPageData() {
+        const pageData = {
+            url: window.location.href,
+            title: document.title,
+            currentPage: this.getCurrentPageType(),
+            data: {}
+        };
+        
+        // Čti data podle typu stránky
+        switch (pageData.currentPage) {
+            case 'user-profile':
+                pageData.data = this.getUserProfileData();
+                break;
+            case 'prodejny':
+                pageData.data = this.getProdejnyData();
+                break;
+            case 'bazar':
+                pageData.data = this.getBazarData();
+                break;
+            case 'servis':
+                pageData.data = this.getServisData();
+                break;
+            default:
+                pageData.data = this.getGeneralPageData();
+        }
+        
+        return pageData;
+    }
+    
+    getCurrentPageType() {
+        const url = window.location.href;
+        if (url.includes('user-profile')) return 'user-profile';
+        if (url.includes('prodejny')) return 'prodejny';
+        if (url.includes('bazar')) return 'bazar';
+        if (url.includes('servis')) return 'servis';
+        if (url.includes('celkem')) return 'celkem';
+        return 'index';
+    }
+    
+    getUserProfileData() {
+        const data = {};
+        
+        // Čti hlavní metriky
+        const totalItems = document.getElementById('totalItemsSold')?.textContent || '0';
+        const totalServices = document.getElementById('totalServicesSold')?.textContent || '0';
+        
+        // Čti aktuální den statistiky
+        const currentAligator = document.getElementById('currentAligatorSales')?.textContent || '0';
+        const currentTotal = document.getElementById('currentTotalSales')?.textContent || '0';
+        const currentRanking = document.getElementById('currentRanking')?.textContent || '-';
+        
+        // Čti měsíční statistiky
+        const monthlyAligator = document.getElementById('monthlyAligatorSales')?.textContent || '0';
+        const monthlyTotal = document.getElementById('monthlyTotalSales')?.textContent || '0';
+        const monthlyRanking = document.getElementById('monthlyRanking')?.textContent || '-';
+        
+        data.overview = {
+            totalItemsSold: totalItems,
+            totalServicesSold: totalServices
+        };
+        
+        data.currentDay = {
+            aligatorSales: currentAligator,
+            totalSales: currentTotal,
+            ranking: currentRanking
+        };
+        
+        data.currentMonth = {
+            aligatorSales: monthlyAligator,
+            totalSales: monthlyTotal,
+            ranking: monthlyRanking
+        };
+        
+        // Čti data z tabulky pokud existuje
+        const table = document.querySelector('#userProfileTable');
+        if (table) {
+            data.tableData = this.parseTableData(table);
+        }
+        
+        return data;
+    }
+    
+    getProdejnyData() {
+        const data = {};
+        
+        // Čti králové/žebříčky
+        const kings = document.querySelectorAll('.king-card');
+        data.kings = [];
+        
+        kings.forEach(king => {
+            const label = king.querySelector('.king-label')?.textContent || '';
+            const name = king.querySelector('.king-name')?.textContent || '';
+            const value = king.querySelector('.king-value')?.textContent || '';
+            
+            data.kings.push({
+                category: label,
+                name: name,
+                value: value
+            });
+        });
+        
+        // Čti data z hlavní tabulky
+        const table = document.querySelector('.retro-sales-table');
+        if (table) {
+            data.tableData = this.parseTableData(table);
+        }
+        
+        return data;
+    }
+    
+    getBazarData() {
+        const data = {};
+        
+        // Čti celkové statistiky
+        const totalCards = document.querySelectorAll('.summary-card');
+        data.summary = [];
+        
+        totalCards.forEach(card => {
+            const label = card.querySelector('.summary-label')?.textContent || '';
+            const value = card.querySelector('.summary-value')?.textContent || '';
+            
+            data.summary.push({
+                label: label,
+                value: value
+            });
+        });
+        
+        // Čti data z tabulky
+        const table = document.querySelector('.bazar-table');
+        if (table) {
+            data.items = this.parseTableData(table);
+        }
+        
+        return data;
+    }
+    
+    getServisData() {
+        const data = {};
+        
+        // Podobně jako bazar - čti servisní data
+        const table = document.querySelector('.servis-table');
+        if (table) {
+            data.services = this.parseTableData(table);
+        }
+        
+        return data;
+    }
+    
+    getGeneralPageData() {
+        const data = {};
+        
+        // Čti obecné informace ze stránky
+        const title = document.querySelector('h1')?.textContent || '';
+        const stats = document.querySelectorAll('.stat-value');
+        
+        data.title = title;
+        data.stats = [];
+        
+        stats.forEach(stat => {
+            const label = stat.previousElementSibling?.textContent || '';
+            const value = stat.textContent || '';
+            
+            data.stats.push({
+                label: label,
+                value: value
+            });
+        });
+        
+        return data;
+    }
+    
+    parseTableData(table) {
+        const headers = [];
+        const rows = [];
+        
+        // Čti hlavičky
+        const headerCells = table.querySelectorAll('thead th');
+        headerCells.forEach(cell => {
+            headers.push(cell.textContent.trim());
+        });
+        
+        // Čti řádky dat (max 10 pro přehlednost)
+        const dataRows = table.querySelectorAll('tbody tr');
+        for (let i = 0; i < Math.min(10, dataRows.length); i++) {
+            const row = [];
+            const cells = dataRows[i].querySelectorAll('td');
+            cells.forEach(cell => {
+                row.push(cell.textContent.trim());
+            });
+            rows.push(row);
+        }
+        
+        return {
+            headers: headers,
+            rows: rows,
+            totalRows: dataRows.length
+        };
+    }
+
     // === OPENAI API ===
     async callOpenAI(message) {
         // Zkontroluj, zda je API klíč nastaven
@@ -832,13 +1048,29 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
             return this.getFallbackResponse(message);
         }
 
+        // Získej aktuální data ze stránky
+        const currentPageData = this.getCurrentPageData();
+        
+        // Vytvoř rozšířený systémový prompt s aktuálními daty
+        const enhancedSystemPrompt = `${this.settings.systemPrompt}
+
+AKTUÁLNÍ KONTEXT:
+- Stránka: ${currentPageData.title}
+- URL: ${currentPageData.url}
+- Typ: ${currentPageData.currentPage}
+
+AKTUÁLNÍ DATA ZE STRÁNKY:
+${JSON.stringify(currentPageData.data, null, 2)}
+
+Použij tato aktuální data k odpovědi na uživatelův dotaz. Pokud se ptá na konkrétní číselné údaje, vždy je vezmi z AKTUÁLNÍCH DAT ZE STRÁNKY.`;
+
         const messages = [
             {
                 role: 'system',
-                content: this.settings.systemPrompt
+                content: enhancedSystemPrompt
             },
-            // Include last 10 messages for context
-            ...this.conversationHistory.slice(-10),
+            // Include last 5 messages for context (reduced to save tokens)
+            ...this.conversationHistory.slice(-5),
             {
                 role: 'user',
                 content: message
@@ -882,7 +1114,28 @@ Odpovídej v češtině, buď přátelský a profesionální. Pokud nevíš odpo
     getFallbackResponse(message) {
         console.log('🤖 Using fallback response system');
         
+        // Získej aktuální data ze stránky i pro fallback
+        const currentPageData = this.getCurrentPageData();
         const lowerMessage = message.toLowerCase();
+        
+        // Pokud se ptá na konkrétní data, zkus je najít
+        if (lowerMessage.includes('kolik') || lowerMessage.includes('počet') || lowerMessage.includes('statistics')) {
+            if (currentPageData.currentPage === 'user-profile' && currentPageData.data.overview) {
+                return `Na základě aktuálních dat z vašeho profilu:
+
+📊 **Vaše statistiky:**
+• **Položky celkem**: ${currentPageData.data.overview.totalItemsSold}
+• **Služby celkem**: ${currentPageData.data.overview.totalServicesSold}
+• **ALIGATOR (aktuální den)**: ${currentPageData.data.currentDay?.aligatorSales || '0'}
+• **ALIGATOR (měsíc)**: ${currentPageData.data.currentMonth?.aligatorSales || '0'}
+
+🏆 **Pozice v žebříčku:**
+• **Aktuální den**: ${currentPageData.data.currentDay?.ranking || '-'}
+• **Aktuální měsíc**: ${currentPageData.data.currentMonth?.ranking || '-'}
+
+*Data načtena přímo z vaší stránky profilu.*`;
+            }
+        }
         
         // Předdefinované odpovědi pro časté dotazy
         if (lowerMessage.includes('jak funguje') || lowerMessage.includes('jak používat')) {
