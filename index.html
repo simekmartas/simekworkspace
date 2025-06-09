@@ -17,8 +17,329 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Mobil Maják">
+    
+    <style>
+        /* Animované emoji pozadí */
+        .emoji-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .floating-emoji {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.1;
+            animation: float 10s infinite ease-in-out;
+        }
+
+        .floating-emoji:nth-child(odd) {
+            animation-direction: reverse;
+        }
+
+        .floating-emoji:nth-child(2n) {
+            animation-delay: -2s;
+        }
+
+        .floating-emoji:nth-child(3n) {
+            animation-delay: -4s;
+        }
+
+        .floating-emoji:nth-child(4n) {
+            animation-delay: -6s;
+        }
+
+        .floating-emoji:nth-child(5n) {
+            animation-delay: -8s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10%, 90% {
+                opacity: 0.1;
+            }
+            50% {
+                opacity: 0.15;
+                transform: translateY(-100px) rotate(180deg);
+            }
+        }
+
+        /* Hlavní hero sekce */
+        .hero-welcome {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.05) 0%, rgba(33, 150, 243, 0.05) 100%);
+            border-radius: 20px;
+            margin: 2rem auto;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .welcome-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff1493, #2196F3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .welcome-subtitle {
+            font-size: 1.5rem;
+            color: #666;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+
+        .welcome-message {
+            font-size: 1.2rem;
+            color: #555;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        /* Motivační citáty */
+        .motivation-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem auto;
+            max-width: 1200px;
+            padding: 0 2rem;
+        }
+
+        .quote-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 20, 147, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quote-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            border-color: rgba(255, 20, 147, 0.3);
+        }
+
+        .quote-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff1493, #2196F3);
+        }
+
+        .quote-emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .quote-text {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: #333;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .quote-author {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 600;
+        }
+
+        /* Statistiky sekce */
+        .stats-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 3rem auto;
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+
+        .stat-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .stat-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Call to action tlačítka */
+        .cta-section {
+            text-align: center;
+            margin: 4rem auto;
+            max-width: 600px;
+            padding: 0 2rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, #ff1493, #e91e63);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4);
+            background: linear-gradient(135deg, #e91e63, #ff1493);
+        }
+
+        .cta-button.secondary {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .cta-button.secondary:hover {
+            background: linear-gradient(135deg, #1976D2, #2196F3);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
+        /* Tmavý režim */
+        .dark-theme .quote-card,
+        .dark-theme .stat-item {
+            background: rgba(30, 41, 59, 0.9);
+            color: #f8fafc;
+            border-color: rgba(255, 20, 147, 0.2);
+        }
+
+        .dark-theme .quote-text {
+            color: #e2e8f0;
+        }
+
+        .dark-theme .quote-author {
+            color: #94a3b8;
+        }
+
+        .dark-theme .stat-label {
+            color: #94a3b8;
+        }
+
+        .dark-theme .welcome-subtitle,
+        .dark-theme .welcome-message {
+            color: #cbd5e1;
+        }
+
+        .dark-theme .hero-welcome {
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.1) 0%, rgba(33, 150, 243, 0.1) 100%);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Responzivní design */
+        @media (max-width: 768px) {
+            .welcome-title {
+                font-size: 2.5rem;
+            }
+
+            .welcome-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .welcome-message {
+                font-size: 1rem;
+            }
+
+            .hero-welcome {
+                padding: 3rem 1.5rem;
+                margin: 1rem;
+            }
+
+            .motivation-section {
+                grid-template-columns: 1fr;
+                padding: 0 1rem;
+            }
+
+            .stats-preview {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 0 1rem;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .cta-button {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-preview {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- Animované emoji pozadí -->
+    <div class="emoji-background" id="emojiBackground"></div>
+
     <header>
         <div class="header-content">
             <a href="index.html" class="logo">Mobil Maják</a>
@@ -32,10 +353,89 @@
     </header>
 
     <main>
-        <section class="hero">
-            <div class="container">
-                <h1>Mobil Maják</h1>
-                <p>Systém pro správu prodejních dat</p>
+        <!-- Hlavní uvítací sekce -->
+        <div class="hero-welcome">
+            <h1 class="welcome-title">Vítejte v Mobil Majáku! 🎯</h1>
+            <p class="welcome-subtitle">Váš digitální parťák pro úspěšný prodej</p>
+            <p class="welcome-message">
+                Každý den je nová příležitost k dosažení skvělých výsledků! 
+                Sledujte své pokroky, soutěžte s kolegy a staňte se nejlepším prodejcem měsíce! 💪
+            </p>
+        </div>
+
+        <!-- Motivační citáty -->
+        <section class="motivation-section">
+            <div class="quote-card">
+                <span class="quote-emoji">🚀</span>
+                <p class="quote-text">"Úspěch není konečný, neúspěch není fatální: důležitá je odvaha pokračovat."</p>
+                <p class="quote-author">Winston Churchill</p>
+            </div>
+            
+            <div class="quote-card">
+                <span class="quote-emoji">⭐</span>
+                <p class="quote-text">"Nejlepší způsob, jak předpovědět budoucnost, je vytvořit ji."</p>
+                <p class="quote-author">Peter Drucker</p>
+            </div>
+            
+            <div class="quote-card">
+                <span class="quote-emoji">🎯</span>
+                <p class="quote-text">"Cíl bez plánu je jen přání."</p>
+                <p class="quote-author">Antoine de Saint-Exupéry</p>
+            </div>
+            
+            <div class="quote-card">
+                <span class="quote-emoji">💡</span>
+                <p class="quote-text">"Kvalita není náhoda. Je to vždy výsledek inteligentního úsilí."</p>
+                <p class="quote-author">John Ruskin</p>
+            </div>
+            
+            <div class="quote-card">
+                <span class="quote-emoji">🏆</span>
+                <p class="quote-text">"Talent vyhrává hry, ale týmová práce a inteligence vyhrávají šampionáty."</p>
+                <p class="quote-author">Michael Jordan</p>
+            </div>
+            
+            <div class="quote-card">
+                <span class="quote-emoji">💪</span>
+                <p class="quote-text">"Úspěch spočívá v tom, že jdete z neúspěchu do neúspěchu, aniž byste ztratili nadšení."</p>
+                <p class="quote-author">Winston Churchill</p>
+            </div>
+        </section>
+
+        <!-- Rychlý přehled statistik -->
+        <section class="stats-preview">
+            <div class="stat-item">
+                <span class="stat-emoji">📱</span>
+                <p class="stat-label">Prodejní data</p>
+            </div>
+            
+            <div class="stat-item">
+                <span class="stat-emoji">🏆</span>
+                <p class="stat-label">Žebříčky</p>
+            </div>
+            
+            <div class="stat-item">
+                <span class="stat-emoji">📊</span>
+                <p class="stat-label">Statistiky</p>
+            </div>
+            
+            <div class="stat-item">
+                <span class="stat-emoji">👥</span>
+                <p class="stat-label">Týmová práce</p>
+            </div>
+        </section>
+
+        <!-- Call to action sekce -->
+        <section class="cta-section">
+            <h2>Začněte ještě dnes! 🌟</h2>
+            <p>Každý úspěšný prodejce začíná sledováním svých výsledků.</p>
+            <div class="cta-buttons">
+                <a href="user-profile.html" class="cta-button">
+                    👤 Můj profil
+                </a>
+                <a href="leaderboards.html" class="cta-button secondary">
+                    🏆 Žebříček
+                </a>
             </div>
         </section>
     </main>
@@ -46,8 +446,6 @@
         </div>
     </footer>
 
-
-
     <!-- Enhanced scripts s novými funkcemi -->
     <script src="theme-toggle.js"></script>
     <script src="navigation.js"></script>
@@ -57,7 +455,8 @@
     <script src="realtime-updates.js"></script>
     <script src="image-upload.js"></script>
 
-    <script src="ai-chatbot.js"></script>
+    <!-- AI chatbot skrytý -->
+    <!-- <script src="ai-chatbot.js"></script> -->
     
     <!-- Service Worker Registration -->
     <script>
@@ -73,15 +472,123 @@
             });
         }
     </script>
+    
     <script>
+        // Vytvoření animovaného emoji pozadí
+        function createEmojiBackground() {
+            const emojiBackground = document.getElementById('emojiBackground');
+            const emojis = ['📱', '🏆', '⭐', '💪', '🎯', '🚀', '💡', '📊', '🎉', '✨', '🌟', '💯', '🔥', '🎪', '🎊'];
+            
+            // Vytvořit náhodná emoji
+            for (let i = 0; i < 15; i++) {
+                const emoji = document.createElement('div');
+                emoji.className = 'floating-emoji';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.left = Math.random() * 100 + '%';
+                emoji.style.animationDelay = Math.random() * 10 + 's';
+                emoji.style.animationDuration = (8 + Math.random() * 4) + 's';
+                emojiBackground.appendChild(emoji);
+            }
+        }
+
+        // Rotace motivačních citátů
+        function rotateQuotes() {
+            const additionalQuotes = [
+                {
+                    emoji: "🎯",
+                    text: "Každý expert byl kdysi začátečník.",
+                    author: "Robin Sharma"
+                },
+                {
+                    emoji: "🌟",
+                    text: "Buďte změnou, kterou chcete vidět ve světě.",
+                    author: "Mahatma Gandhi"
+                },
+                {
+                    emoji: "💎",
+                    text: "Úspěch je součtem malých úsilí, opakovaných den za dnem.",
+                    author: "Robert Collier"
+                },
+                {
+                    emoji: "🎪",
+                    text: "Jediný způsob, jak dosáhnout nemožného, je věřit, že je možné.",
+                    author: "Charles Kingsleigh"
+                }
+            ];
+
+            // Náhodně přidat další citát po 10 sekundách
+            setTimeout(() => {
+                const motivationSection = document.querySelector('.motivation-section');
+                const randomQuote = additionalQuotes[Math.floor(Math.random() * additionalQuotes.length)];
+                
+                const newQuoteCard = document.createElement('div');
+                newQuoteCard.className = 'quote-card';
+                newQuoteCard.style.opacity = '0';
+                newQuoteCard.style.transform = 'translateY(20px)';
+                newQuoteCard.innerHTML = `
+                    <span class="quote-emoji">${randomQuote.emoji}</span>
+                    <p class="quote-text">"${randomQuote.text}"</p>
+                    <p class="quote-author">${randomQuote.author}</p>
+                `;
+                
+                motivationSection.appendChild(newQuoteCard);
+                
+                // Animace objevení
+                setTimeout(() => {
+                    newQuoteCard.style.transition = 'all 0.5s ease';
+                    newQuoteCard.style.opacity = '1';
+                    newQuoteCard.style.transform = 'translateY(0)';
+                }, 100);
+            }, 10000);
+        }
+
+        // Personalizované uvítání podle času
+        function personalizeWelcome() {
+            const hour = new Date().getHours();
+            const welcomeMessage = document.querySelector('.welcome-message');
+            
+            let timeGreeting = '';
+            let emoji = '';
+            
+            if (hour < 6) {
+                timeGreeting = 'Jste skutečný ranní ptáček! 🌅';
+                emoji = '🌙';
+            } else if (hour < 12) {
+                timeGreeting = 'Dobré ráno a skvělý start do nového dne! ☀️';
+                emoji = '🌅';
+            } else if (hour < 17) {
+                timeGreeting = 'Příjemné odpoledne plné úspěchů! 📈';
+                emoji = '☀️';
+            } else if (hour < 22) {
+                timeGreeting = 'Dobrý večer, čas na review dnešních úspěchů! 🎯';
+                emoji = '🌆';
+            } else {
+                timeGreeting = 'Práce nikdy nespí! Obdivuji vaši dedikaci! 💪';
+                emoji = '🌙';
+            }
+            
+            if (welcomeMessage) {
+                welcomeMessage.innerHTML += `<br><br><strong>${emoji} ${timeGreeting}</strong>`;
+            }
+        }
+
         // Ensure proper initialization order
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Index.html inicializace dokončena');
             
+            // Vytvoř animované pozadí
+            createEmojiBackground();
+            
+            // Personalizuj uvítání
+            personalizeWelcome();
+            
+            // Spusť rotaci citátů
+            rotateQuotes();
+            
             // Wait for theme manager to be ready
             setTimeout(() => {
                 if (window.themeManager) {
-                    window.themeManager.updateAllToggleButtons();
+                    window.themeManager.createThemeToggle();
                     console.log('Theme toggle buttons aktualizovány na index.html');
                 }
             }, 200);
