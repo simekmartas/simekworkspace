@@ -942,22 +942,65 @@
                     // Zkusíme první POST s JSON
                     console.log('🔄 Pokus #1: POST s JSON');
                     
-                    console.log('🔄 Odesílám POST s JSON na Google Apps Script');
+                    let finalResponse;
                     
-                    const finalResponse = await fetch('https://script.google.com/macros/s/AKfycbwkATHtC5SG67oDkiItUxxLV-mS3tsIDHoiSRvaNDNMLMPczDEdTrGnexkaev7ppALN/exec', {
-                        method: 'POST',
-                        mode: 'cors',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!finalResponse.ok) {
-                        const errorText = await finalResponse.text();
-                        console.error('❌ HTTP Error Response:', errorText);
-                        throw new Error(`HTTP error! status: ${finalResponse.status} - ${errorText}`);
+                    try {
+                        // Pokus #1: POST s FormData (lépe funguje s Google Apps Script)
+                        console.log('🔄 Pokus #1: POST s FormData');
+                        
+                        const formData = new FormData();
+                        
+                        // Přidání akce
+                        formData.append('action', payload.action);
+                        
+                        // Přidání všech dat z formuláře
+                        Object.keys(payload.data).forEach(key => {
+                            const value = payload.data[key];
+                            if (value !== null && value !== undefined && value !== '') {
+                                formData.append(key, value.toString());
+                            }
+                        });
+                        
+                        console.log('📋 FormData obsahuje:', Array.from(formData.entries()).map(([k, v]) => `${k}: ${v}`));
+                        
+                        finalResponse = await fetch('https://script.google.com/macros/s/AKfycbyPrVbibH_2dCL-9MFRYkSURIV4_bQdruuX-BrGT00Z0kJTOP8cqs3kZ9SaOpXZ7qFA/exec', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        if (!finalResponse.ok) throw new Error('POST FormData failed');
+                        
+                    } catch (error) {
+                        console.log('❌ POST s FormData selhal, zkouším GET...');
+                        
+                        // Pokus #2: GET s parametry (fallback)
+                        const params = new URLSearchParams();
+                        
+                        // Přidání akce
+                        params.append('action', payload.action);
+                        
+                        // Přidání všech dat z formuláře
+                        Object.keys(payload.data).forEach(key => {
+                            const value = payload.data[key];
+                            if (value !== null && value !== undefined && value !== '') {
+                                params.append(key, value.toString());
+                            }
+                        });
+                        
+                        console.log('🔄 Pokus #2: GET s parametry');
+                        console.log('📋 URL parametry:', params.toString());
+                        
+                        const url = `https://script.google.com/macros/s/AKfycbyPrVbibH_2dCL-9MFRYkSURIV4_bQdruuX-BrGT00Z0kJTOP8cqs3kZ9SaOpXZ7qFA/exec?${params.toString()}`;
+                        
+                        finalResponse = await fetch(url, {
+                            method: 'GET'
+                        });
+                        
+                        if (!finalResponse.ok) {
+                            const errorText = await finalResponse.text();
+                            console.error('❌ Všechny pokusy selhaly. Poslední chyba:', errorText);
+                            throw new Error(`HTTP error! status: ${finalResponse.status} - ${errorText}`);
+                        }
                     }
                     
                     console.log('📡 Response status:', finalResponse.status);
