@@ -931,49 +931,41 @@
                     
                     console.log('🚀 Odesílám data na Google Apps Script:', data);
                     
-                    // Příprava dat pro Google Apps Script jako URL parametry
-                    const params = new URLSearchParams();
+                    // Příprava dat pro Google Apps Script ve správném formátu
+                    const payload = {
+                        action: 'addRecord',
+                        data: data
+                    };
                     
-                    // Přidání všech dat do URLSearchParams
-                    Object.keys(data).forEach(key => {
-                        const value = data[key];
-                        if (value !== null && value !== undefined && value !== '') {
-                            params.append(key, value.toString());
-                        }
-                    });
+                    console.log('📋 Payload pro odeslání:', payload);
                     
-                    // Označení jako bazar data
-                    params.append('type', 'bazar');
-                    params.append('action', 'add');
-                    params.append('timestamp', new Date().toISOString());
+                    // Zkusíme první POST s JSON
+                    console.log('🔄 Pokus #1: POST s JSON');
                     
-                    console.log('📋 Parametry pro odeslání:', params.toString());
+                    console.log('🔄 Odesílám POST s JSON na Google Apps Script');
                     
-                    // Odeslání na Google Apps Script pomocí GET
-                    const url = `https://script.google.com/macros/s/AKfycbwkATHtC5SG67oDkiItUxxLV-mS3tsIDHoiSRvaNDNMLMPczDEdTrGnexkaev7ppALN/exec?${params.toString()}`;
-                    
-                    console.log('🌐 URL pro volání:', url.substring(0, 150) + '...');
-                    
-                    const response = await fetch(url, {
-                        method: 'GET',
+                    const finalResponse = await fetch('https://script.google.com/macros/s/AKfycbwkATHtC5SG67oDkiItUxxLV-mS3tsIDHoiSRvaNDNMLMPczDEdTrGnexkaev7ppALN/exec', {
+                        method: 'POST',
                         mode: 'cors',
                         headers: {
+                            'Content-Type': 'application/json',
                             'Accept': 'application/json'
-                        }
+                        },
+                        body: JSON.stringify(payload)
                     });
                     
-                    console.log('📡 Response status:', response.status);
-                    console.log('📡 Response headers:', response.headers);
-                    
-                    if (!response.ok) {
-                        const errorText = await response.text();
+                    if (!finalResponse.ok) {
+                        const errorText = await finalResponse.text();
                         console.error('❌ HTTP Error Response:', errorText);
-                        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+                        throw new Error(`HTTP error! status: ${finalResponse.status} - ${errorText}`);
                     }
+                    
+                    console.log('📡 Response status:', finalResponse.status);
+                    console.log('📡 Response headers:', finalResponse.headers);
                     
                     // Pokus o parsování JSON odpovědi
                     let result;
-                    const responseText = await response.text();
+                    const responseText = await finalResponse.text();
                     console.log('📄 Raw response:', responseText.substring(0, 200) + '...');
                     
                     try {
