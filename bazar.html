@@ -126,6 +126,121 @@
             background-color: rgba(30, 41, 59, 0.3);
             color: #94a3b8;
         }
+        
+        /* CSS styly pro animace úspěchu a chyby */
+        .success-emoji, .error-emoji {
+            position: fixed;
+            font-size: 4rem;
+            z-index: 10000;
+            animation: bounceIn 0.6s ease-out;
+            pointer-events: none;
+        }
+        
+        .celebration-text, .error-text {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2563eb;
+            z-index: 10000;
+            animation: slideInUp 0.8s ease-out;
+            pointer-events: none;
+            text-align: center;
+        }
+        
+        .error-text {
+            color: #dc2626;
+        }
+        
+        @keyframes bounceIn {
+            0% { transform: translateX(-50%) scale(0.3); opacity: 0; }
+            50% { transform: translateX(-50%) scale(1.05); }
+            70% { transform: translateX(-50%) scale(0.9); }
+            100% { transform: translateX(-50%) scale(1); opacity: 1; }
+        }
+        
+        @keyframes slideInUp {
+            0% { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            100% { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        
+        /* Konfety animace */
+        .animation-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            overflow: hidden;
+        }
+        
+        .confetti-piece {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #ffeaa7);
+            animation: confettiFall linear infinite;
+            border-radius: 50%;
+        }
+        
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Sparkle animace */
+        .sparkle {
+            position: absolute;
+            font-size: 1.5rem;
+            animation: sparkleFloat 3s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        @keyframes sparkleFloat {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.5; }
+        }
+        
+        /* Glow efekt pro úspěch */
+        .form-success-glow {
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
+            border: 2px solid #22c55e;
+            animation: successGlow 2s ease-in-out;
+        }
+        
+        @keyframes successGlow {
+            0% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
+            50% { box-shadow: 0 0 60px rgba(34, 197, 94, 0.8); }
+            100% { box-shadow: 0 0 30px rgba(34, 197, 94, 0.5); }
+        }
+        
+        /* Shake efekt pro chybu */
+        .form-error-shake {
+            animation: errorShake 0.6s ease-in-out;
+            border: 2px solid #ef4444;
+        }
+        
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        /* Spinning animace pro loading tlačítko */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="protected-page">
@@ -706,18 +821,58 @@
                 return dateString; // Vrátit původní pokud není ve správném formátu
             }
             
-            // Funkce pro uložení dat do lokální tabulky
+            // Funkce pro uložení dat do Google Sheets přes Google Apps Script
             async function saveBazarData(data) {
+                const submitButton = document.querySelector('button[type="submit"]');
+                const originalButtonText = submitButton.innerHTML;
+                
                 try {
-                    // Použití nového BazarStorage
-                    const success = await window.bazarStorage.addRecord(data);
+                    // Zobrazit loading stav
+                    submitButton.disabled = true;
+                    submitButton.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite;">
+                            <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                        </svg>
+                        Odesílám...
+                    `;
                     
-                    if (success) {
-                        // Spuštění úspěšné animace
+                    console.log('🚀 Odesílám data na Google Apps Script:', data);
+                    
+                    // Příprava dat pro Google Apps Script
+                    const formData = new FormData();
+                    
+                    // Přidání všech dat do FormData
+                    Object.keys(data).forEach(key => {
+                        const value = data[key];
+                        if (value !== null && value !== undefined) {
+                            formData.append(key, value.toString());
+                        }
+                    });
+                    
+                    // Označení jako bazar data
+                    formData.append('type', 'bazar');
+                    formData.append('timestamp', new Date().toISOString());
+                    
+                    // Odeslání na Google Apps Script
+                    const response = await fetch('https://script.google.com/macros/s/AKfycbwkATHtC5SG67oDkiItUxxLV-mS3tsIDHoiSRvaNDNMLMPczDEdTrGnexkaev7ppALN/exec', {
+                        method: 'POST',
+                        body: formData,
+                        mode: 'cors'
+                    });
+                    
+                    console.log('📡 Response status:', response.status);
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('📊 Response data:', result);
+                    
+                    if (result.success) {
+                        // Úspěšné uložení - zobrazit veselý smajlík
                         showSuccessAnimation();
-                        
-                        // Úspěšná zpráva
-                        showMessage('🎉 Záznam byl úspěšně uložen!', 'success');
+                        showMessage('😊 Úspěšně odesláno do Google Sheets!', 'success');
                         
                         // Přidání glow efektu k formuláři
                         newBazarForm.classList.add('form-success-glow');
@@ -732,29 +887,52 @@
                             }
                         }, 3000);
                         
-                        console.log('Nový bazar záznam uložen:', data);
+                        console.log('✅ Bazar záznam úspěšně uložen do Google Sheets');
+                        
                     } else {
-                        throw new Error('Uložení se nezdařilo');
+                        throw new Error(result.error || 'Neznámá chyba ze serveru');
                     }
                     
                 } catch (error) {
-                    console.error('Chyba při ukládání bazaru:', error);
-                    showErrorAnimation(['Chyba při ukládání záznamu']);
-                    showMessage('😞 Chyba při ukládání záznamu. Zkuste to znovu.', 'error');
+                    console.error('❌ Chyba při odesílání na Google Apps Script:', error);
+                    
+                    let errorMessage = '😞 Nepodařilo se odeslat data';
+                    let errorDetails = [];
+                    
+                    if (error.message.includes('Failed to fetch')) {
+                        errorMessage = '🌐 Problém s připojením k internetu';
+                        errorDetails = ['Zkontrolujte internetové připojení a zkuste to znovu'];
+                    } else if (error.message.includes('HTTP error')) {
+                        errorMessage = '⚠️ Chyba serveru';
+                        errorDetails = ['Server je momentálně nedostupný, zkuste to později'];
+                    } else if (error.message.includes('Neznámá chyba')) {
+                        errorMessage = '🔧 Problém se zpracováním dat';
+                        errorDetails = ['Zkontrolujte vyplněná data a zkuste to znovu'];
+                    } else {
+                        errorDetails = [error.message];
+                    }
+                    
+                    // Zobrazit smutný smajlík a důvod chyby
+                    showErrorAnimation(errorDetails);
+                    showMessage(`${errorMessage}: ${errorDetails.join(', ')}`, 'error');
                     
                     // Přidání shake efektu k formuláři
                     newBazarForm.classList.add('form-error-shake');
                     setTimeout(() => {
                         newBazarForm.classList.remove('form-error-shake');
                     }, 3000);
+                    
+                } finally {
+                    // Obnovit tlačítko
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonText;
                 }
             }
             
-            // Přidání export tlačítek po načtení
+            // Inicializace kalendářových inputů při načtení
             setTimeout(() => {
-                addExportButtons();
                 initializeDateInputs();
-            }, 500);
+            }, 100);
             
             // Zajistit inicializaci i při okamžitém načtení
             initializeDateInputs();
@@ -769,24 +947,25 @@
             const yearSelects = document.querySelectorAll('.year-select');
             console.log(`Nalezeno ${yearSelects.length} year selectů`);
             
-            // Inicializace všech date selectů
+            // Inicializace všech year selectů
             yearSelects.forEach((select, index) => {
-                // Vyčistit existující options (kromě první prázdné)
-                while (select.children.length > 1) {
-                    select.removeChild(select.lastChild);
+                // Kontrola, zda již není inicializován
+                if (select.children.length > 1) {
+                    console.log(`Year select ${index + 1} již inicializován, přeskakuji`);
+                    return;
                 }
                 
                 // Přidání roků od současného roku do budoucna (10 let)
                 for (let year = currentYear; year <= currentYear + 10; year++) {
                     const option = document.createElement('option');
-                    option.value = year.toString().padStart(4, '0');
+                    option.value = year.toString();
                     option.textContent = year;
                     select.appendChild(option);
                 }
                 // Pak roky do minulosti
                 for (let year = currentYear - 1; year >= 1920; year--) {
                     const option = document.createElement('option');
-                    option.value = year.toString().padStart(4, '0');
+                    option.value = year.toString();
                     option.textContent = year;
                     select.appendChild(option);
                 }
@@ -800,9 +979,10 @@
             
             // Inicializace dnů (1-31)
             daySelects.forEach((select, index) => {
-                // Vyčistit existující options (kromě první prázdné)
-                while (select.children.length > 1) {
-                    select.removeChild(select.lastChild);
+                // Kontrola, zda již není inicializován
+                if (select.children.length > 1) {
+                    console.log(`Day select ${index + 1} již inicializován, přeskakuji`);
+                    return;
                 }
                 
                 for (let day = 1; day <= 31; day++) {
@@ -815,12 +995,16 @@
                 console.log(`Day select ${index + 1} inicializován s ${select.children.length - 1} dny`);
             });
             
-            // Event listenery pro synchronizaci selectů s text inputy
+            // Event listenery pro synchronizaci selectů s text inputy (pouze jednou)
             const allDateSelects = document.querySelectorAll('.date-select');
             console.log(`Nalezeno ${allDateSelects.length} date selectů celkem`);
             
             allDateSelects.forEach((select, index) => {
-                select.addEventListener('change', function() {
+                // Odstranit předchozí listenery
+                const newSelect = select.cloneNode(true);
+                select.parentNode.replaceChild(newSelect, select);
+                
+                newSelect.addEventListener('change', function() {
                     console.log(`Date select ${index + 1} změněn:`, this.dataset.field, '=', this.value);
                     updateDateInputFromSelects(this.dataset.field);
                 });
@@ -831,17 +1015,21 @@
             console.log(`Nalezeno ${dateTextInputs.length} date text inputů`);
             
             dateTextInputs.forEach((input, index) => {
-                input.addEventListener('input', function() {
+                // Odstranit předchozí listenery
+                const newInput = input.cloneNode(true);
+                input.parentNode.replaceChild(newInput, input);
+                
+                newInput.addEventListener('input', function() {
                     validateDateInput(this);
                 });
                 
-                input.addEventListener('blur', function() {
+                newInput.addEventListener('blur', function() {
                     if (this.value) {
                         formatDateInput(this);
                     }
                 });
                 
-                console.log(`Text input ${index + 1} inicializován:`, input.id);
+                console.log(`Text input ${index + 1} inicializován:`, newInput.id);
             });
             
             // Kontrola tlačítek pro přepínání
@@ -902,9 +1090,20 @@
                 const monthSelect = document.querySelector(`[data-field="${fieldName}"].month-select`);
                 const yearSelect = document.querySelector(`[data-field="${fieldName}"].year-select`);
                 
-                if (daySelect) daySelect.value = parts[0];
-                if (monthSelect) monthSelect.value = parts[1];
-                if (yearSelect) yearSelect.value = parts[2];
+                console.log(`🔄 Synchronizuji selecty pro ${fieldName}:`, parts);
+                
+                if (daySelect && parts[0]) {
+                    daySelect.value = parts[0].padStart(2, '0');
+                    console.log(`Day nastaven na: ${daySelect.value}`);
+                }
+                if (monthSelect && parts[1]) {
+                    monthSelect.value = parts[1].padStart(2, '0');
+                    console.log(`Month nastaven na: ${monthSelect.value}`);
+                }
+                if (yearSelect && parts[2]) {
+                    yearSelect.value = parts[2];
+                    console.log(`Year nastaven na: ${yearSelect.value}`);
+                }
             }
         }
         
@@ -915,10 +1114,24 @@
             const yearSelect = document.querySelector(`[data-field="${fieldName}"].year-select`);
             const textInput = document.getElementById(fieldName);
             
-            if (daySelect.value && monthSelect.value && yearSelect.value) {
-                const dateString = `${daySelect.value}.${monthSelect.value}.${yearSelect.value}`;
+            console.log(`🔄 Aktualizuji text input pro ${fieldName}`);
+            console.log(`Day: ${daySelect?.value}, Month: ${monthSelect?.value}, Year: ${yearSelect?.value}`);
+            
+            if (daySelect && monthSelect && yearSelect && 
+                daySelect.value && monthSelect.value && yearSelect.value) {
+                
+                const day = daySelect.value.padStart(2, '0');
+                const month = monthSelect.value.padStart(2, '0');
+                const year = yearSelect.value;
+                
+                const dateString = `${day}.${month}.${year}`;
                 textInput.value = dateString;
+                console.log(`📅 Datum aktualizováno na: ${dateString}`);
                 validateDateInput(textInput);
+            } else if (textInput && (!daySelect.value || !monthSelect.value || !yearSelect.value)) {
+                // Pokud není všechno vyplněno, vymaž text input
+                textInput.value = '';
+                console.log(`📅 Text input vymazán pro ${fieldName}`);
             }
         }
         
@@ -939,6 +1152,12 @@
         function formatDateInput(input) {
             let value = input.value.replace(/[^\d]/g, '');
             
+            // Omezit na maximum 8 číslic
+            if (value.length > 8) {
+                value = value.substring(0, 8);
+            }
+            
+            // Formátování DD.MM.YYYY
             if (value.length >= 2) {
                 value = value.substring(0, 2) + '.' + value.substring(2);
             }
@@ -947,7 +1166,11 @@
             }
             
             input.value = value;
-            validateDateInput(input);
+            
+            // Validace pouze pokud je kompletní datum
+            if (value.length === 10) {
+                validateDateInput(input);
+            }
         }
         
         // Validace celého formuláře
@@ -968,7 +1191,10 @@
                 { id: 'mistoVydaniDokladu', name: 'Místo vydání dokladu' },
                 { id: 'datumVydaniDokladu', name: 'Datum vydání dokladu' },
                 { id: 'platnostDo', name: 'Platnost do' },
-                { id: 'datumNarozeni', name: 'Datum narození' }
+                { id: 'datumNarozeni', name: 'Datum narození' },
+                { id: 'pohlavi', name: 'Pohlaví' },
+                { id: 'cisloOP', name: 'Číslo OP' },
+                { id: 'mistoNarozeni', name: 'Místo narození' }
             ];
             
             requiredFields.forEach(field => {
@@ -1021,15 +1247,18 @@
             // Přidání emoji a textu
             const successEmoji = document.createElement('div');
             successEmoji.className = 'success-emoji';
-            successEmoji.innerHTML = '👍';
-            successEmoji.style.top = '30%';
+            successEmoji.innerHTML = '😊';
+            successEmoji.style.top = '25%';
             successEmoji.style.left = '50%';
             successEmoji.style.transform = 'translateX(-50%)';
+            successEmoji.style.fontSize = '5rem';
+            successEmoji.style.textAlign = 'center';
             document.body.appendChild(successEmoji);
             
             const celebrationText = document.createElement('div');
             celebrationText.className = 'celebration-text';
-            celebrationText.innerHTML = '🎉 Úspěšně uloženo! 🎉';
+            celebrationText.innerHTML = '🎉 Úspěšně odesláno! 🎉';
+            celebrationText.style.top = '40%';
             document.body.appendChild(celebrationText);
             
             // Přidání sparkle efektů
@@ -1037,8 +1266,8 @@
             
             // Odstranění po 4 sekundách
             setTimeout(() => {
-                successEmoji.remove();
-                celebrationText.remove();
+                if (successEmoji.parentNode) successEmoji.remove();
+                if (celebrationText.parentNode) celebrationText.remove();
             }, 4000);
         }
         
@@ -1047,21 +1276,47 @@
             const errorEmoji = document.createElement('div');
             errorEmoji.className = 'error-emoji';
             errorEmoji.innerHTML = '😞';
-            errorEmoji.style.top = '30%';
+            errorEmoji.style.top = '25%';
             errorEmoji.style.left = '50%';
             errorEmoji.style.transform = 'translateX(-50%)';
+            errorEmoji.style.fontSize = '5rem';
+            errorEmoji.style.textAlign = 'center';
             document.body.appendChild(errorEmoji);
             
             const errorText = document.createElement('div');
             errorText.className = 'error-text';
             errorText.innerHTML = '😞 Něco se nepovedlo';
+            errorText.style.top = '40%';
             document.body.appendChild(errorText);
             
-            // Odstranění po 3 sekundách
+            // Přidání seznamu chyb pokud existují
+            if (errors && errors.length > 0) {
+                const errorDetails = document.createElement('div');
+                errorDetails.style.position = 'fixed';
+                errorDetails.style.top = '50%';
+                errorDetails.style.left = '50%';
+                errorDetails.style.transform = 'translateX(-50%)';
+                errorDetails.style.fontSize = '1rem';
+                errorDetails.style.color = '#dc2626';
+                errorDetails.style.zIndex = '10000';
+                errorDetails.style.textAlign = 'center';
+                errorDetails.style.maxWidth = '80vw';
+                errorDetails.style.padding = '10px';
+                errorDetails.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                errorDetails.style.borderRadius = '8px';
+                errorDetails.innerHTML = errors.slice(0, 3).join('<br>'); // Max 3 chyby
+                document.body.appendChild(errorDetails);
+                
+                setTimeout(() => {
+                    if (errorDetails.parentNode) errorDetails.remove();
+                }, 5000);
+            }
+            
+            // Odstranění po 5 sekundách
             setTimeout(() => {
-                errorEmoji.remove();
-                errorText.remove();
-            }, 3000);
+                if (errorEmoji.parentNode) errorEmoji.remove();
+                if (errorText.parentNode) errorText.remove();
+            }, 5000);
         }
         
         // Vytvoření konfet
