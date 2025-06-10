@@ -700,13 +700,25 @@
             // Kontrola přístupů se provádí automaticky v access-control.js
             // Pokud má uživatel přístup, inicializujeme data loader
             setTimeout(() => {
+                console.log('⏰ Timeout inicializace spuštěn');
+                console.log('🔐 Stav autentifikace:', document.body.classList.contains('authenticated'));
+                console.log('📜 Všechny třídy body:', document.body.className);
+                
                 if (document.body.classList.contains('authenticated')) {
+                    console.log('✅ Uživatel je autentifikovaný, spouštím inicializaci');
+                    
                     // Inicializace bazarového data loaderu
                     window.bazarLoader = new BazarDataLoader('bazarDataContainer');
                     window.bazarLoader.loadBazarData();
                     console.log('Bazar data loader inicializován');
                     
                     // Inicializace formuláře pro nový bazar
+                    initBazarForm();
+                } else {
+                    console.log('❌ Uživatel NENÍ autentifikovaný, přeskakuji inicializaci');
+                    
+                    // Zkusíme inicializaci i bez autentifikace pro debug
+                    console.log('🔧 Pokouším se o inicializaci i bez autentifikace...');
                     initBazarForm();
                 }
                 
@@ -715,11 +727,13 @@
                     window.themeManager.createThemeToggle();
                     console.log('Theme toggle buttons aktualizovány na bazar.html');
                 }
-            }, 200);
+            }, 500);
         });
         
         // Funkce pro inicializaci formuláře
         function initBazarForm() {
+            console.log('🔧 Inicializuji bazar formulář...');
+            
             const newBazarBtn = document.getElementById('newBazarBtn');
             const newBazarForm = document.getElementById('newBazarForm');
             const closeFormBtn = document.getElementById('closeFormBtn');
@@ -727,13 +741,75 @@
             const bazarForm = document.getElementById('bazarForm');
             const formMessage = document.getElementById('formMessage');
             
+            console.log('🔍 Kontrola elementů:', {
+                newBazarBtn: !!newBazarBtn,
+                newBazarForm: !!newBazarForm,
+                closeFormBtn: !!closeFormBtn,
+                cancelFormBtn: !!cancelFormBtn,
+                bazarForm: !!bazarForm,
+                formMessage: !!formMessage
+            });
+            
+            if (!newBazarBtn) {
+                console.error('❌ Tlačítko newBazarBtn nenalezeno!');
+                console.log('🔍 Elementy v DOM:', document.querySelectorAll('[id*="azar"]'));
+                
+                // Zkusíme najít tlačítko později
+                setTimeout(() => {
+                    console.log('🔄 Opakuji hledání tlačítka...');
+                    const retryBtn = document.getElementById('newBazarBtn');
+                    if (retryBtn) {
+                        console.log('✅ Tlačítko nalezeno při opakování!');
+                        initBazarForm();
+                    } else {
+                        console.error('❌ Tlačítko stále nenalezeno');
+                    }
+                }, 1000);
+                return;
+            }
+            
+            if (!newBazarForm) {
+                console.error('❌ Formulář newBazarForm nenalezen!');
+                return;
+            }
+            
+            // Kontrola CSS vlastností tlačítka
+            const btnStyles = window.getComputedStyle(newBazarBtn);
+            console.log('🎨 CSS vlastnosti tlačítka:', {
+                display: btnStyles.display,
+                visibility: btnStyles.visibility,
+                opacity: btnStyles.opacity,
+                pointerEvents: btnStyles.pointerEvents,
+                position: btnStyles.position
+            });
+            
             // Zobrazení formuláře
-            newBazarBtn.addEventListener('click', function() {
+            const clickHandler = function() {
+                console.log('🔘 Kliknuto na tlačítko Nový bazar');
                 newBazarForm.style.display = 'block';
                 newBazarBtn.style.display = 'none';
                 // Scroll k formuláři
                 newBazarForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            });
+            };
+            
+            // Přidání event listeneru s kontrolou
+            try {
+                newBazarBtn.addEventListener('click', clickHandler);
+                console.log('✅ Event listener pro Nový bazar přidán');
+                
+                // Test funkčnosti tlačítka
+                newBazarBtn.style.cursor = 'pointer';
+                newBazarBtn.title = 'Klikněte pro otevření formuláře';
+                
+                // Přidání alternativního způsobu pro debug
+                newBazarBtn.onclick = function(e) {
+                    console.log('🔘 Onclick handler spuštěn');
+                    clickHandler();
+                };
+                
+            } catch (error) {
+                console.error('❌ Chyba při přidávání event listeneru:', error);
+            }
             
             // Skrytí formuláře
             function hideForm() {
