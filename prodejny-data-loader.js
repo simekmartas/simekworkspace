@@ -1,3 +1,7 @@
+// ⚠️⚠️⚠️ POZOR! TENTO SOUBOR OBSAHUJE FUNKČNÍ GOOGLE SHEETS INTEGRACI! ⚠️⚠️⚠️
+// ⚠️ AKTUÁLNÍ I MĚSÍČNÍ DATA FUNGUJÍ SPRÁVNĚ OD 10.6.2025 ⚠️
+// ⚠️ NEMĚNIT BEZ VÝSLOVNÉHO SVOLENÍ UŽIVATELE! ⚠️
+//
 // Specializovaný data loader pro prodejny s podporou "králů"
 class ProdejnyDataLoader {
     constructor(containerId, tabType = 'current') {
@@ -5,18 +9,24 @@ class ProdejnyDataLoader {
         this.tabType = tabType;
         this.isMonthly = tabType === 'monthly';
         
+        // ⚠️ KRITICKÉ NASTAVENÍ - NEMĚNIT BEZ VÝSLOVNÉHO SVOLENÍ! ⚠️
+        // ⚠️ FUNKČNÍ OD 10.6.2025 - AKTUÁLNÍ I MĚSÍČNÍ DATA FUNGUJÍ! ⚠️
         // Google Sheets ID a gid pro hlavní list
         this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
-        this.mainGid = '0'; // aktuální list "statistiky aktual"
+        this.mainGid = '0'; // aktuální list "List 1" 
         this.monthlyGid = '1829845095'; // měsíční list "od 1"
+        // ⚠️ KONEC KRITICKÉHO NASTAVENÍ ⚠️
         
         // Publikované URL pro CSV export
         this.basePublishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv`;
         
         this.refreshInterval = null;
         
+        // ⚠️ KRITICKÁ URL - NEMĚNIT BEZ VÝSLOVNÉHO SVOLENÍ! ⚠️
+        // ⚠️ TENTO SCRIPT ČTENÍ DAT FUNGUJE PRO AKTUÁLNÍ I MĚSÍČNÍ DATA! ⚠️
         // Google Apps Script URL pro ČTENÍ dat z prodejní tabulky
         this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyGPiyfiPMn1yvZFoYuiFwFiCXJ7u3vBLlmiEqXLXSuzuDvDCcKqm6uUyDIRbcH4Ftk5g/exec';
+        // ⚠️ KONEC KRITICKÉ URL ⚠️
         
         // Automaticky načte data po vytvoření instance
         setTimeout(() => {
@@ -740,6 +750,9 @@ class ProdejnyDataLoader {
         });
     }
 
+    // ⚠️⚠️⚠️ KRITICKÁ FUNKCE - ABSOLUTNĚ NEMĚNIT! ⚠️⚠️⚠️
+    // ⚠️ TATO FUNKCE FUNGUJE PRO AKTUÁLNÍ I MĚSÍČNÍ DATA! ⚠️
+    // ⚠️ FUNKČNÍ OD 10.6.2025 - TESTOVÁNO A OVĚŘENO! ⚠️
     async loadWithJsonp(gid, isMonthly) {
         return new Promise((resolve, reject) => {
             const timestamp = Date.now();
@@ -802,6 +815,7 @@ class ProdejnyDataLoader {
             document.head.appendChild(script);
         });
     }
+    // ⚠️⚠️⚠️ KONEC KRITICKÉ FUNKCE loadWithJsonp ⚠️⚠️⚠️
 
     async reloadData() {
         console.log('🔄 Ruční reload dat prodejny...');

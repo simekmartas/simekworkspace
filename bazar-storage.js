@@ -1,10 +1,17 @@
+// ⚠️⚠️⚠️ POZOR! TENTO SOUBOR OBSAHUJE FUNKČNÍ GOOGLE SHEETS ZÁPIS! ⚠️⚠️⚠️
+// ⚠️ VÝKUPNÍ FORMULÁŘ FUNGUJE SPRÁVNĚ OD 10.6.2025 ⚠️
+// ⚠️ NEMĚNIT BEZ VÝSLOVNÉHO SVOLENÍ UŽIVATELE! ⚠️
+//
 // Správa lokálních bazarových dat s Google Sheets synchronizací
 class BazarStorage {
     constructor() {
         this.storageKey = 'bazarRecords';
         this.counterKey = 'bazarCounter';
+        // ⚠️ KRITICKÁ URL PRO ZÁPIS VÝKUPNÍCH DAT - NEMĚNIT! ⚠️
+        // ⚠️ FUNKČNÍ OD 10.6.2025 - ODESÍLÁ DO SPRÁVNÉ TABULKY! ⚠️
         // URL pro Google Apps Script webovou aplikaci - FUNKČNÍ URL
         this.googleSheetsURL = 'https://script.google.com/macros/s/AKfycbwkATHtC5SG67oDkiItUxxLV-mS3tsIDHoiSRvaNDNMLMPczDEdTrGnexkaev7ppALN/exec';
+        // ⚠️ KONEC KRITICKÉ URL ⚠️
         this.syncEnabled = true; // Zapnuto - opravená detekce duplicit podle čísla výkupky
     }
     

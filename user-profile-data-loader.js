@@ -1,3 +1,7 @@
+// ⚠️⚠️⚠️ POZOR! TENTO SOUBOR OBSAHUJE FUNKČNÍ GOOGLE SHEETS ČTENÍ! ⚠️⚠️⚠️
+// ⚠️ USER PROFILY FUNGUJÍ SPRÁVNĚ OD 10.6.2025 ⚠️
+// ⚠️ NEMĚNIT BEZ VÝSLOVNÉHO SVOLENÍ UŽIVATELE! ⚠️
+//
 // Specializovaný data loader pro uživatelské profily s filtrováním podle ID prodejce
 // Používá stejnou logiku jako ProdejnyDataLoader, ale filtruje podle ID prodejce
 class UserProfileDataLoader {
@@ -10,10 +14,13 @@ class UserProfileDataLoader {
         // ID přihlášeného uživatele - získáme z localStorage (pouze ID, ne data)
         this.userSellerId = this.getCurrentUserSellerId();
         
+        // ⚠️ KRITICKÉ NASTAVENÍ PRO USER PROFILE - NEMĚNIT! ⚠️
+        // ⚠️ FUNKČNÍ OD 10.6.2025 - AKTUÁLNÍ I MĚSÍČNÍ DATA! ⚠️
         // Google Sheets ID a gid pro správné listy
         this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
         this.mainGid = '0'; // aktuální data - list "List 1" (obvykle GID = 0)
         this.monthlyGid = '1829845095'; // měsíční data - list "od 1"
+        // ⚠️ KONEC KRITICKÉHO NASTAVENÍ ⚠️
         
         // Publikované URL pro CSV export
         this.basePublishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv`;
