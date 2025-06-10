@@ -543,7 +543,7 @@
             // Wait for theme manager to be ready
             setTimeout(() => {
                 if (window.themeManager) {
-                    window.themeManager.updateAllToggleButtons();
+                    window.themeManager.createThemeToggle();
                     console.log('Theme toggle buttons aktualizovány na prodejny.html');
                 }
             }, 200);
