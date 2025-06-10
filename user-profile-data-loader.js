@@ -20,7 +20,7 @@ class UserProfileDataLoader {
         
         this.refreshInterval = null;
         
-        // Google Apps Script URL - AKTUALIZOVANÉ funkční URL
+        // Google Apps Script URL pro ČTENÍ dat z prodejní tabulky
         this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyGPiyfiPMn1yvZFoYuiFwFiCXJ7u3vBLlmiEqXLXSuzuDvDCcKqm6uUyDIRbcH4Ftk5g/exec';
         
         console.log(`📊 UserProfileDataLoader vytvořen pro ${this.isMonthly ? 'MĚSÍČNÍ' : 'AKTUÁLNÍ'} data`);

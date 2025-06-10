@@ -3,10 +3,10 @@ class BazarDataLoader {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         
-        // Google Sheets ID a gid pro list BAZARVYKUP - AKTUALIZOVANÉ PRO NOVOU TABULKU
-        this.spreadsheetId = '14IQ_ud8aakJSA8Ge_WcEQrRDnP-aK4WpnOvq9HFi2xE';
-        this.bazarGid = '807585117'; // gid pro list (z URL 807585117)
-        this.statisticsGid = '807585117'; // stejný list pro nyní
+        // Google Sheets ID a gid pro list BAZARVYKUP
+        this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
+        this.bazarGid = '1980953060'; // gid pro list BAZARVYKUP
+        this.statisticsGid = '1892426010'; // gid pro statistiky (prodané telefony)
         
         // Publikované URL pro CSV export
         this.basePublishedUrl = `https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/export?format=csv`;

@@ -15,7 +15,7 @@ class ProdejnyDataLoader {
         
         this.refreshInterval = null;
         
-        // Google Apps Script URL - nejnovější nasazení  
+        // Google Apps Script URL pro ČTENÍ dat z prodejní tabulky
         this.scriptUrl = 'https://script.google.com/macros/s/AKfycbyGPiyfiPMn1yvZFoYuiFwFiCXJ7u3vBLlmiEqXLXSuzuDvDCcKqm6uUyDIRbcH4Ftk5g/exec';
         
         // Automaticky načte data po vytvoření instance
@@ -646,7 +646,9 @@ class ProdejnyDataLoader {
 
     async loadWithDevEndpoint(gid, isMonthly) {
         const timestamp = Date.now();
-        const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
+        const sheetName = gid === '0' ? 'List 1' : 'od 1';
+        
+        console.log(`🔍 DevEndpoint Debug: GID=${gid}, isMonthly=${isMonthly}, sheetName=${sheetName}`);
         
         // Zkus /dev endpoint místo /exec pro testování  
         const devScriptUrl = this.scriptUrl.replace('/exec', '/dev');
@@ -687,7 +689,9 @@ class ProdejnyDataLoader {
     async loadWithIframe(gid, isMonthly) {
         return new Promise((resolve, reject) => {
             const timestamp = Date.now();
-            const sheetName = gid === '0' ? 'statistiky aktual' : 'od 1';
+            const sheetName = gid === '0' ? 'List 1' : 'od 1';
+            
+            console.log(`🔍 Iframe Debug: GID=${gid}, isMonthly=${isMonthly}, sheetName=${sheetName}`);
             const messageHandlerName = `iframe_handler_${timestamp}`;
             
             // Vytvoř skrytý iframe
@@ -742,6 +746,8 @@ class ProdejnyDataLoader {
             const sheetName = gid === '0' ? 'List 1' : 'od 1';
             const callbackName = `jsonp_callback_${timestamp}`;
             
+            console.log(`🔍 JSONP Debug: GID=${gid}, isMonthly=${isMonthly}, sheetName=${sheetName}`);
+            
             // Vytvoř JSONP callback
             window[callbackName] = (data) => {
                 console.log('✅ JSONP callback úspěšný:', data);
@@ -774,7 +780,9 @@ class ProdejnyDataLoader {
             
             // Vytvoř script tag
             const script = document.createElement('script');
-            script.src = `${this.scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&callback=${callbackName}&t=${timestamp}`;
+            script.src = `${this.scriptUrl}?action=getData&sheet=${encodeURIComponent(sheetName)}&gid=${gid}&callback=${callbackName}&t=${timestamp}`;
+            
+            console.log(`📤 JSONP Request URL: ${script.src}`);
             
             script.onerror = () => {
                 document.head.removeChild(script);
