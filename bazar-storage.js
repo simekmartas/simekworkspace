@@ -3,7 +3,7 @@ class BazarStorage {
     constructor() {
         this.storageKey = 'bazarRecords';
         this.counterKey = 'bazarCounter';
-        // URL pro Google Apps Script webovou aplikaci
+        // URL pro Google Apps Script webovou aplikaci - FUNKČNÍ URL
         this.googleSheetsURL = 'https://script.google.com/macros/s/AKfycbwkATHtC5SG67oDkiItUxxLV-mS3tsIDHoiSRvaNDNMLMPczDEdTrGnexkaev7ppALN/exec';
         this.syncEnabled = true; // Zapnuto - opravená detekce duplicit podle čísla výkupky
     }

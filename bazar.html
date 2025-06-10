@@ -9,6 +9,124 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#ff1493">
+    
+    <style>
+        /* CSS styly pro date picker s rolovátky */
+        .date-input-container {
+            position: relative;
+        }
+        
+        .date-toggle-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 32px;
+            width: 32px;
+        }
+        
+        .date-toggle-btn:hover {
+            background-color: rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .date-toggle-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .date-selects {
+            display: none;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--secondary-color, #f8f9fa);
+            border-radius: 8px;
+            border: 1px solid var(--border-color, #e0e0e0);
+        }
+        
+        .dark-theme .date-selects {
+            background: rgba(30, 41, 59, 0.5);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .date-select {
+            padding: 8px;
+            border: 1px solid var(--border-color, #ccc);
+            border-radius: 4px;
+            background: var(--input-background, white);
+            color: var(--text-primary, #333);
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        .date-select:focus {
+            outline: none;
+            border-color: var(--primary-color, #2196F3);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+        }
+        
+        .dark-theme .date-select {
+            background: rgba(30, 41, 59, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+            color: #f8fafc;
+        }
+        
+        .dark-theme .date-select:focus {
+            border-color: var(--primary-color, #2196F3);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.3);
+        }
+        
+        /* Responzivní design pro mobilní zařízení */
+        @media (max-width: 768px) {
+            .date-selects {
+                grid-template-columns: 1fr;
+                gap: 0.25rem;
+            }
+            
+            .date-select {
+                padding: 12px;
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+        
+        /* Animace pro show/hide date selectů */
+        .date-selects.show {
+            display: grid;
+            animation: slideDown 0.3s ease-in-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Styling pro date input když jsou aktivní rolovátka */
+        .date-input-container.using-selects input {
+            background-color: var(--disabled-background, #f5f5f5);
+            color: var(--text-secondary, #666);
+        }
+        
+        .dark-theme .date-input-container.using-selects input {
+            background-color: rgba(30, 41, 59, 0.3);
+            color: #94a3b8;
+        }
+    </style>
 </head>
 <body class="protected-page">
     <header>
@@ -636,16 +754,29 @@
             setTimeout(() => {
                 addExportButtons();
                 initializeDateInputs();
-            }, 1000);
+            }, 500);
+            
+            // Zajistit inicializaci i při okamžitém načtení
+            initializeDateInputs();
         }
         
         // Inicializace date inputů s rolovátky
         function initializeDateInputs() {
+            console.log('🗓️ Inicializuji date picker rolovátka...');
             const currentYear = new Date().getFullYear();
             
+            // Najít všechny year selecty
+            const yearSelects = document.querySelectorAll('.year-select');
+            console.log(`Nalezeno ${yearSelects.length} year selectů`);
+            
             // Inicializace všech date selectů
-            document.querySelectorAll('.year-select').forEach(select => {
-                // Přidání roků od současného roku do budoucna (10 let) a pak do minulosti
+            yearSelects.forEach((select, index) => {
+                // Vyčistit existující options (kromě první prázdné)
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
+                // Přidání roků od současného roku do budoucna (10 let)
                 for (let year = currentYear; year <= currentYear + 10; year++) {
                     const option = document.createElement('option');
                     option.value = year.toString().padStart(4, '0');
@@ -659,27 +790,47 @@
                     option.textContent = year;
                     select.appendChild(option);
                 }
+                
+                console.log(`Year select ${index + 1} inicializován s ${select.children.length - 1} roky`);
             });
             
+            // Najít všechny day selecty
+            const daySelects = document.querySelectorAll('.day-select');
+            console.log(`Nalezeno ${daySelects.length} day selectů`);
+            
             // Inicializace dnů (1-31)
-            document.querySelectorAll('.day-select').forEach(select => {
+            daySelects.forEach((select, index) => {
+                // Vyčistit existující options (kromě první prázdné)
+                while (select.children.length > 1) {
+                    select.removeChild(select.lastChild);
+                }
+                
                 for (let day = 1; day <= 31; day++) {
                     const option = document.createElement('option');
                     option.value = day.toString().padStart(2, '0');
                     option.textContent = day;
                     select.appendChild(option);
                 }
+                
+                console.log(`Day select ${index + 1} inicializován s ${select.children.length - 1} dny`);
             });
             
             // Event listenery pro synchronizaci selectů s text inputy
-            document.querySelectorAll('.date-select').forEach(select => {
+            const allDateSelects = document.querySelectorAll('.date-select');
+            console.log(`Nalezeno ${allDateSelects.length} date selectů celkem`);
+            
+            allDateSelects.forEach((select, index) => {
                 select.addEventListener('change', function() {
+                    console.log(`Date select ${index + 1} změněn:`, this.dataset.field, '=', this.value);
                     updateDateInputFromSelects(this.dataset.field);
                 });
             });
             
             // Event listenery pro text inputy - validace formátu
-            document.querySelectorAll('.date-input-container input[type="text"]').forEach(input => {
+            const dateTextInputs = document.querySelectorAll('.date-input-container input[type="text"]');
+            console.log(`Nalezeno ${dateTextInputs.length} date text inputů`);
+            
+            dateTextInputs.forEach((input, index) => {
                 input.addEventListener('input', function() {
                     validateDateInput(this);
                 });
@@ -689,7 +840,15 @@
                         formatDateInput(this);
                     }
                 });
+                
+                console.log(`Text input ${index + 1} inicializován:`, input.id);
             });
+            
+            // Kontrola tlačítek pro přepínání
+            const toggleButtons = document.querySelectorAll('.date-toggle-btn');
+            console.log(`Nalezeno ${toggleButtons.length} toggle tlačítek`);
+            
+            console.log('✅ Date picker inicializace dokončena');
         }
         
         // Přepínání mezi text inputem a rolovátky
@@ -697,20 +856,41 @@
             const textInput = document.getElementById(fieldName);
             const selectsContainer = document.getElementById(fieldName + '_selects');
             const toggleBtn = textInput.parentNode.querySelector('.date-toggle-btn');
+            const container = textInput.closest('.date-input-container');
             
-            if (selectsContainer.style.display === 'none') {
-                // Zobrazit rolovátka a schovat tlačítko
+            if (selectsContainer.style.display === 'none' || selectsContainer.style.display === '') {
+                // Zobrazit rolovátka s animací
                 selectsContainer.style.display = 'grid';
-                toggleBtn.style.display = 'none'; // Schovat tlačítko úplně
+                selectsContainer.classList.add('show');
+                toggleBtn.innerHTML = '📝'; // Změnit ikonu na tužku
+                toggleBtn.title = 'Přepnout na textové pole';
+                
+                // Označit kontejner jako používající rolovátka
+                container.classList.add('using-selects');
                 
                 // Synchronizovat hodnoty pokud je něco zadáno
                 if (textInput.value) {
                     populateSelectsFromInput(fieldName, textInput.value);
                 }
+                
+                // Disable text input při používání rolovátka
+                textInput.readOnly = true;
+                
+                console.log('📅 Aktivována rolovátka pro:', fieldName);
             } else {
-                // Skrýt rolovátka a zobrazit tlačítko
+                // Skrýt rolovátka
                 selectsContainer.style.display = 'none';
-                toggleBtn.style.display = 'flex'; // Zobrazit tlačítko zpět
+                selectsContainer.classList.remove('show');
+                toggleBtn.innerHTML = '📅'; // Změnit ikonu zpět na kalendář
+                toggleBtn.title = 'Přepnout na rolovátka';
+                
+                // Odebrat označení kontejneru
+                container.classList.remove('using-selects');
+                
+                // Enable text input
+                textInput.readOnly = false;
+                
+                console.log('📝 Aktivováno textové pole pro:', fieldName);
             }
         }
         
