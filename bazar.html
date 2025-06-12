@@ -693,41 +693,97 @@
     <script src="bazar-storage.js"></script>
     <script src="bazar-data-loader.js"></script>
     <script>
-        // Inicializace bazarového data loaderu pouze po úspěšné autentifikaci
+        // Inicializace bazarového data loaderu s lepším error handlingem
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Bazar.html inicializace dokončena');
+            console.log('🚀 Bazar.html inicializace dokončena');
             
-            // Kontrola přístupů se provádí automaticky v access-control.js
-            // Pokud má uživatel přístup, inicializujeme data loader
-            setTimeout(() => {
-                console.log('⏰ Timeout inicializace spuštěn');
+            // Funkce pro inicializaci s retry logikou
+            function initializeBazarLoader(attempt = 1) {
+                console.log(`📊 Pokus o inicializaci #${attempt}`);
                 console.log('🔐 Stav autentifikace:', document.body.classList.contains('authenticated'));
                 console.log('📜 Všechny třídy body:', document.body.className);
+                console.log('👤 Role uživatele:', localStorage.getItem('role'));
+                console.log('🔑 Přihlášen:', localStorage.getItem('isLoggedIn'));
                 
-                if (document.body.classList.contains('authenticated')) {
-                    console.log('✅ Uživatel je autentifikovaný, spouštím inicializaci');
+                try {
+                    // Vždy spustíme inicializaci - access control se řeší v access-control.js
+                    console.log('✅ Spouštím inicializaci bazarového loaderu...');
+                    
+                    // Kontrola existence kontejneru
+                    const container = document.getElementById('bazarDataContainer');
+                    if (!container) {
+                        console.error('❌ Kontejner bazarDataContainer nenalezen!');
+                        return;
+                    }
                     
                     // Inicializace bazarového data loaderu
                     window.bazarLoader = new BazarDataLoader('bazarDataContainer');
+                    console.log('📊 BazarDataLoader vytvořen');
+                    
+                    // Načtení dat
                     window.bazarLoader.loadBazarData();
-                    console.log('Bazar data loader inicializován');
+                    console.log('📈 loadBazarData() spuštěno');
                     
                     // Inicializace formuláře pro nový bazar
                     initBazarForm();
-                } else {
-                    console.log('❌ Uživatel NENÍ autentifikovaný, přeskakuji inicializaci');
+                    console.log('📝 Formulář inicializován');
                     
-                    // Zkusíme inicializaci i bez autentifikace pro debug
-                    console.log('🔧 Pokouším se o inicializaci i bez autentifikace...');
-                    initBazarForm();
+                } catch (error) {
+                    console.error('❌ Chyba při inicializaci:', error);
+                    
+                    // Retry pouze pokud jsme nezkusili víckrát než 3x
+                    if (attempt < 3) {
+                        console.log(`🔄 Opakuji za 1 sekundu (pokus ${attempt + 1}/3)`);
+                        setTimeout(() => initializeBazarLoader(attempt + 1), 1000);
+                    } else {
+                        console.error('💀 Inicializace selhala po 3 pokusech');
+                        
+                        // Zobrazíme chybovou zprávu uživateli
+                        const container = document.getElementById('bazarDataContainer');
+                        if (container) {
+                            container.innerHTML = `
+                                <div style="
+                                    padding: 2rem;
+                                    text-align: center;
+                                    background: var(--bg-secondary);
+                                    border-radius: 8px;
+                                    border: 1px solid var(--border-light);
+                                    margin: 2rem 0;
+                                ">
+                                    <h3 style="color: var(--error); margin-bottom: 1rem;">⚠️ Chyba při načítání dat</h3>
+                                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                                        Nepodařilo se načíst bazarová data. Zkuste obnovit stránku.
+                                    </p>
+                                    <button onclick="window.location.reload()" style="
+                                        background: var(--accent-blue);
+                                        color: white;
+                                        border: none;
+                                        padding: 0.75rem 1.5rem;
+                                        border-radius: 0.5rem;
+                                        cursor: pointer;
+                                        font-weight: 600;
+                                    ">
+                                        🔄 Obnovit stránku
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
                 }
                 
-                // Wait for theme manager to be ready
-                if (window.themeManager) {
-                    window.themeManager.createThemeToggle();
-                    console.log('Theme toggle buttons aktualizovány na bazar.html');
+                // Theme manager
+                try {
+                    if (window.themeManager) {
+                        window.themeManager.createThemeToggle();
+                        console.log('🎨 Theme toggle buttons aktualizovány');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Chyba při inicializaci theme manageru:', error);
                 }
-            }, 500);
+            }
+            
+            // Spustit inicializaci s malým zpožděním pro načtení všech skriptů
+            setTimeout(initializeBazarLoader, 100);
         });
         
         // Funkce pro inicializaci formuláře

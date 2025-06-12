@@ -95,6 +95,10 @@ class BazarDataLoader {
                     
                     // Parsovat a zobrazit bazarová data
                     this.parseAndDisplayBazarData(bazarCsvData);
+                    
+                    // Zobrazit informaci o úspěšném načtení dat
+                    this.showDataSourceInfo(true);
+                    
                     this.startAutoRefresh();
                     return;
                 }
@@ -105,9 +109,14 @@ class BazarDataLoader {
             
             // Pokud rychlé načítání selhalo, zobrazíme mock data
             console.log('=== ZOBRAZUJEM MOCK BAZAROVÁ DATA ===');
+            console.log('⚠️ Google Sheets nedostupné, používám testovací data');
+            
             // Ujistit se, že máme i mock statistická data
             this.generateMockStatisticsData();
             this.showMockBazarData();
+            
+            // Zobrazit informaci uživateli
+            this.showDataSourceInfo(false);
             
         } catch (error) {
             console.error('Chyba při načítání bazarových dat:', error.message);
@@ -115,6 +124,9 @@ class BazarDataLoader {
             // Ujistit se, že máme i mock statistická data
             this.generateMockStatisticsData();
             this.showMockBazarData();
+            
+            // Zobrazit informaci uživateli
+            this.showDataSourceInfo(false);
         }
     }
 
@@ -1483,6 +1495,55 @@ class BazarDataLoader {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    }
+
+    showDataSourceInfo(isRealData = true) {
+        // Přidat informační banner o zdroji dat
+        const existingInfo = document.getElementById('dataSourceInfo');
+        if (existingInfo) {
+            existingInfo.remove();
+        }
+
+        const infoDiv = document.createElement('div');
+        infoDiv.id = 'dataSourceInfo';
+        infoDiv.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            background: ${isRealData ? '#059669' : '#dc2626'};
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        `;
+
+        if (isRealData) {
+            infoDiv.innerHTML = '✅ Zobrazují se aktuální data z Google Sheets';
+            // Skrýt po 3 sekundách
+            setTimeout(() => {
+                if (infoDiv.parentNode) {
+                    infoDiv.style.transition = 'opacity 0.5s ease';
+                    infoDiv.style.opacity = '0';
+                    setTimeout(() => infoDiv.remove(), 500);
+                }
+            }, 3000);
+        } else {
+            infoDiv.innerHTML = '⚠️ Zobrazují se testovací data - Google Sheets nedostupné';
+            // Pro testovací data necháme banner déle
+            setTimeout(() => {
+                if (infoDiv.parentNode) {
+                    infoDiv.style.transition = 'opacity 0.5s ease';
+                    infoDiv.style.opacity = '0';
+                    setTimeout(() => infoDiv.remove(), 500);
+                }
+            }, 8000);
+        }
+
+        document.body.appendChild(infoDiv);
     }
 }
 
