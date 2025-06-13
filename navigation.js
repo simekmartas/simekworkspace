@@ -1,449 +1,313 @@
-// Minimalistické menu systém
-function updateNavigation() {
-    const nav = document.querySelector('nav ul');
-    if (!nav) {
-        console.error('Navigation ul element not found!');
-        return;
-    }
-    
-    // Přidej header-controls container pokud neexistuje
-    let headerControls = document.querySelector('.header-controls');
-    if (!headerControls) {
-        const headerContent = document.querySelector('.header-content');
-        if (headerContent) {
-            headerControls = document.createElement('div');
-            headerControls.className = 'header-controls';
-            headerContent.appendChild(headerControls);
-        }
-    }
-    
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    const userRole = localStorage.getItem('role');
-    
-    // Získat jméno uživatele pro profil
-    const userDisplayName = getUserDisplayName();
-    
-    // Čisté minimalistické menu - bez emoji
-    const baseItems = `
-        <li><a href="index.html">Domů</a></li>
-        <li><a href="novinky.html">Novinky</a></li>
-        <li><a href="leaderboards.html">Žebříček</a></li>
-        <li><a href="prodejny.html">Prodejny</a></li>
-    `;
-    
-    // Plus tlačítko pro všechny přihlášené uživatele
-    const salesAssistantButton = `
-        <li><a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff1493, #e91e63); color: white; border-radius: 50%; width: 40px; height: 40px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3); transition: all 0.3s ease;" title="Prodejní asistent" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 8px 25px rgba(255, 20, 147, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255, 20, 147, 0.3)'">➕</a></li>
-    `;
-    
-    // Prodejce menu - čisté a jednoduché
-    const prodejceItems = `
-        <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
-        <li><a href="user-profile.html">${userDisplayName}</a></li>
-        <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
-    `;
-    
-    // Admin menu - minimalistické
-    const adminItems = `
-        <li class="dropdown">
-            <a href="#" class="dropdown-toggle">Mobil Maják</a>
-            <ul class="dropdown-menu">
-                <li><a href="prodejny.html">Prodejny</a></li>
-                <li><a href="servis.html">Servis</a></li>
-                <li><a href="eshop.html">Eshop</a></li>
-                <li class="dropdown-submenu">
-                    <a href="bazar.html" class="dropdown-submenu-toggle">Bazar</a>
-                    <ul class="dropdown-submenu-menu">
-                        <li><a href="bazar.html">Přehled bazaru</a></li>
-                        <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
-                    </ul>
-                </li>
-                <li><a href="celkem.html">Celkem</a></li>
-            </ul>
-        </li>
-        <li><a href="sales-analytics.html">📊 Prodejní analytika</a></li>
-        <li><a href="user-profile.html">${userDisplayName}</a></li>
-        <li><a href="user-management.html">Správa uživatelů</a></li>
-        <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
-    `;
-    
-    // Sestavení menu podle role uživatele
-    if (isLoggedIn) {
-        if (userRole === 'Prodejce') {
-            nav.innerHTML = baseItems + salesAssistantButton + prodejceItems;
-        } else if (userRole === 'Administrator' || userRole === 'Administrátor') {
-            nav.innerHTML = baseItems + salesAssistantButton + adminItems;
-        } else {
-            // Pro ostatní role nebo neznámé role
-            nav.innerHTML = baseItems + salesAssistantButton + `
-                <li><a href="user-profile.html">${userDisplayName}</a></li>
-                <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
-            `;
-        }
-        // Odstranit login tlačítko
-        const existingLoginBtn = document.querySelector('.header-login-btn');
-        if (existingLoginBtn) existingLoginBtn.remove();
-    } else {
-        // Menu pro nepřihlášené - bez login tlačítka v nav
-        nav.innerHTML = baseItems;
-        
-        // Přidat login tlačítko do header-controls
-        const headerControls = document.querySelector('.header-controls');
-        let loginBtn = document.querySelector('.header-login-btn');
-        
-        if (!loginBtn && headerControls) {
-            loginBtn = document.createElement('a');
-            loginBtn.href = 'login.html';
-            loginBtn.className = 'header-login-btn';
-            loginBtn.textContent = 'Přihlásit';
-            
-            // Vložit před hamburger nebo na začátek
-            const hamburger = document.querySelector('.hamburger');
-            if (hamburger) {
-                headerControls.insertBefore(loginBtn, hamburger);
-            } else {
-                headerControls.appendChild(loginBtn);
-            }
-        }
-    }
-    
-    // Logout funkcionalita
-    const logoutButton = document.getElementById('logout');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            if (confirm('Opravdu se chcete odhlásit?')) {
-                const sessionKeys = [
-                    'isLoggedIn', 'username', 'role', 'userId', 'sellerId',
-                    'userEmail', 'userPhone', 'userProdejna', 'userData'
-                ];
-                sessionKeys.forEach(key => localStorage.removeItem(key));
-                window.location.href = 'index.html';
-            }
-        });
-    }
-    
-    setupDropdownMenus();
-    setupHamburgerMenu();
-    markActivePage();
-}
+console.log('🔵 NAVIGATION.JS: Script se načítá...');
 
-// Funkce pro získání zobrazovaného jména uživatele
-function getUserDisplayName() {
+// Enhanced navigation with detailed logging
+function updateNavigation() {
+    console.log('🔵 NAVIGATION.JS: updateNavigation() spuštěno');
+    
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const role = localStorage.getItem('role');
     const username = localStorage.getItem('username');
     
-    if (!username) {
-        return 'Můj profil';
-    }
-    
-    try {
-        // Zkus najít v localStorage uživatelských dat
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const currentUser = users.find(u => u.username === username);
-        
-        if (currentUser) {
-            // Priorita: fullName -> firstName + lastName -> firstName -> username
-            if (currentUser.fullName && currentUser.fullName.trim() !== '') {
-                return currentUser.fullName;
-            } else if (currentUser.firstName && currentUser.lastName) {
-                return `${currentUser.firstName} ${currentUser.lastName}`.trim();
-            } else if (currentUser.firstName) {
-                return currentUser.firstName;
-            } else {
-                return currentUser.username;
-            }
-        }
-    } catch (e) {
-        console.log('Chyba při čtení uživatelských dat z localStorage:', e);
-    }
-    
-    // Fallback na username
-    return username;
-}
-
-// Jednoduché dropdown menu
-function setupDropdownMenus() {
-    const dropdownToggle = document.querySelector('.dropdown-toggle');
-    const dropdown = document.querySelector('.dropdown');
-    
-    if (!dropdownToggle || !dropdown) return;
-    
-    dropdownToggle.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        dropdown.classList.toggle('active');
+    console.log('🔵 NAVIGATION.JS: Stav přihlášení:', {
+        isLoggedIn,
+        role,
+        username,
+        localStorage_keys: Object.keys(localStorage)
     });
     
-    document.addEventListener('click', function(e) {
-        if (!dropdown.contains(e.target)) {
-            dropdown.classList.remove('active');
-        }
-    });
-    
-    // Desktop hover efekt
-    if (window.innerWidth > 768) {
-        dropdown.addEventListener('mouseenter', () => {
-            dropdown.classList.add('active');
-        });
-        
-        dropdown.addEventListener('mouseleave', () => {
-            dropdown.classList.remove('active');
-        });
-    }
-    
-    // Submenu pro mobily
-    const submenuToggle = dropdown.querySelector('.dropdown-submenu-toggle');
-    const submenu = dropdown.querySelector('.dropdown-submenu');
-    
-    if (submenuToggle && submenu) {
-        submenuToggle.addEventListener('click', function(e) {
-            if (window.innerWidth <= 768) {
-                e.preventDefault();
-                e.stopPropagation();
-                submenu.classList.toggle('active');
-            }
-        });
-    }
-}
-
-// Jednoduché hamburger menu
-function setupHamburgerMenu() {
-    // Přidej hamburger tlačítko, pokud neexistuje
-    let hamburger = document.querySelector('.hamburger');
-    if (!hamburger) {
-        const headerControls = document.querySelector('.header-controls');
-        if (headerControls) {
-            hamburger = document.createElement('button');
-            hamburger.className = 'hamburger';
-            hamburger.innerHTML = '<span></span><span></span><span></span>';
-            headerControls.appendChild(hamburger);
-        }
-    }
-    
-    const nav = document.querySelector('nav');
-    
-    if (!hamburger || !nav) return;
-    
-    hamburger.addEventListener('click', function(e) {
-        e.stopPropagation();
-        hamburger.classList.toggle('active');
-        nav.classList.toggle('active');
-        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
-    });
-    
-    document.addEventListener('click', function(e) {
-        if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
-            closeHamburgerMenu();
-        }
-    });
-    
-    nav.addEventListener('click', function(e) {
-        if (e.target.tagName === 'A' && !e.target.classList.contains('dropdown-toggle')) {
-            closeHamburgerMenu();
-        }
-    });
-    
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
-            closeHamburgerMenu();
-        }
-    });
-}
-
-// Zavření hamburger menu
-function closeHamburgerMenu() {
-    const hamburger = document.querySelector('.hamburger');
-    const nav = document.querySelector('nav');
-    
-    if (hamburger && nav) {
-        hamburger.classList.remove('active');
-        nav.classList.remove('active');
-        document.body.style.overflow = '';
-        
-        const dropdown = document.querySelector('.dropdown');
-        if (dropdown) {
-            dropdown.classList.remove('active');
-        }
-    }
-}
-
-// Označení aktivní stránky
-function markActivePage() {
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-    const navLinks = document.querySelectorAll('nav a');
-    
-    navLinks.forEach(link => {
-        link.classList.remove('active');
-        const linkPath = new URL(link.href).pathname.split('/').pop();
-        
-        if (linkPath === currentPage || 
-            (currentPage === '' && linkPath === 'index.html') ||
-            (currentPage === 'index.html' && linkPath === 'index.html')) {
-            link.classList.add('active');
-        }
-    });
-}
-
-// Inicializace menu
-function initNavigation() {
-    updateNavigation();
-    
-    window.addEventListener('storage', function(e) {
-        if (e.key === 'isLoggedIn' || e.key === 'role') {
-            updateNavigation();
-        }
-    });
-}
-
-// Bazar formulář
-function openNewBazarForm(event) {
-    event.preventDefault();
-    closeHamburgerMenu();
-    
-    if (window.location.pathname.includes('bazar.html')) {
-        const newBazarBtn = document.getElementById('newBazarBtn');
-        const newBazarForm = document.getElementById('newBazarForm');
-        
-        if (newBazarBtn && newBazarForm) {
-            newBazarForm.style.display = 'block';
-            newBazarBtn.style.display = 'none';
-            newBazarForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    } else {
-        window.location.href = 'bazar.html?openForm=true';
-    }
-}
-
-// Prodejní asistent
-function openSalesAssistant(event) {
-    event.preventDefault();
-    closeHamburgerMenu();
-    
-    console.log('🔍 DEBUG: openSalesAssistant called');
-    console.log('🔍 Browser:', navigator.userAgent);
-    console.log('🔍 createSalesAssistantModal available:', typeof createSalesAssistantModal);
-    
-    // Zkontroluj zda je sales-assistant.js načten
-    if (typeof createSalesAssistantModal === 'undefined') {
-        console.error('❌ Sales assistant není načten!');
-        console.log('🔍 Zkouším načíst sales-assistant.js dynamicky...');
-        
-        // Pokus o dynamické načtení pro Chrome
-        const script = document.createElement('script');
-        script.src = 'sales-assistant.js';
-        script.onload = function() {
-            console.log('✅ Sales assistant dynamicky načten');
-            openSalesAssistant(event);
-        };
-        script.onerror = function() {
-            console.error('❌ Nepodařilo se načíst sales-assistant.js');
-            alert('Prodejní asistent se nepodařilo načíst. Obnovte stránku (Ctrl+F5).');
-        };
-        document.head.appendChild(script);
+    const navList = document.querySelector('nav ul');
+    if (!navList) {
+        console.error('🔴 NAVIGATION.JS: Nenalezen nav ul element!');
         return;
     }
     
-    console.log('✅ Sales assistant je dostupný');
+    console.log('🔵 NAVIGATION.JS: Nav element nalezen, počet existujících položek:', navList.children.length);
     
-    // Začni měřit čas session
-    if (typeof sessionStartTime !== 'undefined') {
-        sessionStartTime = Date.now();
-        console.log('✅ Session timer started');
-    } else {
-        console.warn('⚠️ sessionStartTime není definována');
-        // Definuj globálně
-        window.sessionStartTime = Date.now();
-    }
-    
-    // Vytvoř prodejní asistent modal
-    try {
-        if (!document.getElementById('salesAssistantModal')) {
-            console.log('🔧 Vytvářím nový modal');
-            createSalesAssistantModal();
-        } else {
-            console.log('🔧 Modal již existuje');
+    // Vymaž aktuální obsah
+    navList.innerHTML = '';
+    console.log('🔵 NAVIGATION.JS: Nav vymazán');
+
+    // Základní navigace
+    if (isLoggedIn) {
+        console.log('🔵 NAVIGATION.JS: Uživatel je přihlášen, vytvářím navigaci pro roli:', role);
+        
+        // Přidej základní položky podle role
+        if (role === 'Prodejce') {
+            console.log('🔵 NAVIGATION.JS: Přidávám navigaci pro PRODEJCE');
+            
+            const homeItem = document.createElement('li');
+            homeItem.innerHTML = '<a href="index.html">🏠 Domů</a>';
+            navList.appendChild(homeItem);
+            console.log('🔵 NAVIGATION.JS: Přidán domů link');
+            
+            const salesItem = document.createElement('li');
+            salesItem.innerHTML = '<a href="sales-analytics.html">📊 Prodeje</a>';
+            navList.appendChild(salesItem);
+            console.log('🔵 NAVIGATION.JS: Přidán prodeje link');
+            
+            const celkemItem = document.createElement('li');
+            celkemItem.innerHTML = '<a href="celkem.html">📈 Celkem</a>';
+            navList.appendChild(celkemItem);
+            console.log('🔵 NAVIGATION.JS: Přidán celkem link');
+            
+            const servisItem = document.createElement('li');
+            servisItem.innerHTML = '<a href="servis.html">🔧 Servis</a>';
+            navList.appendChild(servisItem);
+            console.log('🔵 NAVIGATION.JS: Přidán servis link');
+            
+            const bazarItem = document.createElement('li');
+            bazarItem.innerHTML = '<a href="bazar.html">🛒 Bazar</a>';
+            navList.appendChild(bazarItem);
+            console.log('🔵 NAVIGATION.JS: Přidán bazar link');
+            
+            const leaderboardItem = document.createElement('li');
+            leaderboardItem.innerHTML = '<a href="leaderboards.html">🏆 Žebříčky</a>';
+            navList.appendChild(leaderboardItem);
+            console.log('🔵 NAVIGATION.JS: Přidán žebříčky link');
+            
+            // KLÍČOVÝ MOMENT - PLUS TLAČÍTKO
+            console.log('🔵 NAVIGATION.JS: Začínám vytvářet PLUS TLAČÍTKO pro prodejce...');
+            
+            const plusItem = document.createElement('li');
+            plusItem.style.cssText = 'position: relative; display: flex; align-items: center;';
+            
+            console.log('🔵 NAVIGATION.JS: Kontroluji dostupnost openSalesAssistant funkce:', typeof openSalesAssistant);
+            
+            if (typeof openSalesAssistant === 'function') {
+                console.log('🟢 NAVIGATION.JS: openSalesAssistant funkce JE dostupná - používám ji');
+                plusItem.innerHTML = '<a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 0.5rem 1rem; border-radius: 20px; text-decoration: none; font-weight: bold; box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'" title="Otevřít prodejní asistent">➕ Nový prodej</a>';
+            } else {
+                console.log('🟡 NAVIGATION.JS: openSalesAssistant funkce NENÍ dostupná - vytvářím fallback');
+                plusItem.innerHTML = '<a href="#" onclick="window.forceOpenSalesAssistant && window.forceOpenSalesAssistant(event)" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 0.5rem 1rem; border-radius: 20px; text-decoration: none; font-weight: bold; box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'" title="Otevřít prodejní asistent">➕ Nový prodej</a>';
+            }
+            
+            navList.appendChild(plusItem);
+            console.log('🟢 NAVIGATION.JS: PLUS TLAČÍTKO PŘIDÁNO DO NAVIGACE!');
+            console.log('🔵 NAVIGATION.JS: Plus tlačítko HTML:', plusItem.innerHTML);
+            
+            // Kontrola zda se tlačítko skutečně objevilo
+            setTimeout(() => {
+                const checkPlusButton = document.querySelector('a[onclick*="openSalesAssistant"], a[onclick*="forceOpenSalesAssistant"]');
+                if (checkPlusButton) {
+                    console.log('🟢 NAVIGATION.JS: PLUS TLAČÍTKO OVĚŘENO - je viditelné v DOM!');
+                } else {
+                    console.error('🔴 NAVIGATION.JS: PLUS TLAČÍTKO NEBYLO NALEZENO V DOM!');
+                    
+                    // Windows Chrome fallback
+                    if (navigator.userAgent.includes('Windows') && navigator.userAgent.includes('Chrome')) {
+                        console.log('🟡 NAVIGATION.JS: Detected Windows Chrome - creating fallback button');
+                        createWindowsChromeFallback();
+                    }
+                }
+            }, 500);
+            
+        } else if (role === 'Vedoucí' || role === 'Admin') {
+            console.log('🔵 NAVIGATION.JS: Přidávám navigaci pro VEDOUCÍ/ADMIN');
+            
+            const homeItem = document.createElement('li');
+            homeItem.innerHTML = '<a href="index.html">🏠 Domů</a>';
+            navList.appendChild(homeItem);
+            
+            const salesItem = document.createElement('li');
+            salesItem.innerHTML = '<a href="sales-analytics.html">📊 Prodeje</a>';
+            navList.appendChild(salesItem);
+            
+            const celkemItem = document.createElement('li');
+            celkemItem.innerHTML = '<a href="celkem.html">📈 Celkem</a>';
+            navList.appendChild(celkemItem);
+            
+            const servisItem = document.createElement('li');
+            servisItem.innerHTML = '<a href="servis.html">🔧 Servis</a>';
+            navList.appendChild(servisItem);
+            
+            const bazarItem = document.createElement('li');
+            bazarItem.innerHTML = '<a href="bazar.html">🛒 Bazar</a>';
+            navList.appendChild(bazarItem);
+            
+            const leaderboardItem = document.createElement('li');
+            leaderboardItem.innerHTML = '<a href="leaderboards.html">🏆 Žebříčky</a>';
+            navList.appendChild(leaderboardItem);
+            
+            // Plus tlačítko i pro vedoucí
+            console.log('🔵 NAVIGATION.JS: Přidávám PLUS TLAČÍTKO pro vedoucí/admin');
+            const plusItem = document.createElement('li');
+            plusItem.innerHTML = '<a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 0.5rem 1rem; border-radius: 20px; text-decoration: none; font-weight: bold; box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3); transition: all 0.3s ease;" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'" title="Otevřít prodejní asistent">➕ Nový prodej</a>';
+            navList.appendChild(plusItem);
+            console.log('🟢 NAVIGATION.JS: PLUS TLAČÍTKO přidáno pro vedoucí/admin');
         }
         
+        // User info
+        const userItem = document.createElement('li');
+        userItem.innerHTML = `<span style="color: #666; font-size: 0.9em;">👤 ${username} (${role})</span>`;
+        navList.appendChild(userItem);
+        console.log('🔵 NAVIGATION.JS: Přidáno user info');
+        
+        // Logout
+        const logoutItem = document.createElement('li');
+        logoutItem.innerHTML = '<a href="#" onclick="logout()" style="color: #ff6b6b;">🚪 Odhlásit</a>';
+        navList.appendChild(logoutItem);
+        console.log('🔵 NAVIGATION.JS: Přidáno logout');
+        
+    } else {
+        console.log('🔵 NAVIGATION.JS: Uživatel NENÍ přihlášen, zobrazuji login');
+        const loginItem = document.createElement('li');
+        loginItem.innerHTML = '<a href="login.html">🔐 Přihlásit se</a>';
+        navList.appendChild(loginItem);
+    }
+    
+    console.log('🔵 NAVIGATION.JS: Navigace dokončena, celkový počet položek:', navList.children.length);
+    
+    // Final check pro Windows Chrome
+    if (navigator.userAgent.includes('Windows') && navigator.userAgent.includes('Chrome')) {
+        setTimeout(() => {
+            console.log('🔵 NAVIGATION.JS: Windows Chrome final check...');
+            const finalPlusCheck = document.querySelector('a[onclick*="openSalesAssistant"]');
+            if (!finalPlusCheck && isLoggedIn && role === 'Prodejce') {
+                console.error('🔴 NAVIGATION.JS: CRITICAL - Plus tlačítko se neobjevilo na Windows Chrome!');
+                createWindowsChromeFallback();
+            }
+        }, 1000);
+    }
+}
+
+// Windows Chrome fallback function
+function createWindowsChromeFallback() {
+    console.log('🟡 NAVIGATION.JS: Vytvářím Windows Chrome fallback tlačítko...');
+    
+    // Remove existing fallback
+    const existingFallback = document.querySelector('.windows-chrome-fallback');
+    if (existingFallback) {
+        existingFallback.remove();
+        console.log('🟡 NAVIGATION.JS: Odstraněn existující fallback');
+    }
+    
+    const fallbackButton = document.createElement('div');
+    fallbackButton.className = 'windows-chrome-fallback';
+    fallbackButton.innerHTML = '➕ PRODEJ';
+    fallbackButton.title = 'Windows Chrome Fallback - Prodejní asistent';
+    fallbackButton.style.cssText = `
+        position: fixed !important;
+        top: 80px !important;
+        right: 20px !important;
+        background: linear-gradient(135deg, #ff1493, #e91e63) !important;
+        color: white !important;
+        padding: 1rem 1.5rem !important;
+        border-radius: 25px !important;
+        cursor: pointer !important;
+        z-index: 999999 !important;
+        font-weight: bold !important;
+        font-size: 1rem !important;
+        box-shadow: 0 4px 20px rgba(255, 20, 147, 0.5) !important;
+        border: 2px solid white !important;
+        animation: windowsFallbackPulse 3s infinite !important;
+    `;
+    
+    fallbackButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('🟡 NAVIGATION.JS: Windows Chrome fallback button clicked!');
+        
+        if (typeof openSalesAssistant === 'function') {
+            openSalesAssistant(e);
+        } else if (typeof createSalesAssistantModal === 'function') {
+            createSalesAssistantModal();
+            document.getElementById('salesAssistantModal').style.display = 'flex';
+        } else {
+            alert('Prodejní asistent není dostupný. Zkuste obnovit stránku (F5).');
+        }
+    });
+    
+    document.body.appendChild(fallbackButton);
+    console.log('🟢 NAVIGATION.JS: Windows Chrome fallback button vytvořen!');
+    
+    // Add CSS animation
+    if (!document.querySelector('#windows-fallback-css')) {
+        const style = document.createElement('style');
+        style.id = 'windows-fallback-css';
+        style.textContent = `
+            @keyframes windowsFallbackPulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); box-shadow: 0 6px 25px rgba(255, 20, 147, 0.7); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
+
+// Logout function
+function logout() {
+    console.log('🔵 NAVIGATION.JS: Odhlašování uživatele...');
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('role');
+    localStorage.removeItem('username');
+    console.log('🔵 NAVIGATION.JS: LocalStorage vymazán');
+    window.location.href = 'login.html';
+}
+
+// Force create plus button function for emergency use
+window.forceCreatePlusButton = function() {
+    console.log('🚨 NAVIGATION.JS: forceCreatePlusButton() called!');
+    
+    const navList = document.querySelector('nav ul');
+    if (!navList) {
+        console.error('🔴 NAVIGATION.JS: Cannot force create - nav ul not found!');
+        return false;
+    }
+    
+    // Remove existing plus button
+    const existingPlus = navList.querySelector('a[onclick*="openSalesAssistant"]');
+    if (existingPlus) {
+        existingPlus.parentElement.remove();
+        console.log('🔵 NAVIGATION.JS: Removed existing plus button');
+    }
+    
+    const plusItem = document.createElement('li');
+    plusItem.innerHTML = '<a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); color: white; padding: 0.5rem 1rem; border-radius: 20px; text-decoration: none; font-weight: bold; box-shadow: 0 2px 10px rgba(255, 107, 107, 0.3); transition: all 0.3s ease;" title="Otevřít prodejní asistent">➕ FORCE CREATED</a>';
+    
+    navList.appendChild(plusItem);
+    console.log('🟢 NAVIGATION.JS: Force created plus button!');
+    return true;
+};
+
+// Force open sales assistant for fallback
+window.forceOpenSalesAssistant = function(event) {
+    console.log('🚨 NAVIGATION.JS: forceOpenSalesAssistant() called!');
+    
+    if (event) {
+        event.preventDefault();
+    }
+    
+    if (typeof openSalesAssistant === 'function') {
+        console.log('🟢 NAVIGATION.JS: Calling openSalesAssistant...');
+        openSalesAssistant(event);
+    } else if (typeof createSalesAssistantModal === 'function') {
+        console.log('🟢 NAVIGATION.JS: Calling createSalesAssistantModal...');
+        createSalesAssistantModal();
         const modal = document.getElementById('salesAssistantModal');
         if (modal) {
             modal.style.display = 'flex';
-            console.log('✅ Modal zobrazený');
-        } else {
-            throw new Error('Modal se nepodařilo vytvořit');
         }
-    } catch (error) {
-        console.error('❌ Chyba při vytváření modalu:', error);
-        alert('Chyba při otevírání prodejního asistenta: ' + error.message);
-    }
-}
-
-// Inicializace při načtení stránky
-document.addEventListener('DOMContentLoaded', function() {
-    initNavigation();
-    
-    // Automatické otevření formuláře z URL parametru
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('openForm') === 'true' && window.location.pathname.includes('bazar.html')) {
-        setTimeout(() => {
-            const newBazarBtn = document.getElementById('newBazarBtn');
-            const newBazarForm = document.getElementById('newBazarForm');
-            
-            if (newBazarBtn && newBazarForm) {
-                newBazarForm.style.display = 'block';
-                newBazarBtn.style.display = 'none';
-                newBazarForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                
-                // Vyčistit URL
-                const newUrl = window.location.pathname;
-                window.history.replaceState({}, '', newUrl);
-            }
-        }, 500);
-    }
-});
-
-// Debug funkce pro testování Chrome kompatibility
-window.debugSalesAssistant = function() {
-    console.log('🔍 DEBUG: Testing Sales Assistant in Chrome');
-    console.log('🔍 Browser details:', {
-        userAgent: navigator.userAgent,
-        chrome: navigator.userAgent.includes('Chrome'),
-        version: navigator.userAgent.match(/Chrome\/(\d+)/)?.[1],
-        isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
-    });
-    
-    console.log('🔍 Script loading status:', {
-        salesAssistant: typeof createSalesAssistantModal !== 'undefined',
-        navigation: typeof updateNavigation !== 'undefined',
-        sessionStartTime: typeof sessionStartTime !== 'undefined'
-    });
-    
-    console.log('🔍 DOM elements:', {
-        navigation: !!document.querySelector('nav ul'),
-        plusButton: !!document.querySelector('a[onclick*="openSalesAssistant"]'),
-        isLoggedIn: localStorage.getItem('isLoggedIn'),
-        userRole: localStorage.getItem('role')
-    });
-    
-    // Pokus o zobrazení plus tlačítka
-    const plusButton = document.querySelector('a[onclick*="openSalesAssistant"]');
-    if (plusButton) {
-        plusButton.setAttribute('data-debug', 'sales-assistant-button');
-        console.log('✅ Plus button found and marked for debugging');
-        console.log('🔍 Plus button styles:', window.getComputedStyle(plusButton));
     } else {
-        console.log('❌ Plus button not found');
+        console.error('🔴 NAVIGATION.JS: No sales assistant functions available!');
+        alert('Prodejní asistent není dostupný. Zkuste obnovit stránku (F5).');
     }
 };
 
-// Automatické spuštění debug pro Chrome
-if (navigator.userAgent.includes('Chrome')) {
-    window.addEventListener('load', function() {
-        setTimeout(() => {
-            console.log('🚀 Chrome Auto-Debug starting...');
-            if (window.debugSalesAssistant) {
-                window.debugSalesAssistant();
-            }
-        }, 1000);
-    });
-} 
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔵 NAVIGATION.JS: DOM loaded, čekám na inicializaci...');
+    
+    // Wait a bit for other scripts to load
+    setTimeout(() => {
+        console.log('🔵 NAVIGATION.JS: Spouštím updateNavigation...');
+        updateNavigation();
+    }, 100);
+});
+
+// Also update on page load
+window.addEventListener('load', function() {
+    console.log('🔵 NAVIGATION.JS: Window loaded, aktualizuji navigaci...');
+    updateNavigation();
+});
+
+console.log('🔵 NAVIGATION.JS: Script úspěšně načten a připraven'); 

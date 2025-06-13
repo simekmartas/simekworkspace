@@ -1,7 +1,11 @@
+console.log('🟢 SALES-ASSISTANT.JS: Script se načítá...');
+
 // Prodejní asistent - pomocník pro prodejce
 let currentSalesSession = null;
 let currentScenario = null;
 let sessionStartTime = null;
+
+console.log('🟢 SALES-ASSISTANT.JS: Definuji globální proměnné...');
 
 // Globální inicializace pro kompatibilitu s Chrome
 if (typeof window !== 'undefined') {
@@ -10,13 +14,63 @@ if (typeof window !== 'undefined') {
     window.currentScenario = null;
     
     // Debug informace pro Chrome
-    console.log('🔧 Sales assistant initialized');
-    console.log('🔍 User Agent:', navigator.userAgent);
-    console.log('🔍 Chrome version:', navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Not Chrome');
+    console.log('🟢 SALES-ASSISTANT.JS: Globální inicializace dokončena');
+    console.log('🔍 SALES-ASSISTANT.JS: User Agent:', navigator.userAgent);
+    console.log('🔍 SALES-ASSISTANT.JS: Chrome version:', navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Not Chrome');
+    console.log('🔍 SALES-ASSISTANT.JS: Is Windows?', navigator.userAgent.includes('Windows'));
+}
+
+// Hlavní funkce pro otevření asistenta - hlavní entry point
+function openSalesAssistant(event) {
+    console.log('🟢 SALES-ASSISTANT.JS: openSalesAssistant() ZAVOLÁNA!');
+    console.log('🔍 SALES-ASSISTANT.JS: Event:', event);
+    
+    if (event) {
+        event.preventDefault();
+        console.log('🔍 SALES-ASSISTANT.JS: Event preventDefault() zavolán');
+    }
+    
+    // Zkontroluj jestli modal už neexistuje
+    const existingModal = document.getElementById('salesAssistantModal');
+    if (existingModal) {
+        console.log('🟡 SALES-ASSISTANT.JS: Modal už existuje, zobrazuji ho');
+        existingModal.style.display = 'flex';
+        return;
+    }
+    
+    console.log('🟢 SALES-ASSISTANT.JS: Vytvářím nový modal...');
+    try {
+        createSalesAssistantModal();
+        const modal = document.getElementById('salesAssistantModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            console.log('🟢 SALES-ASSISTANT.JS: Modal úspěšně vytvořen a zobrazen!');
+        } else {
+            console.error('🔴 SALES-ASSISTANT.JS: Modal se nepodařilo vytvořit!');
+        }
+    } catch (error) {
+        console.error('🔴 SALES-ASSISTANT.JS: Chyba při vytváření modalu:', error);
+    }
+}
+
+// Registruj funkci globálně pro kompatibilitu
+if (typeof window !== 'undefined') {
+    window.openSalesAssistant = openSalesAssistant;
+    console.log('🟢 SALES-ASSISTANT.JS: openSalesAssistant registrováno globálně');
 }
 
 // Hlavní funkce pro vytvoření modal okna
 function createSalesAssistantModal() {
+    console.log('🟢 SALES-ASSISTANT.JS: createSalesAssistantModal() SPUŠTĚNA!');
+    
+    // Zkontroluj jestli už modal neexistuje
+    const existingModal = document.getElementById('salesAssistantModal');
+    if (existingModal) {
+        console.log('🟡 SALES-ASSISTANT.JS: Modal už existuje, odstraňuji starý...');
+        existingModal.remove();
+    }
+    
+    console.log('🟢 SALES-ASSISTANT.JS: Vytvářím HTML pro modal...');
     const modalHTML = `
         <div id="salesAssistantModal" class="sales-modal">
             <div class="sales-modal-overlay" onclick="closeSalesAssistant()"></div>
@@ -32,9 +86,22 @@ function createSalesAssistantModal() {
         </div>
     `;
     
+    console.log('🟢 SALES-ASSISTANT.JS: Přidávám modal HTML do body...');
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+    
+    console.log('🟢 SALES-ASSISTANT.JS: Přidávám styly...');
     addSalesAssistantStyles();
+    
+    console.log('🟢 SALES-ASSISTANT.JS: Inicializuji checkbox listenery...');
     initCheckboxListeners();
+    
+    // Ověř že se modal skutečně vytvořil
+    const createdModal = document.getElementById('salesAssistantModal');
+    if (createdModal) {
+        console.log('🟢 SALES-ASSISTANT.JS: Modal ÚSPĚŠNĚ vytvořen v DOM!');
+    } else {
+        console.error('🔴 SALES-ASSISTANT.JS: Modal SE NEPODAŘILO vytvořit v DOM!');
+    }
 }
 
 // Styly pro prodejní asistent
@@ -997,12 +1064,26 @@ function showSuccessMessage(message) {
 
 // Zavření prodejního asistenta
 function closeSalesAssistant() {
+    console.log('🟢 SALES-ASSISTANT.JS: closeSalesAssistant() zavolána');
     const modal = document.getElementById('salesAssistantModal');
     if (modal) {
         modal.style.display = 'none';
+        console.log('🟢 SALES-ASSISTANT.JS: Modal zavřen');
+    } else {
+        console.log('🟡 SALES-ASSISTANT.JS: Modal nenalezen při zavírání');
     }
     
     // Reset stavu
     currentSalesSession = null;
     currentScenario = null;
-} 
+    console.log('🟢 SALES-ASSISTANT.JS: Stav resetován');
+}
+
+// Registrujeme také globálně pro kompatibilitu
+if (typeof window !== 'undefined') {
+    window.createSalesAssistantModal = createSalesAssistantModal;
+    window.closeSalesAssistant = closeSalesAssistant;
+    console.log('🟢 SALES-ASSISTANT.JS: Všechny funkce registrovány globálně');
+}
+
+console.log('🟢 SALES-ASSISTANT.JS: Script úspěšně načten a připraven!'); 
