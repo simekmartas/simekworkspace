@@ -1,5 +1,5 @@
 // Unifikovaný přihlašovací systém - mobilně optimalizovaný
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const loginForm = document.getElementById('login-form');
     const messageElement = document.getElementById('login-message');
     const submitButton = loginForm.querySelector('button[type="submit"]');
@@ -11,8 +11,10 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
     
-    // Inicializace výchozích uživatelů
-    initializeUsers();
+    // Inicializace výchozích uživatelů (nyní asynchronní)
+    await initializeUsers();
+    
+    console.log('✅ Login system initialized');
     
     // Mobilní specifické vylepšení UX
     const username = document.getElementById('username');
@@ -173,27 +175,33 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Funkce pro kontrolu starého autentizačního systému
-    function checkLegacyAuth(username, password) {
+    function checkLegacyAuth(usernameValue, passwordValue) {
+        console.log('🔄 DEBUG: Legacy auth check', { username: usernameValue, password: '***' });
+        
         // Hardcoded admin/prodejce accounts for backward compatibility
         const legacyAccounts = {
             'admin': { password: 'Admin123', role: 'Administrator', name: 'Administrátor' },
-            'prodejce': { password: 'Prodejce123', role: 'Prodejce', name: 'Prodejce' }
+            'prodejce': { password: 'prodejce123', role: 'Prodejce', name: 'Prodejce' }
         };
         
-        if (legacyAccounts[username] && legacyAccounts[username].password === password) {
-            return {
-                id: username === 'admin' ? 1 : 2,
-                username: username,
-                firstName: legacyAccounts[username].name.split(' ')[0],
-                lastName: legacyAccounts[username].name.split(' ')[1] || '',
-                role: legacyAccounts[username].role,
-                email: `${username}@mobilmajak.cz`,
+        if (legacyAccounts[usernameValue] && legacyAccounts[usernameValue].password === passwordValue) {
+            const user = {
+                id: usernameValue === 'admin' ? 1 : 2,
+                username: usernameValue,
+                firstName: legacyAccounts[usernameValue].name.split(' ')[0],
+                lastName: legacyAccounts[usernameValue].name.split(' ')[1] || '',
+                role: legacyAccounts[usernameValue].role,
+                email: `${usernameValue}@mobilmajak.cz`,
                 phone: '',
-                prodejna: username === 'admin' ? 'Hlavní pobočka' : 'Pobočka',
-                password: password
+                prodejna: usernameValue === 'admin' ? 'Hlavní pobočka' : 'Pobočka',
+                password: passwordValue
             };
+            
+            console.log('✅ DEBUG: Legacy auth successful', { username: usernameValue, role: user.role });
+            return user;
         }
         
+        console.log('❌ DEBUG: Legacy auth failed', { username: usernameValue });
         return null;
     }
 
@@ -212,9 +220,100 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Inicializace výchozích uživatelů - vylepšená verze
-    function initializeUsers() {
-        let existingUsers = getUsers();
+    async function initializeUsers() {
+        console.log('🚀 Inicializuji uživatele...');
         
+        let existingUsers = getUsers();
+        console.log('📦 LocalStorage users:', existingUsers.length);
+        
+        // NOVÉ: Pokus o načtení ze serveru (Safari vs Chrome rozdíl)
+        try {
+            console.log('🌐 Načítám uživatele ze serveru...');
+            console.log('🔍 Browser:', navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other');
+            
+            // Chrome-specifické headers
+            const chromeHeaders = {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
+                'Pragma': 'no-cache',
+                'Expires': '0'
+            };
+            
+            // Pokud je Chrome, přidej další headers
+            if (navigator.userAgent.includes('Chrome')) {
+                chromeHeaders['X-Chrome-Request'] = 'true';
+                chromeHeaders['X-Requested-With'] = 'XMLHttpRequest';
+            }
+            
+            const response = await fetch('/api/users-github', {
+                method: 'GET',
+                headers: chromeHeaders,
+                cache: 'no-store'  // Chrome specific
+            });
+            
+            console.log('📡 Server response:', response.status, response.statusText);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('📊 Server data:', { 
+                    success: data.success, 
+                    usersCount: data.users?.length || 0,
+                    hasUsers: Array.isArray(data.users)
+                });
+                
+                if (data.success && Array.isArray(data.users) && data.users.length > 0) {
+                    console.log(`✅ Načteno ${data.users.length} uživatelů ze serveru`);
+                    
+                    // Debug: ukažme první uživatele
+                    console.log('👤 První uživatel ze serveru:', data.users[0]);
+                    
+                    // Ulož do localStorage jako cache
+                    localStorage.setItem('users', JSON.stringify(data.users));
+                    existingUsers = data.users;
+                    
+                    console.log('🔄 Server users loaded successfully');
+                    return; // Úspěšně načteno ze serveru
+                } else {
+                    console.warn('⚠️ Server response invalid or empty:', data);
+                }
+            } else {
+                console.warn('⚠️ Server responded with:', response.status, response.statusText);
+                
+                // Chrome retry pokus
+                if (navigator.userAgent.includes('Chrome') && response.status >= 500) {
+                    console.log('🔄 Chrome: Trying retry after server error...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    const retryResponse = await fetch('/api/users-github', {
+                        method: 'GET',
+                        headers: chromeHeaders
+                    });
+                    
+                    if (retryResponse.ok) {
+                        const retryData = await retryResponse.json();
+                        if (retryData.success && Array.isArray(retryData.users) && retryData.users.length > 0) {
+                            console.log('✅ Chrome retry successful!');
+                            localStorage.setItem('users', JSON.stringify(retryData.users));
+                            return;
+                        }
+                    }
+                }
+            }
+        } catch (serverError) {
+            console.warn('⚠️ Server loading failed:', serverError.message);
+            console.log('🔄 Fallback to localStorage/legacy...');
+            
+            // Chrome specifické error handling
+            if (navigator.userAgent.includes('Chrome')) {
+                console.log('🔧 Chrome debug info:', {
+                    error: serverError.name,
+                    message: serverError.message,
+                    stack: serverError.stack?.substring(0, 200)
+                });
+            }
+        }
+        
+        // Původní logika jako fallback
         const defaultUsers = [
             {
                 id: 1,
@@ -413,5 +512,81 @@ window.resetLoginSystem = function() {
         localStorage.removeItem('role');
         alert('Systém resetován. Obnovte stránku.');
         location.reload();
+    }
+};
+
+// Chrome cache clearing pro debugging
+window.clearBrowserCache = function() {
+    if (confirm('Vyčistit cache a obnovit stránku?\n\nToto pomůže pokud se změny nenačítají správně.')) {
+        // Vyčištění service worker cache pokud existuje
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+        }
+        
+        // Vyčištění browser cache pomocí hard reload
+        location.reload(true);
+    }
+};
+
+// Debug console commands
+console.log('🔧 DEBUG: Login.js loaded');
+console.log('🔧 Available debug commands:');
+console.log('  - resetLoginSystem() - reset všech uživatelských dat');
+console.log('  - clearBrowserCache() - vyčištění cache a hard reload');
+console.log('  - testServerAPI() - test načítání ze serveru');
+console.log('🔧 Test credentials:');
+console.log('  - admin / Admin123');
+console.log('  - prodejce / prodejce123');
+
+// Test server API funkce
+window.testServerAPI = async function() {
+    console.log('🧪 TESTING SERVER API...');
+    console.log('🔍 Browser:', navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other');
+    
+    try {
+        const response = await fetch('/api/users-github', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'X-Test-Request': 'true'
+            }
+        });
+        
+        console.log('📡 Response status:', response.status);
+        console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log('📊 Response data:', data);
+            console.log('✅ API Test: SUCCESS');
+            
+            if (data.users && data.users.length > 0) {
+                console.log('👥 Available users:');
+                data.users.forEach(user => {
+                    console.log(`  - ${user.username} (${user.role})`);
+                });
+                
+                // Ulož do localStorage pro testování
+                localStorage.setItem('users', JSON.stringify(data.users));
+                console.log('💾 Users saved to localStorage for testing');
+            }
+            
+            return true;
+        } else {
+            const errorText = await response.text();
+            console.error('❌ API Test: FAILED');
+            console.error('Error:', response.status, errorText);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ API Test: ERROR');
+        console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
+        return false;
     }
 }; 
