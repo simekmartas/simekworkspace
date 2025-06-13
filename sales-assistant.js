@@ -22,6 +22,7 @@ function createSalesAssistantModal() {
     
     document.body.insertAdjacentHTML('beforeend', modalHTML);
     addSalesAssistantStyles();
+    initCheckboxListeners();
 }
 
 // Styly pro prodejní asistent
@@ -254,48 +255,89 @@ function addSalesAssistantStyles() {
         
         .checkbox-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 0.75rem;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
             margin: 1rem 0;
         }
         
         .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
             cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            overflow: hidden;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .checkbox-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 20, 147, 0.3), transparent);
+            transition: all 0.3s ease;
         }
         
         .checkbox-item:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 20, 147, 0.3);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.08) 0%, rgba(33, 150, 243, 0.08) 100%);
+            border-color: rgba(255, 20, 147, 0.4);
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.15);
+        }
+        
+        .checkbox-item:hover::before {
+            background: linear-gradient(90deg, #ff1493, #2196F3, #ff1493);
         }
         
         .checkbox-item.checked {
-            background: rgba(255, 20, 147, 0.15);
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.2) 0%, rgba(33, 150, 243, 0.2) 100%);
             border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 20, 147, 0.25);
+        }
+        
+        .checkbox-item.checked::before {
+            background: linear-gradient(90deg, #ff1493, #2196F3);
+        }
+        
+        .checkbox-item .item-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            display: block;
+            opacity: 0.8;
         }
         
         .checkbox-item input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--primary-color);
-            cursor: pointer;
-            margin: 0;
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
         }
         
         .checkbox-item label {
             color: var(--text-primary);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
-            flex: 1;
             margin: 0;
             user-select: none;
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        .checkbox-item.checked label {
+            color: var(--primary-color);
         }
         
         .sales-form {
@@ -334,37 +376,70 @@ function addSalesAssistantStyles() {
         }
         
         .radio-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 25px;
+            position: relative;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 1rem 2rem;
             cursor: pointer;
-            transition: all 0.2s ease;
-            border: 2px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: center;
+            overflow: hidden;
+            min-width: 120px;
+        }
+        
+        .radio-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 20, 147, 0.3), transparent);
+            transition: all 0.3s ease;
         }
         
         .radio-item:hover {
-            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.08) 0%, rgba(33, 150, 243, 0.08) 100%);
+            border-color: rgba(255, 20, 147, 0.4);
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.15);
+        }
+        
+        .radio-item:hover::before {
+            background: linear-gradient(90deg, #ff1493, #2196F3, #ff1493);
         }
         
         .radio-item.selected {
-            background: rgba(255, 20, 147, 0.2);
-            border-color: var(--primary-color);
+            background: linear-gradient(135deg, rgba(46, 213, 115, 0.2) 0%, rgba(32, 191, 107, 0.2) 100%);
+            border-color: #2ed573;
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(46, 213, 115, 0.25);
+        }
+        
+        .radio-item.selected::before {
+            background: linear-gradient(90deg, #2ed573, #20bf6b);
         }
         
         .radio-item input[type="radio"] {
-            width: 16px;
-            height: 16px;
-            accent-color: var(--primary-color);
+            position: absolute;
+            opacity: 0;
+            width: 0;
+            height: 0;
+            pointer-events: none;
         }
         
         .radio-item label {
             color: var(--text-primary);
             font-size: 0.9rem;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
+            margin: 0;
+            user-select: none;
+        }
+        
+        .radio-item.selected label {
+            color: #2ed573;
         }
         
         @media (max-width: 768px) {
@@ -394,6 +469,32 @@ function addSalesAssistantStyles() {
             
             .radio-group {
                 flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .radio-item {
+                min-width: auto;
+                width: 100%;
+                padding: 0.75rem 1rem;
+            }
+            
+            .checkbox-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            
+            .checkbox-item {
+                min-height: 70px;
+                padding: 0.75rem;
+            }
+            
+            .checkbox-item .item-icon {
+                font-size: 1.2rem;
+                margin-bottom: 0.25rem;
+            }
+            
+            .checkbox-item label {
+                font-size: 0.75rem;
             }
         }
     `;
@@ -580,51 +681,61 @@ function renderSoldForm() {
         <div class="sales-content">
             <h4 style="color: var(--primary-color); margin-bottom: 1rem;">📱 OBALY:</h4>
             <div class="checkbox-grid">
-                <div class="checkbox-item" onclick="toggleCheckbox('pruhledny-obal')">
+                <div class="checkbox-item" data-checkbox="pruhledny-obal">
+                    <span class="item-icon">🔹</span>
                     <input type="checkbox" id="pruhledny-obal" name="sold-items">
-                    <label for="pruhledny-obal">PRŮHLEDNÝ OBAL</label>
+                    <label for="pruhledny-obal">PRŮHLEDNÝ<br>OBAL</label>
                 </div>
-                <div class="checkbox-item" onclick="toggleCheckbox('barevny-obal')">
+                <div class="checkbox-item" data-checkbox="barevny-obal">
+                    <span class="item-icon">🌈</span>
                     <input type="checkbox" id="barevny-obal" name="sold-items">
-                    <label for="barevny-obal">BAREVNÝ OBAL</label>
+                    <label for="barevny-obal">BAREVNÝ<br>OBAL</label>
                 </div>
-                <div class="checkbox-item" onclick="toggleCheckbox('klasicky-obal')">
+                <div class="checkbox-item" data-checkbox="klasicky-obal">
+                    <span class="item-icon">📱</span>
                     <input type="checkbox" id="klasicky-obal" name="sold-items">
-                    <label for="klasicky-obal">KLASICKÝ OBAL</label>
+                    <label for="klasicky-obal">KLASICKÝ<br>OBAL</label>
                 </div>
-                <div class="checkbox-item" onclick="toggleCheckbox('knizkovy-obal')">
+                <div class="checkbox-item" data-checkbox="knizkovy-obal">
+                    <span class="item-icon">📖</span>
                     <input type="checkbox" id="knizkovy-obal" name="sold-items">
-                    <label for="knizkovy-obal">KNÍŽKOVÝ OBAL</label>
+                    <label for="knizkovy-obal">KNÍŽKOVÝ<br>OBAL</label>
                 </div>
             </div>
             
             <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔍 SKLÍČKA:</h4>
             <div class="checkbox-grid">
-                <div class="checkbox-item" onclick="toggleCheckbox('kvalitnejsi-sklicko')">
+                <div class="checkbox-item" data-checkbox="kvalitnejsi-sklicko">
+                    <span class="item-icon">💎</span>
                     <input type="checkbox" id="kvalitnejsi-sklicko" name="sold-items">
-                    <label for="kvalitnejsi-sklicko">KVALITNĚJŠÍ SKLÍČKO</label>
+                    <label for="kvalitnejsi-sklicko">KVALITNĚJŠÍ<br>SKLÍČKO</label>
                 </div>
-                <div class="checkbox-item" onclick="toggleCheckbox('levnejsi-sklicko')">
+                <div class="checkbox-item" data-checkbox="levnejsi-sklicko">
+                    <span class="item-icon">💰</span>
                     <input type="checkbox" id="levnejsi-sklicko" name="sold-items">
-                    <label for="levnejsi-sklicko">LEVNĚJŠÍ SKLÍČKO</label>
+                    <label for="levnejsi-sklicko">LEVNĚJŠÍ<br>SKLÍČKO</label>
                 </div>
             </div>
             
             <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔌 OSTATNÍ PŘÍSLUŠENSTVÍ:</h4>
             <div class="checkbox-grid">
-                <div class="checkbox-item" onclick="toggleCheckbox('kabel')">
+                <div class="checkbox-item" data-checkbox="kabel">
+                    <span class="item-icon">🔌</span>
                     <input type="checkbox" id="kabel" name="sold-items">
                     <label for="kabel">KABEL</label>
                 </div>
-                <div class="checkbox-item" onclick="toggleCheckbox('nabijeka')">
+                <div class="checkbox-item" data-checkbox="nabijeka">
+                    <span class="item-icon">🔋</span>
                     <input type="checkbox" id="nabijeka" name="sold-items">
                     <label for="nabijeka">NABÍJEČKA</label>
                 </div>
-                <div class="checkbox-item" onclick="toggleCheckbox('drzak-do-auta')">
+                <div class="checkbox-item" data-checkbox="drzak-do-auta">
+                    <span class="item-icon">🚗</span>
                     <input type="checkbox" id="drzak-do-auta" name="sold-items">
-                    <label for="drzak-do-auta">DRŽÁK DO AUTA</label>
+                    <label for="drzak-do-auta">DRŽÁK<br>DO AUTA</label>
                 </div>
-                <div class="checkbox-item" onclick="toggleCheckbox('ostatni')">
+                <div class="checkbox-item" data-checkbox="ostatni">
+                    <span class="item-icon">📦</span>
                     <input type="checkbox" id="ostatni" name="sold-items">
                     <label for="ostatni">OSTATNÍ</label>
                 </div>
@@ -700,6 +811,21 @@ function toggleCheckbox(checkboxId) {
             checkboxItem.classList.remove('checked');
         }
     }
+}
+
+// Inicializace checkbox event listenerů
+function initCheckboxListeners() {
+    // Event delegation pro všechny checkbox items
+    document.addEventListener('click', function(e) {
+        const checkboxItem = e.target.closest('.checkbox-item');
+        if (checkboxItem && checkboxItem.dataset.checkbox) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const checkboxId = checkboxItem.dataset.checkbox;
+            toggleCheckbox(checkboxId);
+        }
+    });
 }
 
 // Výběr slevy
