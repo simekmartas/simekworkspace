@@ -89,28 +89,28 @@ class CelkemDataLoader {
     }
 
     async tryLoadData(csvUrl) {
+        // Chrome kompatibilní timeout implementace
+        const createFetchWithTimeout = (url, timeoutMs) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            
+            return fetch(url, {
+                mode: 'cors',
+                cache: 'no-cache',
+                signal: controller.signal
+            }).finally(() => clearTimeout(timeoutId));
+        };
+        
         // Zkusíme několik rychlých přístupů paralelně
         const attempts = [
             // Přímý přístup k CSV
-            fetch(csvUrl, {
-                mode: 'cors',
-                cache: 'no-cache',
-                signal: AbortSignal.timeout(3000) // 3 sekundy timeout
-            }),
+            createFetchWithTimeout(csvUrl, 3000),
             
             // Publikované URL
-            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${this.celkemGid}&single=true&output=csv`, {
-                mode: 'cors',
-                cache: 'no-cache',
-                signal: AbortSignal.timeout(3000)
-            }),
+            createFetchWithTimeout(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${this.celkemGid}&single=true&output=csv`, 3000),
             
             // Alternativní formát
-            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${this.celkemGid}`, {
-                mode: 'cors',
-                cache: 'no-cache',
-                signal: AbortSignal.timeout(3000)
-            })
+            createFetchWithTimeout(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${this.celkemGid}`, 3000)
         ];
 
         // Zkusíme všechny přístupy současně a vezmeme první úspěšný

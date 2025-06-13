@@ -134,28 +134,28 @@ class BazarDataLoader {
         // Pokud není gid specifikováno, extrahujeme ho z URL
         const targetGid = gid || this.bazarGid;
         
+        // Chrome kompatibilní timeout implementace
+        const createFetchWithTimeout = (url, timeoutMs) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            
+            return fetch(url, {
+                mode: 'cors',
+                cache: 'no-cache',
+                signal: controller.signal
+            }).finally(() => clearTimeout(timeoutId));
+        };
+        
         // Zkusíme několik rychlých přístupů paralelně
         const attempts = [
             // Přímý přístup k CSV
-            fetch(csvUrl, {
-                mode: 'cors',
-                cache: 'no-cache',
-                signal: AbortSignal.timeout(2000) // 2 sekundy timeout
-            }),
+            createFetchWithTimeout(csvUrl, 2000),
             
             // Publikované URL
-            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${targetGid}&single=true&output=csv`, {
-                mode: 'cors',
-                cache: 'no-cache',
-                signal: AbortSignal.timeout(2000)
-            }),
+            createFetchWithTimeout(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/pub?gid=${targetGid}&single=true&output=csv`, 2000),
             
             // Alternativní formát
-            fetch(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${targetGid}`, {
-                mode: 'cors',
-                cache: 'no-cache',
-                signal: AbortSignal.timeout(2000)
-            })
+            createFetchWithTimeout(`https://docs.google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq?tqx=out:csv&gid=${targetGid}`, 2000)
         ];
 
         // Zkusíme všechny přístupy současně a vezmeme první úspěšný

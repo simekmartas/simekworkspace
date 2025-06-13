@@ -320,24 +320,62 @@ function openSalesAssistant(event) {
     event.preventDefault();
     closeHamburgerMenu();
     
+    console.log('🔍 DEBUG: openSalesAssistant called');
+    console.log('🔍 Browser:', navigator.userAgent);
+    console.log('🔍 createSalesAssistantModal available:', typeof createSalesAssistantModal);
+    
     // Zkontroluj zda je sales-assistant.js načten
     if (typeof createSalesAssistantModal === 'undefined') {
-        console.error('Sales assistant není načten!');
-        alert('Prodejní asistent se nepodařilo načíst. Obnovte stránku.');
+        console.error('❌ Sales assistant není načten!');
+        console.log('🔍 Zkouším načíst sales-assistant.js dynamicky...');
+        
+        // Pokus o dynamické načtení pro Chrome
+        const script = document.createElement('script');
+        script.src = 'sales-assistant.js';
+        script.onload = function() {
+            console.log('✅ Sales assistant dynamicky načten');
+            openSalesAssistant(event);
+        };
+        script.onerror = function() {
+            console.error('❌ Nepodařilo se načíst sales-assistant.js');
+            alert('Prodejní asistent se nepodařilo načíst. Obnovte stránku (Ctrl+F5).');
+        };
+        document.head.appendChild(script);
         return;
     }
+    
+    console.log('✅ Sales assistant je dostupný');
     
     // Začni měřit čas session
     if (typeof sessionStartTime !== 'undefined') {
         sessionStartTime = Date.now();
+        console.log('✅ Session timer started');
+    } else {
+        console.warn('⚠️ sessionStartTime není definována');
+        // Definuj globálně
+        window.sessionStartTime = Date.now();
     }
     
     // Vytvoř prodejní asistent modal
-    if (!document.getElementById('salesAssistantModal')) {
-        createSalesAssistantModal();
+    try {
+        if (!document.getElementById('salesAssistantModal')) {
+            console.log('🔧 Vytvářím nový modal');
+            createSalesAssistantModal();
+        } else {
+            console.log('🔧 Modal již existuje');
+        }
+        
+        const modal = document.getElementById('salesAssistantModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            console.log('✅ Modal zobrazený');
+        } else {
+            throw new Error('Modal se nepodařilo vytvořit');
+        }
+    } catch (error) {
+        console.error('❌ Chyba při vytváření modalu:', error);
+        alert('Chyba při otevírání prodejního asistenta: ' + error.message);
     }
-    
-    document.getElementById('salesAssistantModal').style.display = 'flex';
 }
 
 // Inicializace při načtení stránky
@@ -362,4 +400,50 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 500);
     }
-}); 
+});
+
+// Debug funkce pro testování Chrome kompatibility
+window.debugSalesAssistant = function() {
+    console.log('🔍 DEBUG: Testing Sales Assistant in Chrome');
+    console.log('🔍 Browser details:', {
+        userAgent: navigator.userAgent,
+        chrome: navigator.userAgent.includes('Chrome'),
+        version: navigator.userAgent.match(/Chrome\/(\d+)/)?.[1],
+        isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    });
+    
+    console.log('🔍 Script loading status:', {
+        salesAssistant: typeof createSalesAssistantModal !== 'undefined',
+        navigation: typeof updateNavigation !== 'undefined',
+        sessionStartTime: typeof sessionStartTime !== 'undefined'
+    });
+    
+    console.log('🔍 DOM elements:', {
+        navigation: !!document.querySelector('nav ul'),
+        plusButton: !!document.querySelector('a[onclick*="openSalesAssistant"]'),
+        isLoggedIn: localStorage.getItem('isLoggedIn'),
+        userRole: localStorage.getItem('role')
+    });
+    
+    // Pokus o zobrazení plus tlačítka
+    const plusButton = document.querySelector('a[onclick*="openSalesAssistant"]');
+    if (plusButton) {
+        plusButton.setAttribute('data-debug', 'sales-assistant-button');
+        console.log('✅ Plus button found and marked for debugging');
+        console.log('🔍 Plus button styles:', window.getComputedStyle(plusButton));
+    } else {
+        console.log('❌ Plus button not found');
+    }
+};
+
+// Automatické spuštění debug pro Chrome
+if (navigator.userAgent.includes('Chrome')) {
+    window.addEventListener('load', function() {
+        setTimeout(() => {
+            console.log('🚀 Chrome Auto-Debug starting...');
+            if (window.debugSalesAssistant) {
+                window.debugSalesAssistant();
+            }
+        }, 1000);
+    });
+} 

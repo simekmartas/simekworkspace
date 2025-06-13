@@ -6962,3 +6962,118 @@ tr:hover td {
     background: linear-gradient(135deg, rgba(220, 38, 38, 0.2), rgba(220, 38, 38, 0.1));
     border-color: rgba(220, 38, 38, 0.3);
 }
+
+/* Chrome kompatibilní CSS fixes */
+@supports (-webkit-appearance: none) {
+    /* Chrome specifické styly */
+    .sales-modal {
+        -webkit-backdrop-filter: blur(5px);
+        backdrop-filter: blur(5px);
+    }
+    
+    .sales-modal-content {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+    }
+    
+    .scenario-tile,
+    .checkbox-item,
+    .radio-item {
+        -webkit-transform: translateZ(0);
+        transform: translateZ(0);
+        will-change: transform;
+    }
+    
+    /* Fix pro plus tlačítko v Chrome */
+    nav ul li a[onclick*="openSalesAssistant"] {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 40px !important;
+        height: 40px !important;
+        border-radius: 50% !important;
+        background: linear-gradient(135deg, #ff1493, #e91e63) !important;
+        color: white !important;
+        text-decoration: none !important;
+        font-weight: 600 !important;
+        font-size: 1.2rem !important;
+        box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3) !important;
+        transition: all 0.3s ease !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        cursor: pointer !important;
+    }
+    
+    nav ul li a[onclick*="openSalesAssistant"]:hover {
+        -webkit-transform: scale(1.1) !important;
+        transform: scale(1.1) !important;
+        box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4) !important;
+    }
+    
+    /* Chrome input fixes */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    textarea {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+        -webkit-border-radius: 0.5rem !important;
+        border-radius: 0.5rem !important;
+    }
+    
+    /* Chrome checkbox a radio fixes */
+    input[type="checkbox"],
+    input[type="radio"] {
+        -webkit-appearance: none !important;
+        appearance: none !important;
+    }
+    
+    /* Chrome scrollbar styling */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: linear-gradient(135deg, #ff1493, #e91e63);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(135deg, #e91e63, #c2185b);
+    }
+}
+
+/* Fallback pro starší Chrome verze */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+    .scenario-tile:hover,
+    .checkbox-item:hover,
+    .radio-item:hover {
+        -webkit-transform: translateY(-2px) translateZ(0) !important;
+        transform: translateY(-2px) translateZ(0) !important;
+    }
+    
+    .sales-btn:hover {
+        -webkit-transform: translateY(-2px) translateZ(0) !important;
+        transform: translateY(-2px) translateZ(0) !important;
+    }
+}
+
+/* Debug CSS pro testování viditelnosti tlačítka */
+[data-debug="sales-assistant-button"] {
+    border: 2px solid red !important;
+    background: yellow !important;
+    color: black !important;
+    opacity: 1 !important;
+    display: block !important;
+    visibility: visible !important;
+    z-index: 9999 !important;
+    position: relative !important;
+}

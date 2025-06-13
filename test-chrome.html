@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chrome Compatibility Test - Mobil Maják</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            padding: 2rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .test-section {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .test-result {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            margin: 0.25rem;
+            font-weight: 600;
+        }
+        
+        .test-pass {
+            background: #2ed573;
+            color: white;
+        }
+        
+        .test-fail {
+            background: #ff4757;
+            color: white;
+        }
+        
+        .test-warn {
+            background: #ff9500;
+            color: white;
+        }
+        
+        .debug-button {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .debug-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Chrome Compatibility Test</h1>
+    <p>Testování kompatibility webu s Google Chrome</p>
+    
+    <div class="test-section">
+        <h2>📊 Browser Info</h2>
+        <div id="browserInfo"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔍 Script Loading Tests</h2>
+        <div id="scriptTests"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🧪 Functionality Tests</h2>
+        <div id="functionalityTests"></div>
+        
+        <button class="debug-button" onclick="runAllTests()">🔄 Run All Tests</button>
+        <button class="debug-button" onclick="testPlusButton()">➕ Test Plus Button</button>
+        <button class="debug-button" onclick="testLoginSystem()">🔐 Test Login</button>
+        <button class="debug-button" onclick="clearLocalStorage()">🗑️ Clear Storage</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📝 Test Log</h2>
+        <div id="testLog" style="background: #000; color: #0f0; padding: 1rem; border-radius: 8px; font-family: monospace; max-height: 300px; overflow-y: auto;"></div>
+    </div>
+
+    <!-- Scripts v správném pořadí -->
+    <script src="theme-toggle.js"></script>
+    <script src="sales-assistant.js"></script>
+    <script src="navigation.js"></script>
+    
+    <script>
+        // Test logging system
+        function log(message, type = 'info') {
+            const testLog = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#0f0',
+                error: '#f00',
+                warn: '#ff0',
+                success: '#0f0'
+            };
+            testLog.innerHTML += `<div style="color: ${colors[type]};">[${timestamp}] ${message}</div>`;
+            testLog.scrollTop = testLog.scrollHeight;
+            console.log(message);
+        }
+
+        // Browser info test
+        function displayBrowserInfo() {
+            const info = {
+                userAgent: navigator.userAgent,
+                isChrome: navigator.userAgent.includes('Chrome'),
+                chromeVersion: navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Not Chrome',
+                isMobile: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent),
+                supportsAbortSignal: typeof AbortController !== 'undefined',
+                supportsBackdropFilter: CSS.supports('backdrop-filter', 'blur(5px)'),
+                viewport: window.innerWidth + 'x' + window.innerHeight
+            };
+            
+            const browserInfo = document.getElementById('browserInfo');
+            browserInfo.innerHTML = Object.entries(info).map(([key, value]) => 
+                `<div><strong>${key}:</strong> ${value}</div>`
+            ).join('');
+            
+            log(`Browser detected: Chrome ${info.chromeVersion}`, info.isChrome ? 'success' : 'warn');
+        }
+
+        // Script loading tests
+        function testScriptLoading() {
+            const tests = [
+                { name: 'sales-assistant.js', test: typeof createSalesAssistantModal !== 'undefined' },
+                { name: 'navigation.js', test: typeof updateNavigation !== 'undefined' },
+                { name: 'theme-toggle.js', test: typeof window.themeManager !== 'undefined' },
+                { name: 'sessionStartTime', test: typeof sessionStartTime !== 'undefined' || typeof window.sessionStartTime !== 'undefined' }
+            ];
+            
+            const scriptTests = document.getElementById('scriptTests');
+            scriptTests.innerHTML = tests.map(test => 
+                `<span class="test-result ${test.test ? 'test-pass' : 'test-fail'}">
+                    ${test.name}: ${test.test ? 'PASS' : 'FAIL'}
+                </span>`
+            ).join('');
+            
+            tests.forEach(test => {
+                log(`Script test ${test.name}: ${test.test ? 'PASS' : 'FAIL'}`, test.test ? 'success' : 'error');
+            });
+        }
+
+        // Functionality tests
+        function testFunctionality() {
+            const tests = [
+                { 
+                    name: 'localStorage', 
+                    test: () => {
+                        try {
+                            localStorage.setItem('test', 'value');
+                            localStorage.removeItem('test');
+                            return true;
+                        } catch (e) {
+                            return false;
+                        }
+                    }
+                },
+                {
+                    name: 'fetch API',
+                    test: () => typeof fetch !== 'undefined'
+                },
+                {
+                    name: 'CSS Grid',
+                    test: () => CSS.supports('display', 'grid')
+                },
+                {
+                    name: 'CSS Flexbox',
+                    test: () => CSS.supports('display', 'flex')
+                }
+            ];
+            
+            const functionalityTests = document.getElementById('functionalityTests');
+            functionalityTests.innerHTML = tests.map(test => {
+                const result = typeof test.test === 'function' ? test.test() : test.test;
+                return `<span class="test-result ${result ? 'test-pass' : 'test-fail'}">
+                    ${test.name}: ${result ? 'PASS' : 'FAIL'}
+                </span>`;
+            }).join('');
+            
+            tests.forEach(test => {
+                const result = typeof test.test === 'function' ? test.test() : test.test;
+                log(`Functionality test ${test.name}: ${result ? 'PASS' : 'FAIL'}`, result ? 'success' : 'error');
+            });
+        }
+
+        // Test plus button
+        function testPlusButton() {
+            log('Testing plus button...', 'info');
+            
+            // Simulace přihlášení
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('role', 'Administrator');
+            localStorage.setItem('username', 'test-user');
+            
+            log('Simulated login set', 'info');
+            
+            // Update navigation
+            if (typeof updateNavigation === 'function') {
+                updateNavigation();
+                log('Navigation updated', 'success');
+                
+                // Check for plus button
+                setTimeout(() => {
+                    const plusButton = document.querySelector('a[onclick*="openSalesAssistant"]');
+                    if (plusButton) {
+                        log('Plus button found!', 'success');
+                        plusButton.style.border = '3px solid red';
+                        plusButton.style.backgroundColor = 'yellow';
+                        plusButton.style.color = 'black';
+                        
+                        // Test click
+                        try {
+                            plusButton.click();
+                            log('Plus button clicked successfully', 'success');
+                        } catch (e) {
+                            log('Plus button click failed: ' + e.message, 'error');
+                        }
+                    } else {
+                        log('Plus button NOT found!', 'error');
+                    }
+                }, 500);
+            } else {
+                log('updateNavigation function not available', 'error');
+            }
+        }
+
+        // Test login system
+        function testLoginSystem() {
+            log('Testing login system...', 'info');
+            
+            const testCredentials = [
+                { username: 'admin', password: 'Admin123' },
+                { username: 'prodejce', password: 'prodejce123' }
+            ];
+            
+            testCredentials.forEach(cred => {
+                try {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('username', cred.username);
+                    localStorage.setItem('role', cred.username === 'admin' ? 'Administrator' : 'Prodejce');
+                    log(`Login test ${cred.username}: PASS`, 'success');
+                } catch (e) {
+                    log(`Login test ${cred.username}: FAIL - ${e.message}`, 'error');
+                }
+            });
+        }
+
+        // Clear localStorage
+        function clearLocalStorage() {
+            localStorage.clear();
+            log('localStorage cleared', 'info');
+            location.reload();
+        }
+
+        // Run all tests
+        function runAllTests() {
+            log('=== STARTING ALL TESTS ===', 'info');
+            displayBrowserInfo();
+            testScriptLoading();
+            testFunctionality();
+            log('=== TESTS COMPLETED ===', 'success');
+        }
+
+        // Auto-run tests on load
+        document.addEventListener('DOMContentLoaded', function() {
+            runAllTests();
+            
+            // Auto-debug for Chrome
+            if (navigator.userAgent.includes('Chrome')) {
+                setTimeout(() => {
+                    if (window.debugSalesAssistant) {
+                        window.debugSalesAssistant();
+                    }
+                }, 2000);
+            }
+        });
+    </script>
+</body>
+</html> 

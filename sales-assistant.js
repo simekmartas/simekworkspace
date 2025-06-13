@@ -3,6 +3,18 @@ let currentSalesSession = null;
 let currentScenario = null;
 let sessionStartTime = null;
 
+// Globální inicializace pro kompatibilitu s Chrome
+if (typeof window !== 'undefined') {
+    window.sessionStartTime = null;
+    window.currentSalesSession = null;
+    window.currentScenario = null;
+    
+    // Debug informace pro Chrome
+    console.log('🔧 Sales assistant initialized');
+    console.log('🔍 User Agent:', navigator.userAgent);
+    console.log('🔍 Chrome version:', navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Not Chrome');
+}
+
 // Hlavní funkce pro vytvoření modal okna
 function createSalesAssistantModal() {
     const modalHTML = `

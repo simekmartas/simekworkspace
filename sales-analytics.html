@@ -270,7 +270,15 @@
                     <button class="filter-btn" onclick="loadAnalytics('today')">Dnes</button>
                     <button class="filter-btn" onclick="loadAnalytics('week')">Tento týden</button>
                     <button class="filter-btn" onclick="loadAnalytics('month')">Tento měsíc</button>
-                    <button class="filter-btn" onclick="debugLoadData()" style="background: #ff4757; border-color: #ff4757;">🔄 Debug refresh</button>
+                </div>
+                
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
+                        <button class="filter-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3;">🔄 Obnovit data</button>
+                        <button class="filter-btn" onclick="testServerConnection()" style="background: #2ed573; border-color: #2ed573;">🌐 Test serveru</button>
+                        <button class="filter-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500;">🔄 Sync se serverem</button>
+                        <button class="filter-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757;">🗑️ Smazat data</button>
+                    </div>
                 </div>
             </div>
 
@@ -290,8 +298,8 @@
     </footer>
 
     <script src="theme-toggle.js"></script>
-    <script src="navigation.js"></script>
     <script src="sales-assistant.js"></script>
+    <script src="navigation.js"></script>
     <script src="access-control.js"></script>
     
     <script>
@@ -761,9 +769,329 @@
             loadAnalytics('all');
         }
 
+        // Test serveru
+        async function testServerConnection() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Testuji...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('/api/sales-data?type=stats');
+                
+                if (response.ok) {
+                    btn.textContent = '✅ Server OK';
+                    btn.style.background = '#2ed573';
+                    console.log('✅ Server je dostupný');
+                    
+                    const data = await response.json();
+                    console.log('📊 Server data:', data);
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            } catch (error) {
+                btn.textContent = '❌ Server nedostupný';
+                btn.style.background = '#ff4757';
+                console.error('❌ Server test failed:', error);
+            }
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                btn.style.background = '#2ed573';
+            }, 3000);
+        }
+
+        // Synchronizace se serverem
+        async function syncWithServer() {
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '⏳ Synchronizuji...';
+            btn.disabled = true;
+            
+            try {
+                // Načti data ze serveru
+                const response = await fetch('/api/sales-data');
+                
+                if (response.ok) {
+                    const serverData = await response.json();
+                    
+                    if (serverData.success && serverData.salesData) {
+                        // Ulož server data do localStorage
+                        localStorage.setItem('sales_sessions', JSON.stringify(serverData.salesData));
+                        console.log('✅ Data synchronizována ze serveru:', serverData.salesData.length, 'sessions');
+                        
+                        btn.textContent = '✅ Synchronizováno';
+                        btn.style.background = '#2ed573';
+                        
+                        // Refresh analytiky
+                        loadAnalytics('all');
+                    } else {
+                        throw new Error('Server nevrátil validní data');
+                    }
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('❌ Sync failed:', error);
+                
+                // Zkus poslat lokální data na server
+                try {
+                    const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                    if (localData.length > 0) {
+                        console.log('📤 Posílám lokální data na server...');
+                        
+                        for (const session of localData) {
+                            await fetch('/api/sales-data', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(session)
+                            });
+                        }
+                        
+                        btn.textContent = '✅ Lokální → Server';
+                        btn.style.background = '#2ed573';
+                    } else {
+                        throw error;
+                    }
+                } catch (uploadError) {
+                    btn.textContent = '❌ Sync selhal';
+                    btn.style.background = '#ff4757';
+                }
+            }
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                btn.style.background = '#ff9500';
+            }, 3000);
+        }
+
+        // Modal pro smazání dat
+        function showDeleteDataModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 10000; display: flex; 
+                align-items: center; justify-content: center; padding: 1rem;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-primary); border-radius: 15px; padding: 2rem; 
+                    max-width: 500px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+                ">
+                    <h3 style="color: var(--text-primary); margin: 0 0 1.5rem 0; text-align: center;">
+                        🗑️ Smazat prodejní data
+                    </h3>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Vyberte období:</h4>
+                        
+                        <div style="display: grid; gap: 0.75rem;">
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <input type="radio" name="deleteOption" value="today" style="accent-color: var(--primary-color);">
+                                <span style="color: var(--text-primary);">Pouze dnešní data</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <input type="radio" name="deleteOption" value="week" style="accent-color: var(--primary-color);">
+                                <span style="color: var(--text-primary);">Tento týden</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                <input type="radio" name="deleteOption" value="month" style="accent-color: var(--primary-color);">
+                                <span style="color: var(--text-primary);">Tento měsíc</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,71,87,0.1); border-radius: 8px; border: 1px solid rgba(255,71,87,0.3);">
+                                <input type="radio" name="deleteOption" value="all" style="accent-color: #ff4757;">
+                                <span style="color: #ff4757; font-weight: 600;">⚠️ Všechna data (POZOR!)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button onclick="this.closest('.modal').remove()" style="
+                            background: rgba(255,255,255,0.1); color: var(--text-primary); 
+                            border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; 
+                            border-radius: 8px; cursor: pointer;
+                        ">Zrušit</button>
+                        
+                        <button onclick="confirmDeleteData(this)" style="
+                            background: #ff4757; color: white; border: none; 
+                            padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600;
+                        ">🗑️ Smazat</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.className = 'modal';
+            document.body.appendChild(modal);
+            
+            // Zavření na klik mimo
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+        }
+
+        // Potvrzení smazání dat
+        async function confirmDeleteData(btn) {
+            const selectedOption = document.querySelector('input[name="deleteOption"]:checked');
+            
+            if (!selectedOption) {
+                alert('Prosím vyberte období pro smazání.');
+                return;
+            }
+            
+            const period = selectedOption.value;
+            const periodNames = {
+                today: 'dnešní data',
+                week: 'data z tohoto týdne',
+                month: 'data z tohoto měsíce',
+                all: 'VŠECHNA DATA'
+            };
+            
+            if (!confirm(`Opravdu chcete smazat ${periodNames[period]}?\n\nTato akce je nevratná!`)) {
+                return;
+            }
+            
+            btn.textContent = '⏳ Mazání...';
+            btn.disabled = true;
+            
+            try {
+                const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                let filteredData = [...localData];
+                const now = new Date();
+                
+                // Filtruj podle období
+                if (period !== 'all') {
+                    filteredData = localData.filter(session => {
+                        const sessionDate = new Date(session.timestamp);
+                        
+                        switch(period) {
+                            case 'today':
+                                return sessionDate.toDateString() !== now.toDateString();
+                            case 'week':
+                                const weekAgo = new Date(now);
+                                weekAgo.setDate(weekAgo.getDate() - 7);
+                                return sessionDate < weekAgo;
+                            case 'month':
+                                const monthAgo = new Date(now);
+                                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                                return sessionDate < monthAgo;
+                            default:
+                                return true;
+                        }
+                    });
+                } else {
+                    filteredData = [];
+                }
+                
+                // Ulož filtrovaná data
+                localStorage.setItem('sales_sessions', JSON.stringify(filteredData));
+                
+                console.log(`🗑️ Smazáno: ${localData.length - filteredData.length} sessions`);
+                console.log(`📊 Zůstává: ${filteredData.length} sessions`);
+                
+                // Refresh analytiky
+                loadAnalytics('all');
+                
+                // Zavři modal
+                document.querySelector('.modal').remove();
+                
+                alert(`✅ Úspěšně smazáno ${localData.length - filteredData.length} záznamů!`);
+                
+            } catch (error) {
+                console.error('❌ Chyba při mazání:', error);
+                alert('❌ Chyba při mazání dat!');
+            }
+        }
+
+        // Zobrazení statusu ukládání dat
+        function showDataStatus() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                const statusDiv = document.getElementById('storage-info');
+                
+                if (statusDiv) {
+                    const statusHTML = `
+                        <div style="display: grid; gap: 0.5rem;">
+                            <div>💾 <strong>Lokální úložiště:</strong> ${localData.length} sessions uloženo</div>
+                            <div>🌐 <strong>Server:</strong> <span id="server-status">Testuji...</span></div>
+                            <div>🔄 <strong>Synchronizace:</strong> <span id="sync-status">Automatická při uložení</span></div>
+                            <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);">
+                                ✅ Data jsou ukládána lokálně i na server pro dlouhodobé uchovávání
+                            </div>
+                        </div>
+                    `;
+                    statusDiv.innerHTML = statusHTML;
+                    
+                    // Test server status
+                    testServerStatusQuiet();
+                }
+            } catch (error) {
+                console.error('Chyba při zobrazování statusu dat:', error);
+            }
+        }
+
+        // Tichý test serveru pro status
+        async function testServerStatusQuiet() {
+            const statusElement = document.getElementById('server-status');
+            if (!statusElement) return;
+            
+            try {
+                // Chrome kompatibilní timeout implementace
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch('/api/sales-data?type=stats', { 
+                    method: 'GET',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (response.ok) {
+                    statusElement.innerHTML = '<span style="color: #2ed573;">✅ Připojen a funkční</span>';
+                } else {
+                    throw new Error('Server nedostupný');
+                }
+            } catch (error) {
+                statusElement.innerHTML = '<span style="color: #ff9500;">⚠️ Offline (data v localStorage)</span>';
+            }
+        }
+
         // Inicializace při načtení stránky
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Analytika se inicializuje...');
+            
+            // Přidej status section před analytiky
+            const analyticsContainer = document.querySelector('.analytics-container');
+            const filterSection = document.querySelector('.filter-section');
+            
+            if (analyticsContainer && filterSection) {
+                const statusSection = document.createElement('div');
+                statusSection.innerHTML = `
+                    <div style="
+                        background: rgba(255,255,255,0.05); border-radius: 10px; padding: 1rem; 
+                        margin-bottom: 2rem; border-left: 4px solid var(--primary-color);
+                    ">
+                        <h4 style="color: var(--primary-color); margin: 0 0 0.5rem 0; font-size: 0.9rem;">
+                            📊 Status ukládání dat
+                        </h4>
+                        <div id="storage-info" style="color: var(--text-secondary); font-size: 0.85rem;">
+                            <div>🔍 Kontroluji stav úložiště...</div>
+                        </div>
+                    </div>
+                `;
+                
+                analyticsContainer.insertBefore(statusSection, filterSection.nextSibling);
+                
+                // Zobraz status dat
+                setTimeout(showDataStatus, 200);
+            }
+            
             // Malé zpoždění aby se všechno načetlo
             setTimeout(() => {
                 loadAnalytics('all');
