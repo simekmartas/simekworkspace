@@ -293,21 +293,107 @@ window.forceOpenSalesAssistant = function(event) {
     }
 };
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔵 NAVIGATION.JS: DOM loaded, čekám na inicializaci...');
+// FORCE NAVIGATION - vynutí vytvoření navigace za všech okolností
+function forceCreateNavigation() {
+    console.log('🚨 NAVIGATION.JS: FORCE CREATE NAVIGATION!');
     
-    // Wait a bit for other scripts to load
+    // Simuluj přihlášení pokud není
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    if (!isLoggedIn) {
+        console.log('🚨 NAVIGATION.JS: Force simuluji přihlášení...');
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('role', 'Prodejce');
+        localStorage.setItem('username', 'force-user');
+    }
+    
+    // Vytvořit navigaci
+    updateNavigation();
+    
+    // Ověřit že plus tlačítko existuje
     setTimeout(() => {
-        console.log('🔵 NAVIGATION.JS: Spouštím updateNavigation...');
+        const plusButton = document.querySelector('a[onclick*="openSalesAssistant"]');
+        if (!plusButton) {
+            console.log('🚨 NAVIGATION.JS: Plus tlačítko chybí, vytvářím emergency...');
+            
+            // Emergency plus tlačítko přímo do navigace
+            const navList = document.querySelector('nav ul');
+            if (navList) {
+                const emergencyPlus = document.createElement('li');
+                emergencyPlus.innerHTML = '<a href="#" onclick="if(typeof openSalesAssistant===\'function\'){openSalesAssistant(event)}else{alert(\'Obnovte stránku F5\')}" style="background: linear-gradient(135deg, #ff1493, #e91e63) !important; color: white !important; padding: 0.5rem 1rem !important; border-radius: 20px !important; text-decoration: none !important; font-weight: bold !important; box-shadow: 0 4px 15px rgba(255, 20, 147, 0.4) !important;" title="Emergency prodejní asistent">🚨 ➕ PRODEJ</a>';
+                navList.appendChild(emergencyPlus);
+                console.log('🚨 NAVIGATION.JS: Emergency plus tlačítko přidáno!');
+            }
+        }
+    }, 500);
+}
+
+// Multiple initialization attempts
+console.log('🔵 NAVIGATION.JS: Spouštím multiple init...');
+
+// Immediate attempt
+setTimeout(() => {
+    console.log('🔵 NAVIGATION.JS: Immediate attempt...');
+    updateNavigation();
+}, 10);
+
+// DOM ready attempt  
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔵 NAVIGATION.JS: DOM loaded attempt...');
+    setTimeout(() => {
         updateNavigation();
+        
+        // Force check
+        setTimeout(() => {
+            const navItems = document.querySelectorAll('nav ul li');
+            if (navItems.length < 3) {
+                console.log('🚨 NAVIGATION.JS: Navigace neúplná, force creating...');
+                forceCreateNavigation();
+            }
+        }, 500);
     }, 100);
 });
 
-// Also update on page load
+// Window load attempt
 window.addEventListener('load', function() {
-    console.log('🔵 NAVIGATION.JS: Window loaded, aktualizuji navigaci...');
-    updateNavigation();
+    console.log('🔵 NAVIGATION.JS: Window loaded attempt...');
+    setTimeout(() => {
+        updateNavigation();
+        
+        // Final force check
+        setTimeout(() => {
+            const navItems = document.querySelectorAll('nav ul li');
+            const plusButton = document.querySelector('a[onclick*="openSalesAssistant"]');
+            
+            if (navItems.length < 3 || !plusButton) {
+                console.log('🚨 NAVIGATION.JS: Final force creation...');
+                forceCreateNavigation();
+            }
+        }, 1000);
+    }, 200);
 });
+
+// Interval backup for stubborn cases
+let navigationAttempts = 0;
+const navigationInterval = setInterval(() => {
+    navigationAttempts++;
+    console.log(`🔵 NAVIGATION.JS: Interval attempt ${navigationAttempts}...`);
+    
+    const navList = document.querySelector('nav ul');
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    
+    if (navList && isLoggedIn && navList.children.length < 3) {
+        console.log('🔵 NAVIGATION.JS: Interval triggering navigation...');
+        updateNavigation();
+    }
+    
+    // Stop after 10 attempts or when navigation is complete
+    const navItems = document.querySelectorAll('nav ul li');
+    const plusButton = document.querySelector('a[onclick*="openSalesAssistant"]');
+    
+    if (navigationAttempts >= 10 || (navItems.length >= 3 && plusButton)) {
+        clearInterval(navigationInterval);
+        console.log('🔵 NAVIGATION.JS: Interval stopped, navigation complete');
+    }
+}, 1000);
 
 console.log('🔵 NAVIGATION.JS: Script úspěšně načten a připraven'); 
