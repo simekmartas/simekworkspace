@@ -270,6 +270,7 @@
                     <button class="filter-btn" onclick="loadAnalytics('today')">Dnes</button>
                     <button class="filter-btn" onclick="loadAnalytics('week')">Tento týden</button>
                     <button class="filter-btn" onclick="loadAnalytics('month')">Tento měsíc</button>
+                    <button class="filter-btn" onclick="debugLoadData()" style="background: #ff4757; border-color: #ff4757;">🔄 Debug refresh</button>
                 </div>
             </div>
 
@@ -320,7 +321,19 @@
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event?.target?.classList.add('active');
+            
+            // Najdi a aktivuj správné tlačítko
+            if (event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // Při automatickém načtení aktivuj tlačítko podle filtru
+                const targetBtn = Array.from(document.querySelectorAll('.filter-btn')).find(btn => 
+                    btn.textContent.toLowerCase().includes(filter === 'all' ? 'všechna' : filter)
+                );
+                if (targetBtn) {
+                    targetBtn.classList.add('active');
+                }
+            }
             
             const contentDiv = document.getElementById('analyticsContent');
             contentDiv.innerHTML = `
@@ -353,17 +366,24 @@
                 // Načti data z localStorage
                 try {
                     const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                    console.log('📊 Načítám data z localStorage:', localSalesData.length, 'sessions');
+                    console.log('📊 Data detail:', localSalesData);
                     
                     if (localSalesData.length > 0) {
                         const stats = generateLocalStats(localSalesData);
+                        console.log('📊 Vygenerované statistiky:', stats);
                         analyticsData = stats;
                         renderAnalytics(analyticsData);
                     } else {
+                        console.log('📊 Žádná data v localStorage');
                         contentDiv.innerHTML = `
                             <div class="no-data">
                                 <span class="no-data-emoji">📈</span>
                                 <h3>Zatím žádná data</h3>
                                 <p>Jakmile prodejci začnou používat prodejní asistent, zde se zobrazí analytické údaje.</p>
+                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem;">
+                                    Debug: localStorage má ${localSalesData.length} sessions
+                                </p>
                             </div>
                         `;
                     }
@@ -718,9 +738,36 @@
             `;
         }
 
+        // Debug funkce
+        function debugLoadData() {
+            console.log('🔍 DEBUG: Kontroluji localStorage...');
+            const localData = localStorage.getItem('sales_sessions');
+            console.log('🔍 Raw localStorage data:', localData);
+            
+            try {
+                const parsed = JSON.parse(localData || '[]');
+                console.log('🔍 Parsed data:', parsed);
+                console.log('🔍 Počet sessions:', parsed.length);
+                
+                if (parsed.length > 0) {
+                    console.log('🔍 První session:', parsed[0]);
+                    console.log('🔍 Poslední session:', parsed[parsed.length - 1]);
+                }
+            } catch (e) {
+                console.error('🔍 Chyba při parsování:', e);
+            }
+            
+            // Vynutí načtení
+            loadAnalytics('all');
+        }
+
         // Inicializace při načtení stránky
         document.addEventListener('DOMContentLoaded', function() {
-            loadAnalytics('all');
+            console.log('🚀 Analytika se inicializuje...');
+            // Malé zpoždění aby se všechno načetlo
+            setTimeout(() => {
+                loadAnalytics('all');
+            }, 100);
         });
     </script>
 </body>

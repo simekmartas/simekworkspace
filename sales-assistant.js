@@ -107,6 +107,16 @@ function addSalesAssistantStyles() {
             padding: 1.5rem;
             max-height: 65vh;
             overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+        
+        .sales-modal-body.scroll-top {
+            animation: scrollToTop 0.3s ease-out;
+        }
+        
+        @keyframes scrollToTop {
+            from { scroll-behavior: auto; }
+            to { scroll-behavior: smooth; }
         }
         
         .scenario-grid {
@@ -667,6 +677,13 @@ function handleSaleResult(result) {
     } else {
         modalBody.innerHTML = renderNotSoldForm();
     }
+    
+    // Scroll na začátek modalu
+    setTimeout(() => {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(() => modalBody.classList.remove('scroll-top'), 300);
+    }, 50);
 }
 
 // Formulář pro prodáno
@@ -926,6 +943,8 @@ async function saveSalesSession(sessionData) {
         localStorage.setItem('sales_sessions', JSON.stringify(existingSessions));
         
         console.log('📦 Sales session uložena do localStorage');
+        console.log('📦 Celkem sessions v localStorage:', existingSessions.length);
+        console.log('📦 Nová session data:', sessionData);
         
         // Zkus uložit na server
         const response = await fetch('/api/sales-data', {
