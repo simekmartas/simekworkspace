@@ -57,23 +57,38 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Unifikovaná autentizační funkce
-    function authenticateUser(username, password) {
+    function authenticateUser(usernameValue, passwordValue) {
         try {
+            console.log('🔐 DEBUG: Authentication attempt', { 
+                username: usernameValue, 
+                browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other',
+                timestamp: new Date().toISOString()
+            });
+            
             // Získat uživatele z localStorage (nový systém)
             const users = getUsers();
-            let user = users.find(u => u.username === username && u.password === password);
+            let user = users.find(u => u.username === usernameValue && u.password === passwordValue);
+            
+            console.log('🔍 DEBUG: User lookup result', { 
+                foundUser: !!user, 
+                totalUsers: users.length,
+                searchUsername: usernameValue 
+            });
             
             // Pokud uživatel nebyl nalezen v novém systému, zkus starý formát
             if (!user) {
-                // Fallback na starý systém
-                user = checkLegacyAuth(username, password);
+                console.log('🔄 DEBUG: Trying legacy auth...');
+                user = checkLegacyAuth(usernameValue, passwordValue);
+                console.log('🔍 DEBUG: Legacy auth result', { foundUser: !!user });
             }
             
             if (user) {
+                console.log('✅ DEBUG: Login successful');
+                
                 // Úspěšné přihlášení - unified session storage
                 const sessionData = {
                     isLoggedIn: 'true',
-                    username: user.firstName ? `${user.firstName} ${user.lastName}` : user.name || username,
+                    username: user.firstName ? `${user.firstName} ${user.lastName}` : user.name || usernameValue,
                     userId: user.id ? user.id.toString() : '1',
                     role: user.role || 'Prodejce',
                     userEmail: user.email || '',
@@ -85,6 +100,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     deviceType: /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? 'mobile' : 'desktop',
                     loginTime: Date.now()
                 };
+                
+                console.log('💾 DEBUG: Saving session data', sessionData);
                 
                 // Store session data
                 Object.keys(sessionData).forEach(key => {
@@ -100,6 +117,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Redirect after short delay
                 setTimeout(() => {
+                    console.log('🔀 DEBUG: Redirecting to', sessionData.role === 'Prodejce' ? 'prodejny.html' : 'index.html');
+                    
                     // Determine redirect based on role
                     if (sessionData.role === 'Prodejce') {
                         window.location.href = 'prodejny.html';
@@ -109,6 +128,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }, 1000);
                 
             } else {
+                console.log('❌ DEBUG: Login failed - invalid credentials');
+                
                 setLoadingState(false);
                 showMessage('❌ Nesprávné přihlašovací údaje. Zkuste to znovu.', 'error');
                 
@@ -123,13 +144,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     loginForm.style.animation = '';
                 }, 500);
                 
-                // Focus on username field (only on desktop)
+                // Focus on username field (only on desktop) - použij správný DOM element
                 if (window.innerWidth > 768) {
-                    username.focus();
+                    try {
+                        const usernameInput = document.getElementById('username');
+                        if (usernameInput && typeof usernameInput.focus === 'function') {
+                            usernameInput.focus();
+                            console.log('🎯 DEBUG: Username field focused');
+                        } else {
+                            console.warn('⚠️ DEBUG: Username input not found or focus not available');
+                        }
+                    } catch (focusError) {
+                        console.error('❌ DEBUG: Focus error:', focusError);
+                    }
                 }
             }
         } catch (error) {
-            console.error('Login error:', error);
+            console.error('❌ DEBUG: Login error details:', {
+                error: error.message,
+                stack: error.stack,
+                browser: navigator.userAgent,
+                timestamp: new Date().toISOString()
+            });
+            
             setLoadingState(false);
             showMessage('⚠️ Chyba při přihlašování. Zkuste to znovu.', 'error');
         }
