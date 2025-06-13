@@ -57,17 +57,17 @@ function addSalesAssistantStyles() {
         .sales-modal-content {
             position: relative;
             background: var(--bg-primary);
-            border-radius: 20px;
+            border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
-            max-height: 90vh;
+            max-height: 85vh;
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .sales-modal-header {
-            padding: 2rem 2rem 1rem;
+            padding: 1.5rem 1.5rem 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
@@ -103,8 +103,8 @@ function addSalesAssistantStyles() {
         }
         
         .sales-modal-body {
-            padding: 2rem;
-            max-height: 70vh;
+            padding: 1.5rem;
+            max-height: 65vh;
             overflow-y: auto;
         }
         
@@ -118,8 +118,8 @@ function addSalesAssistantStyles() {
         .scenario-tile {
             background: linear-gradient(135deg, rgba(255, 20, 147, 0.1) 0%, rgba(33, 150, 243, 0.1) 100%);
             border: 2px solid rgba(255, 20, 147, 0.2);
-            border-radius: 15px;
-            padding: 1.5rem;
+            border-radius: 12px;
+            padding: 1rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -144,14 +144,14 @@ function addSalesAssistantStyles() {
         }
         
         .scenario-emoji {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
             display: block;
         }
         
         .scenario-title {
             color: var(--text-primary);
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 600;
             margin: 0;
         }
@@ -176,29 +176,29 @@ function addSalesAssistantStyles() {
         
         .sales-content {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .sales-step {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
         
         .sales-step h3 {
             color: var(--primary-color);
-            margin: 0 0 1rem 0;
-            font-size: 1.1rem;
+            margin: 0 0 0.75rem 0;
+            font-size: 1rem;
             font-weight: 600;
         }
         
         .sales-advice {
             background: rgba(255, 20, 147, 0.1);
             border-left: 4px solid var(--primary-color);
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
         }
         
         .sales-advice p {
@@ -268,16 +268,25 @@ function addSalesAssistantStyles() {
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
+            border: 1px solid transparent;
         }
         
         .checkbox-item:hover {
             background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 20, 147, 0.3);
+        }
+        
+        .checkbox-item.checked {
+            background: rgba(255, 20, 147, 0.15);
+            border-color: var(--primary-color);
         }
         
         .checkbox-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             accent-color: var(--primary-color);
+            cursor: pointer;
+            margin: 0;
         }
         
         .checkbox-item label {
@@ -285,6 +294,8 @@ function addSalesAssistantStyles() {
             font-size: 0.9rem;
             cursor: pointer;
             flex: 1;
+            margin: 0;
+            user-select: none;
         }
         
         .sales-form {
@@ -358,14 +369,15 @@ function addSalesAssistantStyles() {
         
         @media (max-width: 768px) {
             .sales-modal-content {
-                margin: 1rem;
+                margin: 0.5rem;
                 max-width: none;
-                width: calc(100% - 2rem);
+                width: calc(100% - 1rem);
+                max-height: 90vh;
             }
             
             .sales-modal-header,
             .sales-modal-body {
-                padding: 1.5rem;
+                padding: 1rem;
             }
             
             .scenario-grid {
@@ -568,19 +580,19 @@ function renderSoldForm() {
         <div class="sales-content">
             <h4 style="color: var(--primary-color); margin-bottom: 1rem;">📱 OBALY:</h4>
             <div class="checkbox-grid">
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('pruhledny-obal')">
                     <input type="checkbox" id="pruhledny-obal" name="sold-items">
                     <label for="pruhledny-obal">PRŮHLEDNÝ OBAL</label>
                 </div>
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('barevny-obal')">
                     <input type="checkbox" id="barevny-obal" name="sold-items">
                     <label for="barevny-obal">BAREVNÝ OBAL</label>
                 </div>
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('klasicky-obal')">
                     <input type="checkbox" id="klasicky-obal" name="sold-items">
                     <label for="klasicky-obal">KLASICKÝ OBAL</label>
                 </div>
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('knizkovy-obal')">
                     <input type="checkbox" id="knizkovy-obal" name="sold-items">
                     <label for="knizkovy-obal">KNÍŽKOVÝ OBAL</label>
                 </div>
@@ -588,11 +600,11 @@ function renderSoldForm() {
             
             <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔍 SKLÍČKA:</h4>
             <div class="checkbox-grid">
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('kvalitnejsi-sklicko')">
                     <input type="checkbox" id="kvalitnejsi-sklicko" name="sold-items">
                     <label for="kvalitnejsi-sklicko">KVALITNĚJŠÍ SKLÍČKO</label>
                 </div>
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('levnejsi-sklicko')">
                     <input type="checkbox" id="levnejsi-sklicko" name="sold-items">
                     <label for="levnejsi-sklicko">LEVNĚJŠÍ SKLÍČKO</label>
                 </div>
@@ -600,19 +612,19 @@ function renderSoldForm() {
             
             <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔌 OSTATNÍ PŘÍSLUŠENSTVÍ:</h4>
             <div class="checkbox-grid">
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('kabel')">
                     <input type="checkbox" id="kabel" name="sold-items">
                     <label for="kabel">KABEL</label>
                 </div>
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('nabijeka')">
                     <input type="checkbox" id="nabijeka" name="sold-items">
                     <label for="nabijeka">NABÍJEČKA</label>
                 </div>
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('drzak-do-auta')">
                     <input type="checkbox" id="drzak-do-auta" name="sold-items">
                     <label for="drzak-do-auta">DRŽÁK DO AUTA</label>
                 </div>
-                <div class="checkbox-item">
+                <div class="checkbox-item" onclick="toggleCheckbox('ostatni')">
                     <input type="checkbox" id="ostatni" name="sold-items">
                     <label for="ostatni">OSTATNÍ</label>
                 </div>
@@ -671,6 +683,23 @@ function renderNotSoldForm() {
             </button>
         </div>
     `;
+}
+
+// Toggle checkbox funkce
+function toggleCheckbox(checkboxId) {
+    const checkbox = document.getElementById(checkboxId);
+    const checkboxItem = checkbox.closest('.checkbox-item');
+    
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+        
+        // Aktualizuj vizuální stav
+        if (checkbox.checked) {
+            checkboxItem.classList.add('checked');
+        } else {
+            checkboxItem.classList.remove('checked');
+        }
+    }
 }
 
 // Výběr slevy
