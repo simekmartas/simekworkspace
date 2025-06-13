@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Prodejní analytika - Mobil Maják</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="progressive-enhancement.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#ff1493">
+    <meta name="description" content="Prodejní analytika - Mobil Maják">
+    
+    <style>
+        .analytics-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            margin-top: 100px;
+        }
+        
+        .analytics-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .analytics-header h1 {
+            color: var(--text-primary);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .analytics-header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff1493, #2196F3);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 20, 147, 0.15);
+        }
+        
+        .stat-emoji {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .section-title {
+            color: var(--text-primary);
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin: 3rem 0 1.5rem 0;
+            text-align: center;
+        }
+        
+        .chart-container {
+            background: var(--bg-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .seller-table, .scenario-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .seller-table th, .seller-table td,
+        .scenario-table th, .scenario-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .seller-table th, .scenario-table th {
+            color: var(--primary-color);
+            font-weight: 600;
+            background: rgba(255, 20, 147, 0.05);
+        }
+        
+        .seller-table td, .scenario-table td {
+            color: var(--text-primary);
+        }
+        
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 8px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #2ed573, #20bf6b);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        
+        .filter-section {
+            background: var(--bg-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .filter-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, #ff1493, #e91e63);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+        .loading-spinner {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+        }
+        
+        .no-data-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        @media (max-width: 768px) {
+            .analytics-container {
+                padding: 1rem;
+                margin-top: 80px;
+            }
+            
+            .analytics-header h1 {
+                font-size: 2rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .stat-card {
+                padding: 1.5rem;
+            }
+            
+            .stat-value {
+                font-size: 2rem;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+            }
+            
+            .filter-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="analytics-container">
+            <div class="analytics-header">
+                <h1>📊 Prodejní analytika</h1>
+                <p>Komplexní přehled výkonnosti prodejních týmů</p>
+            </div>
+
+            <div class="filter-section">
+                <div class="filter-controls">
+                    <button class="filter-btn active" onclick="loadAnalytics('all')">Všechna data</button>
+                    <button class="filter-btn" onclick="loadAnalytics('today')">Dnes</button>
+                    <button class="filter-btn" onclick="loadAnalytics('week')">Tento týden</button>
+                    <button class="filter-btn" onclick="loadAnalytics('month')">Tento měsíc</button>
+                </div>
+            </div>
+
+            <div id="analyticsContent">
+                <div class="loading">
+                    <div class="loading-spinner">⏳</div>
+                    <p>Načítám analytické data...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        </div>
+    </footer>
+
+    <script src="theme-toggle.js"></script>
+    <script src="navigation.js"></script>
+    <script src="sales-assistant.js"></script>
+    <script src="access-control.js"></script>
+    
+    <script>
+        let currentFilter = 'all';
+        let analyticsData = null;
+
+        // Kontrola přístupu - pouze pro administrátory
+        function checkAdminAccess() {
+            const userRole = localStorage.getItem('role');
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            
+            if (!isLoggedIn || (userRole !== 'Administrator' && userRole !== 'Administrátor')) {
+                alert('Nemáte oprávnění k přístupu k této stránce.');
+                window.location.href = 'index.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Načtení analytických dat
+        async function loadAnalytics(filter = 'all') {
+            if (!checkAdminAccess()) return;
+            
+            currentFilter = filter;
+            
+            // Aktualizuj aktivní tlačítko
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event?.target?.classList.add('active');
+            
+            const contentDiv = document.getElementById('analyticsContent');
+            contentDiv.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner">⏳</div>
+                    <p>Načítám analytické data...</p>
+                </div>
+            `;
+            
+            try {
+                const response = await fetch('/api/sales-data?type=stats');
+                
+                if (!response.ok) {
+                    throw new Error('Chyba při načítání dat');
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    analyticsData = data.stats;
+                    renderAnalytics(analyticsData);
+                } else {
+                    throw new Error(data.error || 'Neznámá chyba');
+                }
+                
+            } catch (error) {
+                console.error('Chyba při načítání analytiky:', error);
+                contentDiv.innerHTML = `
+                    <div class="no-data">
+                        <span class="no-data-emoji">⚠️</span>
+                        <h3>Chyba při načítání dat</h3>
+                        <p>${error.message}</p>
+                        <button class="filter-btn" onclick="loadAnalytics('${currentFilter}')">Zkusit znovu</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Renderování analytiky
+        function renderAnalytics(stats) {
+            const contentDiv = document.getElementById('analyticsContent');
+            
+            if (stats.totalSessions === 0) {
+                contentDiv.innerHTML = `
+                    <div class="no-data">
+                        <span class="no-data-emoji">📈</span>
+                        <h3>Zatím žádná data</h3>
+                        <p>Jakmile prodejci začnou používat prodejní asistent, zde se zobrazí analytické údaje.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            contentDiv.innerHTML = `
+                <!-- Základní statistiky -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <span class="stat-emoji">📋</span>
+                        <div class="stat-value">${stats.totalSessions}</div>
+                        <div class="stat-label">Celkem rozhovorů</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <span class="stat-emoji">✅</span>
+                        <div class="stat-value">${stats.successfulSales}</div>
+                        <div class="stat-label">Úspěšných prodejů</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <span class="stat-emoji">❌</span>
+                        <div class="stat-value">${stats.unsuccessfulSales}</div>
+                        <div class="stat-label">Neúspěšných pokusů</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <span class="stat-emoji">📊</span>
+                        <div class="stat-value">${stats.conversionRate}%</div>
+                        <div class="stat-label">Úspěšnost prodeje</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <span class="stat-emoji">⏱️</span>
+                        <div class="stat-value">${stats.averageSessionTime || '0'} min</div>
+                        <div class="stat-label">Průměrný čas session</div>
+                    </div>
+                </div>
+
+                <!-- Top prodejci -->
+                <h2 class="section-title">🏆 Výkonnost prodejců</h2>
+                <div class="chart-container">
+                    ${renderSellersTable(stats.topSellers)}
+                </div>
+
+                <!-- Statistiky scénářů -->
+                <h2 class="section-title">📱 Statistiky scénářů</h2>
+                <div class="chart-container">
+                    ${renderScenariosTable(stats.scenarioStats)}
+                </div>
+
+                <!-- Populární položky -->
+                ${stats.popularItems && Object.keys(stats.popularItems).length > 0 ? `
+                <h2 class="section-title">🛍️ Nejprodávanější položky</h2>
+                <div class="chart-container">
+                    ${renderPopularItems(stats.popularItems)}
+                </div>
+                ` : ''}
+
+                <!-- Používání slevy -->
+                ${stats.discountUsage.used > 0 || stats.discountUsage.notUsed > 0 ? `
+                <h2 class="section-title">💰 Používání slev</h2>
+                <div class="chart-container">
+                    ${renderDiscountUsage(stats.discountUsage)}
+                </div>
+                ` : ''}
+            `;
+        }
+
+        // Tabulka prodejců
+        function renderSellersTable(topSellers) {
+            if (!topSellers || Object.keys(topSellers).length === 0) {
+                return '<p style="text-align: center; color: var(--text-secondary);">Žádní prodejci zatím nezaznamenali data.</p>';
+            }
+            
+            const sellers = Object.entries(topSellers)
+                .map(([name, stats]) => ({
+                    name,
+                    ...stats,
+                    successRate: stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(1) : 0
+                }))
+                .sort((a, b) => b.sold - a.sold);
+            
+            return `
+                <table class="seller-table">
+                    <thead>
+                        <tr>
+                            <th>Prodejce</th>
+                            <th>Celkem</th>
+                            <th>Prodáno</th>
+                            <th>Neprodáno</th>
+                            <th>Úspěšnost</th>
+                            <th>Ø Čas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sellers.map(seller => `
+                            <tr>
+                                <td><strong>${seller.name}</strong></td>
+                                <td>${seller.total}</td>
+                                <td style="color: #2ed573;">${seller.sold}</td>
+                                <td style="color: #ff4757;">${seller.notSold}</td>
+                                <td>
+                                    ${seller.successRate}%
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${seller.successRate}%"></div>
+                                    </div>
+                                </td>
+                                <td style="color: var(--text-secondary);">${seller.avgTime || '0'} min</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Tabulka scénářů
+        function renderScenariosTable(scenarioStats) {
+            if (!scenarioStats || Object.keys(scenarioStats).length === 0) {
+                return '<p style="text-align: center; color: var(--text-secondary);">Žádné scénáře zatím nebyly použity.</p>';
+            }
+            
+            const scenarios = Object.entries(scenarioStats)
+                .map(([name, stats]) => ({
+                    name,
+                    ...stats,
+                    successRate: stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(1) : 0
+                }))
+                .sort((a, b) => b.total - a.total);
+            
+            const scenarioNames = {
+                'zasilkovna': '📦 Zásilkovna',
+                'prislusenstvi': '🔌 Příslušenství',
+                'novy-telefon': '📱 Nový telefon',
+                'vykup': '💰 Výkup',
+                'jen-se-kouka': '👀 Jen se kouká',
+                'konzultace': '💬 Konzultace',
+                'servis': '🔧 Servis'
+            };
+            
+            return `
+                <table class="scenario-table">
+                    <thead>
+                        <tr>
+                            <th>Scénář</th>
+                            <th>Celkem</th>
+                            <th>Prodáno</th>
+                            <th>Neprodáno</th>
+                            <th>Úspěšnost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${scenarios.map(scenario => `
+                            <tr>
+                                <td><strong>${scenarioNames[scenario.name] || scenario.name}</strong></td>
+                                <td>${scenario.total}</td>
+                                <td style="color: #2ed573;">${scenario.sold}</td>
+                                <td style="color: #ff4757;">${scenario.notSold}</td>
+                                <td>
+                                    ${scenario.successRate}%
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${scenario.successRate}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Populární položky
+        function renderPopularItems(popularItems) {
+            const items = Object.entries(popularItems)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+            
+            const total = Object.values(popularItems).reduce((sum, count) => sum + count, 0);
+            
+            return `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    ${items.map(([item, count]) => {
+                        const percentage = ((count / total) * 100).toFixed(1);
+                        return `
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 10px;">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem; color: var(--primary-color);">${count}</div>
+                                <div style="color: var(--text-primary); font-weight: 500; margin-bottom: 0.5rem;">${item}</div>
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">${percentage}%</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        // Používání slev
+        function renderDiscountUsage(discountUsage) {
+            const total = discountUsage.used + discountUsage.notUsed;
+            const usedPercentage = total > 0 ? ((discountUsage.used / total) * 100).toFixed(1) : 0;
+            const notUsedPercentage = total > 0 ? ((discountUsage.notUsed / total) * 100).toFixed(1) : 0;
+            
+            return `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                    <div style="text-align: center; padding: 2rem; background: rgba(46, 213, 115, 0.1); border-radius: 15px;">
+                        <div style="font-size: 3rem; color: #2ed573; margin-bottom: 1rem;">${discountUsage.used}</div>
+                        <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Sleva použita</div>
+                        <div style="color: var(--text-secondary);">${usedPercentage}% případů</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 2rem; background: rgba(255, 71, 87, 0.1); border-radius: 15px;">
+                        <div style="font-size: 3rem; color: #ff4757; margin-bottom: 1rem;">${discountUsage.notUsed}</div>
+                        <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Sleva nepoužita</div>
+                        <div style="color: var(--text-secondary);">${notUsedPercentage}% případů</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Inicializace při načtení stránky
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAnalytics('all');
+        });
+    </script>
+</body>
+</html> 

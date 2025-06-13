@@ -31,6 +31,11 @@ function updateNavigation() {
         <li><a href="prodejny.html">Prodejny</a></li>
     `;
     
+    // Plus tlačítko pro všechny přihlášené uživatele
+    const salesAssistantButton = `
+        <li><a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff1493, #e91e63); color: white; border-radius: 20px; padding: 0.3rem 0.8rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">➕ Prodejní asistent</a></li>
+    `;
+    
     // Prodejce menu - čisté a jednoduché
     const prodejceItems = `
         <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
@@ -56,6 +61,7 @@ function updateNavigation() {
                 <li><a href="celkem.html">Celkem</a></li>
             </ul>
         </li>
+        <li><a href="sales-analytics.html">📊 Prodejní analytika</a></li>
         <li><a href="user-profile.html">${userDisplayName}</a></li>
         <li><a href="user-management.html">Správa uživatelů</a></li>
         <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
@@ -64,11 +70,15 @@ function updateNavigation() {
     // Sestavení menu podle role uživatele
     if (isLoggedIn) {
         if (userRole === 'Prodejce') {
-            nav.innerHTML = baseItems + prodejceItems;
+            nav.innerHTML = baseItems + salesAssistantButton + prodejceItems;
         } else if (userRole === 'Administrator' || userRole === 'Administrátor') {
-            nav.innerHTML = baseItems + adminItems;
+            nav.innerHTML = baseItems + salesAssistantButton + adminItems;
         } else {
-            nav.innerHTML = baseItems;
+            // Pro ostatní role nebo neznámé role
+            nav.innerHTML = baseItems + salesAssistantButton + `
+                <li><a href="user-profile.html">${userDisplayName}</a></li>
+                <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
+            `;
         }
         // Odstranit login tlačítko
         const existingLoginBtn = document.querySelector('.header-login-btn');
@@ -303,6 +313,31 @@ function openNewBazarForm(event) {
     } else {
         window.location.href = 'bazar.html?openForm=true';
     }
+}
+
+// Prodejní asistent
+function openSalesAssistant(event) {
+    event.preventDefault();
+    closeHamburgerMenu();
+    
+    // Zkontroluj zda je sales-assistant.js načten
+    if (typeof createSalesAssistantModal === 'undefined') {
+        console.error('Sales assistant není načten!');
+        alert('Prodejní asistent se nepodařilo načíst. Obnovte stránku.');
+        return;
+    }
+    
+    // Začni měřit čas session
+    if (typeof sessionStartTime !== 'undefined') {
+        sessionStartTime = Date.now();
+    }
+    
+    // Vytvoř prodejní asistent modal
+    if (!document.getElementById('salesAssistantModal')) {
+        createSalesAssistantModal();
+    }
+    
+    document.getElementById('salesAssistantModal').style.display = 'flex';
 }
 
 // Inicializace při načtení stránky

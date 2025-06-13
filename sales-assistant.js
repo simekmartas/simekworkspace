@@ -1,0 +1,822 @@
+// Prodejní asistent - pomocník pro prodejce
+let currentSalesSession = null;
+let currentScenario = null;
+let sessionStartTime = null;
+
+// Hlavní funkce pro vytvoření modal okna
+function createSalesAssistantModal() {
+    const modalHTML = `
+        <div id="salesAssistantModal" class="sales-modal">
+            <div class="sales-modal-overlay" onclick="closeSalesAssistant()"></div>
+            <div class="sales-modal-content">
+                <div class="sales-modal-header">
+                    <h2>Prodejní asistent</h2>
+                    <button class="sales-close-btn" onclick="closeSalesAssistant()">×</button>
+                </div>
+                <div class="sales-modal-body" id="salesModalBody">
+                    ${renderScenarioSelection()}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    addSalesAssistantStyles();
+}
+
+// Styly pro prodejní asistent
+function addSalesAssistantStyles() {
+    if (document.getElementById('salesAssistantStyles')) return;
+    
+    const styles = document.createElement('style');
+    styles.id = 'salesAssistantStyles';
+    styles.textContent = `
+        .sales-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .sales-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+        }
+        
+        .sales-modal-content {
+            position: relative;
+            background: var(--bg-primary);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sales-modal-header {
+            padding: 2rem 2rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .sales-modal-header h2 {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .sales-close-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .sales-close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+        }
+        
+        .sales-modal-body {
+            padding: 2rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .scenario-tile {
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.1) 0%, rgba(33, 150, 243, 0.1) 100%);
+            border: 2px solid rgba(255, 20, 147, 0.2);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .scenario-tile:hover {
+            transform: translateY(-5px);
+            border-color: rgba(255, 20, 147, 0.5);
+            box-shadow: 0 10px 30px rgba(255, 20, 147, 0.2);
+        }
+        
+        .scenario-tile::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #ff1493, #2196F3);
+        }
+        
+        .scenario-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        
+        .scenario-title {
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .scenario-back-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--text-primary);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-bottom: 1.5rem;
+        }
+        
+        .scenario-back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-5px);
+        }
+        
+        .sales-content {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .sales-step {
+            margin-bottom: 2rem;
+        }
+        
+        .sales-step h3 {
+            color: var(--primary-color);
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .sales-advice {
+            background: rgba(255, 20, 147, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        
+        .sales-advice p {
+            margin: 0;
+            color: var(--text-primary);
+            line-height: 1.5;
+            font-style: italic;
+        }
+        
+        .sales-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        
+        .sales-btn {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .sales-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+        
+        .sales-btn.success {
+            background: linear-gradient(135deg, #2ed573, #20bf6b);
+            box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
+        }
+        
+        .sales-btn.success:hover {
+            box-shadow: 0 8px 25px rgba(46, 213, 115, 0.4);
+        }
+        
+        .sales-btn.danger {
+            background: linear-gradient(135deg, #ff4757, #ff3838);
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+        }
+        
+        .sales-btn.danger:hover {
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.4);
+        }
+        
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .checkbox-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .checkbox-item input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-color);
+        }
+        
+        .checkbox-item label {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .sales-form {
+            margin-top: 1.5rem;
+        }
+        
+        .sales-form textarea {
+            width: 100%;
+            min-height: 100px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+        
+        .sales-form textarea::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        .sales-form textarea:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(255, 20, 147, 0.2);
+        }
+        
+        .radio-group {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+            justify-content: center;
+        }
+        
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+        
+        .radio-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .radio-item.selected {
+            background: rgba(255, 20, 147, 0.2);
+            border-color: var(--primary-color);
+        }
+        
+        .radio-item input[type="radio"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-color);
+        }
+        
+        .radio-item label {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .sales-modal-content {
+                margin: 1rem;
+                max-width: none;
+                width: calc(100% - 2rem);
+            }
+            
+            .sales-modal-header,
+            .sales-modal-body {
+                padding: 1.5rem;
+            }
+            
+            .scenario-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .sales-actions {
+                flex-direction: column;
+            }
+            
+            .sales-btn {
+                width: 100%;
+            }
+            
+            .radio-group {
+                flex-direction: column;
+            }
+        }
+    `;
+    
+    document.head.appendChild(styles);
+}
+
+// Renderování výběru scénářů
+function renderScenarioSelection() {
+    return `
+        <div class="scenario-selection">
+            <h3 style="text-align: center; color: var(--text-primary); margin-bottom: 2rem;">S čím zákazník přišel?</h3>
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectScenario('zasilkovna')">
+                    <span class="scenario-emoji">📦</span>
+                    <h4 class="scenario-title">ZÁSILKOVNA</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectScenario('prislusenstvi')">
+                    <span class="scenario-emoji">🔌</span>
+                    <h4 class="scenario-title">PŘÍSLUŠENSTVÍ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectScenario('novy-telefon')">
+                    <span class="scenario-emoji">📱</span>
+                    <h4 class="scenario-title">NOVÝ TELEFON</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectScenario('vykup')">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">VÝKUP</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectScenario('jen-se-kouka')">
+                    <span class="scenario-emoji">👀</span>
+                    <h4 class="scenario-title">JEN SE KOUKÁ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectScenario('konzultace')">
+                    <span class="scenario-emoji">💬</span>
+                    <h4 class="scenario-title">CHCE KONZULTACI</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectScenario('servis')">
+                    <span class="scenario-emoji">🔧</span>
+                    <h4 class="scenario-title">CHCE SERVIS TELEFONU</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr scénáře
+function selectScenario(scenario) {
+    currentScenario = scenario;
+    
+    // Inicializace sales session
+    currentSalesSession = {
+        id: Date.now().toString(),
+        scenario: scenario,
+        seller: localStorage.getItem('username') || 'Unknown',
+        sellerId: localStorage.getItem('sellerId') || localStorage.getItem('username'),
+        store: localStorage.getItem('userProdejna') || 'Unknown',
+        timestamp: Date.now(),
+        steps: []
+    };
+    
+    const modalBody = document.getElementById('salesModalBody');
+    
+    switch(scenario) {
+        case 'zasilkovna':
+            modalBody.innerHTML = renderZasilkovnaScenario();
+            break;
+        case 'prislusenstvi':
+            modalBody.innerHTML = renderComingSoon('PŘÍSLUŠENSTVÍ', '🔌');
+            break;
+        case 'novy-telefon':
+            modalBody.innerHTML = renderComingSoon('NOVÝ TELEFON', '📱');
+            break;
+        case 'vykup':
+            modalBody.innerHTML = renderComingSoon('VÝKUP', '💰');
+            break;
+        case 'jen-se-kouka':
+            modalBody.innerHTML = renderComingSoon('JEN SE KOUKÁ', '👀');
+            break;
+        case 'konzultace':
+            modalBody.innerHTML = renderComingSoon('CHCE KONZULTACI', '💬');
+            break;
+        case 'servis':
+            modalBody.innerHTML = renderComingSoon('CHCE SERVIS TELEFONU', '🔧');
+            break;
+        default:
+            modalBody.innerHTML = renderScenarioSelection();
+    }
+}
+
+// Zásilkovna scénář
+function renderZasilkovnaScenario() {
+    return `
+        <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 2rem;">
+            📦 ZÁSILKOVNA - Než vydám balíček
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-step">
+                <h3>🔍 POKUD MÁ ROZBITÉ SKLÍČKO NA TELEFONU:</h3>
+                <div class="sales-advice">
+                    <p>"Vidím, že máte rozbité sklíčko, rovnou vám ho vyměním. Mám kvalitnější nebo levnější sklíčko? + A díky zásilkovně máte na všechno příslušenství 20% slevu!"</p>
+                </div>
+            </div>
+            
+            <div class="sales-step">
+                <h3>📱 POKUD MÁ ROZBITÝ NEBO ŽLUTÝ OBAL:</h3>
+                <div class="sales-advice">
+                    <p>"Vidím, že máte žlutý obal na telefonu, rovnou vám ho vyměním. Chcete průhledný, barevný, klasický nebo knížkový obal? + A díky zásilkovně máte 20% slevu!"</p>
+                </div>
+            </div>
+            
+            <div class="sales-step">
+                <h3>🧽 POKUD MÁ ŠPINAVÝ TELEFON:</h3>
+                <div class="sales-advice">
+                    <p>"Vidím, že máte špinavý telefon, vyčistím vám ho zdarma! A můžu vám nabídnout obal nebo sklíčko? Díky zásilkovně máte 20% slevu!"</p>
+                </div>
+            </div>
+            
+            <div class="sales-step">
+                <h3>✨ POKUD MÁ VŠECHNO V POŘÁDKU:</h3>
+                <div class="sales-advice">
+                    <p>"Můžu vám nabídnout obal nebo sklíčko? Díky zásilkovně u nás teď máte 20% slevu na všechno příslušenství!"</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-actions">
+            <button class="sales-btn success" onclick="handleSaleResult('sold')">
+                ✅ PRODÁNO
+            </button>
+            <button class="sales-btn danger" onclick="handleSaleResult('not-sold')">
+                ❌ NEPRODÁNO
+            </button>
+        </div>
+    `;
+}
+
+// Coming soon template
+function renderComingSoon(title, emoji) {
+    return `
+        <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
+        
+        <div style="text-align: center; padding: 3rem 1rem;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">${emoji}</div>
+            <h3 style="color: var(--text-primary); margin-bottom: 1rem;">${title}</h3>
+            <p style="color: var(--text-secondary); font-size: 1.1rem;">
+                Tento scénář bude brzy dostupný!<br>
+                Momentálně pracujeme na jeho dokončení.
+            </p>
+        </div>
+    `;
+}
+
+// Zpět na výběr scénářů
+function goBackToScenarios() {
+    currentScenario = null;
+    currentSalesSession = null;
+    document.getElementById('salesModalBody').innerHTML = renderScenarioSelection();
+}
+
+// Zpracování výsledku prodeje
+function handleSaleResult(result) {
+    const modalBody = document.getElementById('salesModalBody');
+    
+    if (result === 'sold') {
+        modalBody.innerHTML = renderSoldForm();
+    } else {
+        modalBody.innerHTML = renderNotSoldForm();
+    }
+}
+
+// Formulář pro prodáno
+function renderSoldForm() {
+    return `
+        <button class="scenario-back-btn" onclick="selectScenario('zasilkovna')">← Zpět na scénář</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 2rem;">
+            ✅ Skvělé! Co se podařilo prodat?
+        </h3>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem;">📱 OBALY:</h4>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="pruhledny-obal" name="sold-items">
+                    <label for="pruhledny-obal">PRŮHLEDNÝ OBAL</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="barevny-obal" name="sold-items">
+                    <label for="barevny-obal">BAREVNÝ OBAL</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="klasicky-obal" name="sold-items">
+                    <label for="klasicky-obal">KLASICKÝ OBAL</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="knizkovy-obal" name="sold-items">
+                    <label for="knizkovy-obal">KNÍŽKOVÝ OBAL</label>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔍 SKLÍČKA:</h4>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="kvalitnejsi-sklicko" name="sold-items">
+                    <label for="kvalitnejsi-sklicko">KVALITNĚJŠÍ SKLÍČKO</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="levnejsi-sklicko" name="sold-items">
+                    <label for="levnejsi-sklicko">LEVNĚJŠÍ SKLÍČKO</label>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔌 OSTATNÍ PŘÍSLUŠENSTVÍ:</h4>
+            <div class="checkbox-grid">
+                <div class="checkbox-item">
+                    <input type="checkbox" id="kabel" name="sold-items">
+                    <label for="kabel">KABEL</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="nabijeka" name="sold-items">
+                    <label for="nabijeka">NABÍJEČKA</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="drzak-do-auta" name="sold-items">
+                    <label for="drzak-do-auta">DRŽÁK DO AUTA</label>
+                </div>
+                <div class="checkbox-item">
+                    <input type="checkbox" id="ostatni" name="sold-items">
+                    <label for="ostatni">OSTATNÍ</label>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--text-primary); margin: 2rem 0 1rem 0; text-align: center;">
+                Použil jste při argumentaci slevu?
+            </h4>
+            
+            <div class="radio-group">
+                <div class="radio-item" onclick="selectDiscountUsed(true, this)">
+                    <input type="radio" id="discount-yes" name="discount-used" value="yes">
+                    <label for="discount-yes">ANO</label>
+                </div>
+                <div class="radio-item" onclick="selectDiscountUsed(false, this)">
+                    <input type="radio" id="discount-no" name="discount-used" value="no">
+                    <label for="discount-no">NE</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-actions">
+            <button class="sales-btn success" onclick="completeSale()">
+                🎉 DOKONČIT
+            </button>
+        </div>
+    `;
+}
+
+// Formulář pro neprodáno
+function renderNotSoldForm() {
+    return `
+        <button class="scenario-back-btn" onclick="selectScenario('zasilkovna')">← Zpět na scénář</button>
+        
+        <h3 style="text-align: center; color: #ff4757; margin-bottom: 2rem;">
+            ❌ Nedošlo k prodeji
+        </h3>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--text-primary); margin-bottom: 1rem;">
+                Napište ve zkratce důvod:
+            </h4>
+            
+            <div class="sales-form">
+                <textarea 
+                    id="notSoldReason" 
+                    placeholder="Např.: Zákazník si rozmyslel, neměl peníze, nelíbil se mu design..."
+                    rows="4"
+                ></textarea>
+            </div>
+        </div>
+        
+        <div class="sales-actions">
+            <button class="sales-btn danger" onclick="completeNotSold()">
+                📝 DOKONČIT
+            </button>
+        </div>
+    `;
+}
+
+// Výběr slevy
+function selectDiscountUsed(used, element) {
+    document.querySelectorAll('.radio-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    const radio = element.querySelector('input[type="radio"]');
+    radio.checked = true;
+}
+
+// Dokončení prodeje
+async function completeSale() {
+    const soldItems = [];
+    document.querySelectorAll('input[name="sold-items"]:checked').forEach(item => {
+        // Převést ID na čitelný název z labelu
+        const label = document.querySelector(`label[for="${item.id}"]`);
+        const itemName = label ? label.textContent : item.id.toUpperCase();
+        soldItems.push(itemName);
+    });
+    
+    const discountUsed = document.querySelector('input[name="discount-used"]:checked');
+    
+    if (soldItems.length === 0) {
+        alert('Prosím vyberte alespoň jednu položku která byla prodána.');
+        return;
+    }
+    
+    if (!discountUsed) {
+        alert('Prosím vyberte zda byla použita sleva.');
+        return;
+    }
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'sold';
+    currentSalesSession.soldItems = soldItems;
+    currentSalesSession.discountUsed = discountUsed.value === 'yes';
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100; // Minuty s 2 des. místy
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Prodej byl úspěšně zaznamenán! 🎉');
+        setTimeout(() => {
+            closeSalesAssistant();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
+    }
+}
+
+// Dokončení neprodáno
+async function completeNotSold() {
+    const reason = document.getElementById('notSoldReason').value.trim();
+    
+    if (!reason) {
+        alert('Prosím napište důvod proč nedošlo k prodeji.');
+        return;
+    }
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'not-sold';
+    currentSalesSession.notSoldReason = reason;
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100; // Minuty s 2 des. místy
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Záznam byl úspěšně uložen. 📝');
+        setTimeout(() => {
+            closeSalesAssistant();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
+    }
+}
+
+// Uložení sales session na server
+async function saveSalesSession(sessionData) {
+    try {
+        // Nejdřív ulož do localStorage jako backup
+        const existingSessions = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+        existingSessions.push(sessionData);
+        localStorage.setItem('sales_sessions', JSON.stringify(existingSessions));
+        
+        console.log('📦 Sales session uložena do localStorage');
+        
+        // Zkus uložit na server
+        const response = await fetch('/api/sales-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(sessionData)
+        });
+        
+        if (response.ok) {
+            console.log('✅ Sales session úspěšně uložena na server');
+            return true;
+        } else {
+            console.warn('⚠️ Server nedostupný, data uložena pouze lokálně');
+            return true; // Vraťme true i pro lokální uložení
+        }
+        
+    } catch (error) {
+        console.warn('⚠️ Chyba při ukládání na server:', error.message);
+        return true; // Data jsou alespoň v localStorage
+    }
+}
+
+// Zobrazení success zprávy
+function showSuccessMessage(message) {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = `
+        <div style="text-align: center; padding: 3rem 1rem;">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+            <h3 style="color: #2ed573; margin-bottom: 1rem;">${message}</h3>
+            <p style="color: var(--text-secondary);">
+                Okno se automaticky zavře za chvíli...
+            </p>
+        </div>
+    `;
+}
+
+// Zavření prodejního asistenta
+function closeSalesAssistant() {
+    const modal = document.getElementById('salesAssistantModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Reset stavu
+    currentSalesSession = null;
+    currentScenario = null;
+} 
