@@ -92,6 +92,12 @@ function updateNavigation() {
                     console.log('🟢 NAVIGATION.JS: PLUS TLAČÍTKO OVĚŘENO - je viditelné v DOM!');
                 } else {
                     console.error('🔴 NAVIGATION.JS: PLUS TLAČÍTKO NEBYLO NALEZENO V DOM!');
+                    
+                    // Windows Chrome fallback
+                    if (navigator.userAgent.includes('Windows') && navigator.userAgent.includes('Chrome')) {
+                        console.log('🟡 NAVIGATION.JS: Detected Windows Chrome - creating fallback button');
+                        createWindowsChromeFallback();
+                    }
                 }
             }, 500);
             
@@ -150,8 +156,83 @@ function updateNavigation() {
     }
     
     console.log('🔵 NAVIGATION.JS: Navigace dokončena, celkový počet položek:', navList.children.length);
+    
+    // Final check pro Windows Chrome
+    if (navigator.userAgent.includes('Windows') && navigator.userAgent.includes('Chrome')) {
+        setTimeout(() => {
+            console.log('🔵 NAVIGATION.JS: Windows Chrome final check...');
+            const finalPlusCheck = document.querySelector('a[onclick*="openSalesAssistant"]');
+            if (!finalPlusCheck && isLoggedIn && role === 'Prodejce') {
+                console.error('🔴 NAVIGATION.JS: CRITICAL - Plus tlačítko se neobjevilo na Windows Chrome!');
+                createWindowsChromeFallback();
+            }
+        }, 1000);
+    }
 }
 
+// Windows Chrome fallback function
+function createWindowsChromeFallback() {
+    console.log('🟡 NAVIGATION.JS: Vytvářím Windows Chrome fallback tlačítko...');
+    
+    // Remove existing fallback
+    const existingFallback = document.querySelector('.windows-chrome-fallback');
+    if (existingFallback) {
+        existingFallback.remove();
+        console.log('🟡 NAVIGATION.JS: Odstraněn existující fallback');
+    }
+    
+    const fallbackButton = document.createElement('div');
+    fallbackButton.className = 'windows-chrome-fallback';
+    fallbackButton.innerHTML = '➕ PRODEJ';
+    fallbackButton.title = 'Windows Chrome Fallback - Prodejní asistent';
+    fallbackButton.style.cssText = `
+        position: fixed !important;
+        top: 80px !important;
+        right: 20px !important;
+        background: linear-gradient(135deg, #ff1493, #e91e63) !important;
+        color: white !important;
+        padding: 1rem 1.5rem !important;
+        border-radius: 25px !important;
+        cursor: pointer !important;
+        z-index: 999999 !important;
+        font-weight: bold !important;
+        font-size: 1rem !important;
+        box-shadow: 0 4px 20px rgba(255, 20, 147, 0.5) !important;
+        border: 2px solid white !important;
+        animation: windowsFallbackPulse 3s infinite !important;
+    `;
+    
+    fallbackButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('🟡 NAVIGATION.JS: Windows Chrome fallback button clicked!');
+        
+        if (typeof openSalesAssistant === 'function') {
+            openSalesAssistant(e);
+        } else if (typeof createSalesAssistantModal === 'function') {
+            createSalesAssistantModal();
+            document.getElementById('salesAssistantModal').style.display = 'flex';
+        } else {
+            alert('Prodejní asistent není dostupný. Zkuste obnovit stránku (F5).');
+        }
+    });
+    
+    document.body.appendChild(fallbackButton);
+    console.log('🟢 NAVIGATION.JS: Windows Chrome fallback button vytvořen!');
+    
+    // Add CSS animation
+    if (!document.querySelector('#windows-fallback-css')) {
+        const style = document.createElement('style');
+        style.id = 'windows-fallback-css';
+        style.textContent = `
+            @keyframes windowsFallbackPulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); box-shadow: 0 6px 25px rgba(255, 20, 147, 0.7); }
+                100% { transform: scale(1); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+}
 
 // Logout function
 function logout() {
@@ -193,7 +274,7 @@ window.forceOpenSalesAssistant = function(event) {
     console.log('🚨 NAVIGATION.JS: forceOpenSalesAssistant() called!');
     
     if (event) {
-        event.preventDefault();
+    event.preventDefault();
     }
     
     if (typeof openSalesAssistant === 'function') {
@@ -217,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🔵 NAVIGATION.JS: DOM loaded, čekám na inicializaci...');
     
     // Wait a bit for other scripts to load
-    setTimeout(() => {
+        setTimeout(() => {
         console.log('🔵 NAVIGATION.JS: Spouštím updateNavigation...');
         updateNavigation();
     }, 100);

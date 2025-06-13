@@ -11,28 +11,95 @@
   "lang": "cs",
   "dir": "ltr",
   "categories": ["business", "productivity"],
-  "icons": [],
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Novinky",
       "short_name": "Novinky",
       "description": "Zobrazit nejnovější příspěvky",
-      "url": "/novinky.html"
+      "url": "/novinky.html",
+      "icons": [{ "src": "/icons/news-icon.png", "sizes": "96x96" }]
     },
     {
       "name": "Prodejny",
       "short_name": "Prodejny",
       "description": "Zobrazit data prodejny",
-      "url": "/prodejny.html"
+      "url": "/prodejny.html",
+      "icons": [{ "src": "/icons/store-icon.png", "sizes": "96x96" }]
     },
     {
       "name": "Bazar",
       "short_name": "Bazar",
       "description": "Otevřít bazar",
-      "url": "/bazar.html"
+      "url": "/bazar.html",
+      "icons": [{ "src": "/icons/market-icon.png", "sizes": "96x96" }]
     }
   ],
-  "screenshots": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-home.png",
+      "type": "image/png",
+      "sizes": "1280x720",
+      "form_factor": "wide",
+      "label": "Hlavní stránka na desktopu"
+    },
+    {
+      "src": "/screenshots/mobile-home.png",
+      "type": "image/png",
+      "sizes": "390x844",
+      "form_factor": "narrow",
+      "label": "Hlavní stránka na mobilu"
+    }
+  ],
   "prefer_related_applications": false,
   "related_applications": [],
   "share_target": {
