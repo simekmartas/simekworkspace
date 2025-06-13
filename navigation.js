@@ -33,7 +33,7 @@ function updateNavigation() {
     
     // Plus tlačítko pro všechny přihlášené uživatele
     const salesAssistantButton = `
-        <li><a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff1493, #e91e63); color: white; border-radius: 20px; padding: 0.3rem 0.8rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">➕ Prodejní asistent</a></li>
+        <li><a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff1493, #e91e63); color: white; border-radius: 50%; width: 40px; height: 40px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3); transition: all 0.3s ease;" title="Prodejní asistent" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 8px 25px rgba(255, 20, 147, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255, 20, 147, 0.3)'">➕</a></li>
     `;
     
     // Prodejce menu - čisté a jednoduché

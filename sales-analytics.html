@@ -331,32 +331,163 @@
             `;
             
             try {
+                // Zkus načíst ze serveru
                 const response = await fetch('/api/sales-data?type=stats');
                 
-                if (!response.ok) {
-                    throw new Error('Chyba při načítání dat');
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        analyticsData = data.stats;
+                        renderAnalytics(analyticsData);
+                        return;
+                    }
                 }
                 
-                const data = await response.json();
-                
-                if (data.success) {
-                    analyticsData = data.stats;
-                    renderAnalytics(analyticsData);
-                } else {
-                    throw new Error(data.error || 'Neznámá chyba');
-                }
+                // Fallback na localStorage data
+                throw new Error('Server nedostupný');
                 
             } catch (error) {
-                console.error('Chyba při načítání analytiky:', error);
-                contentDiv.innerHTML = `
-                    <div class="no-data">
-                        <span class="no-data-emoji">⚠️</span>
-                        <h3>Chyba při načítání dat</h3>
-                        <p>${error.message}</p>
-                        <button class="filter-btn" onclick="loadAnalytics('${currentFilter}')">Zkusit znovu</button>
-                    </div>
-                `;
+                console.warn('⚠️ Server nedostupný, načítám data z localStorage:', error.message);
+                
+                // Načti data z localStorage
+                try {
+                    const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                    
+                    if (localSalesData.length > 0) {
+                        const stats = generateLocalStats(localSalesData);
+                        analyticsData = stats;
+                        renderAnalytics(analyticsData);
+                    } else {
+                        contentDiv.innerHTML = `
+                            <div class="no-data">
+                                <span class="no-data-emoji">📈</span>
+                                <h3>Zatím žádná data</h3>
+                                <p>Jakmile prodejci začnou používat prodejní asistent, zde se zobrazí analytické údaje.</p>
+                            </div>
+                        `;
+                    }
+                } catch (localError) {
+                    console.error('Chyba při načítání lokálních dat:', localError);
+                    contentDiv.innerHTML = `
+                        <div class="no-data">
+                            <span class="no-data-emoji">⚠️</span>
+                            <h3>Chyba při načítání dat</h3>
+                            <p>Nelze načíst ani lokální data. Zkuste obnovit stránku.</p>
+                            <button class="filter-btn" onclick="loadAnalytics('${currentFilter}')">Zkusit znovu</button>
+                        </div>
+                    `;
+                }
             }
+        }
+        
+        // Generování statistik z lokálních dat
+        function generateLocalStats(salesData) {
+            const stats = {
+                totalSessions: salesData.length,
+                successfulSales: 0,
+                unsuccessfulSales: 0,
+                conversionRate: 0,
+                topSellers: {},
+                popularItems: {},
+                discountUsage: { used: 0, notUsed: 0 },
+                scenarioStats: {},
+                storeStats: {},
+                dailyStats: {},
+                totalSessionTime: 0,
+                sessionsWithTime: 0,
+                averageSessionTime: 0
+            };
+            
+            // Počítej základní statistiky
+            salesData.forEach(session => {
+                // Úspěšnost prodeje
+                if (session.result === 'sold') {
+                    stats.successfulSales++;
+                    
+                    // Populární položky
+                    if (session.soldItems) {
+                        session.soldItems.forEach(item => {
+                            stats.popularItems[item] = (stats.popularItems[item] || 0) + 1;
+                        });
+                    }
+                    
+                    // Používání slevy
+                    if (session.discountUsed === true) {
+                        stats.discountUsage.used++;
+                    } else if (session.discountUsed === false) {
+                        stats.discountUsage.notUsed++;
+                    }
+                } else {
+                    stats.unsuccessfulSales++;
+                }
+                
+                // Časové statistiky
+                if (session.sessionDurationMinutes && session.sessionDurationMinutes > 0) {
+                    stats.totalSessionTime += session.sessionDurationMinutes;
+                    stats.sessionsWithTime++;
+                }
+                
+                // Top prodejci
+                const seller = session.seller || session.sellerId || 'Unknown';
+                if (!stats.topSellers[seller]) {
+                    stats.topSellers[seller] = { total: 0, sold: 0, notSold: 0, totalTime: 0, avgTime: 0 };
+                }
+                stats.topSellers[seller].total++;
+                if (session.result === 'sold') {
+                    stats.topSellers[seller].sold++;
+                } else {
+                    stats.topSellers[seller].notSold++;
+                }
+                
+                // Čas pro prodejce
+                if (session.sessionDurationMinutes && session.sessionDurationMinutes > 0) {
+                    stats.topSellers[seller].totalTime += session.sessionDurationMinutes;
+                }
+                
+                // Statistiky scénářů
+                const scenario = session.scenario || 'unknown';
+                if (!stats.scenarioStats[scenario]) {
+                    stats.scenarioStats[scenario] = { total: 0, sold: 0, notSold: 0 };
+                }
+                stats.scenarioStats[scenario].total++;
+                if (session.result === 'sold') {
+                    stats.scenarioStats[scenario].sold++;
+                } else {
+                    stats.scenarioStats[scenario].notSold++;
+                }
+                
+                // Statistiky prodejen
+                const store = session.store || 'Unknown';
+                if (!stats.storeStats[store]) {
+                    stats.storeStats[store] = { total: 0, sold: 0, notSold: 0 };
+                }
+                stats.storeStats[store].total++;
+                if (session.result === 'sold') {
+                    stats.storeStats[store].sold++;
+                } else {
+                    stats.storeStats[store].notSold++;
+                }
+            });
+            
+            // Spočítej conversion rate
+            if (stats.totalSessions > 0) {
+                stats.conversionRate = ((stats.successfulSales / stats.totalSessions) * 100).toFixed(1);
+            }
+            
+            // Spočítej průměrný čas session
+            if (stats.sessionsWithTime > 0) {
+                stats.averageSessionTime = (stats.totalSessionTime / stats.sessionsWithTime).toFixed(1);
+            }
+            
+            // Spočítej průměrný čas pro každého prodejce
+            Object.keys(stats.topSellers).forEach(seller => {
+                if (stats.topSellers[seller].total > 0) {
+                    stats.topSellers[seller].avgTime = (stats.topSellers[seller].totalTime / stats.topSellers[seller].total).toFixed(1);
+                }
+            });
+            
+            return stats;
         }
 
         // Renderování analytiky
