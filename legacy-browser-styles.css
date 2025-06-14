@@ -1,0 +1,196 @@
+/**
+ * Legacy Browser CSS Fallbacks
+ * Fallbacky a alternativy pro moderní CSS vlastnosti
+ * Autor: Mobil Maják
+ * Datum: 2025
+ */
+
+/* ==========================================================================
+   FLEXBOX FALLBACKS
+   ========================================================================== */
+
+/* Fallback pro display: flex */
+.legacy-flex-fallback {
+    display: table;
+    width: 100%;
+    table-layout: fixed;
+}
+
+.legacy-flex-fallback > * {
+    display: table-cell;
+    vertical-align: top;
+}
+
+.legacy-flex-fallback.flex-center > * {
+    vertical-align: middle;
+    text-align: center;
+}
+
+/* ==========================================================================
+   GRID FALLBACKS  
+   ========================================================================== */
+
+/* Fallback pro CSS Grid */
+.legacy-grid-fallback {
+    display: table;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 10px;
+}
+
+.legacy-grid-fallback > * {
+    display: table-cell;
+    vertical-align: top;
+    width: 50%;
+}
+
+.legacy-grid-3-cols > * {
+    width: 33.333%;
+}
+
+.legacy-grid-4-cols > * {
+    width: 25%;
+}
+
+/* ==========================================================================
+   BACKDROP-FILTER FALLBACKS
+   ========================================================================== */
+
+/* Fallback pro backdrop-filter */
+.legacy-backdrop-blur {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.legacy-backdrop-blur.dark {
+    background: rgba(15, 23, 42, 0.9);
+}
+
+/* ==========================================================================
+   MODERN CSS PROPERTIES FALLBACKS
+   ========================================================================== */
+
+/* Fallback pro object-fit */
+.legacy-object-fit-cover {
+    position: relative;
+    overflow: hidden;
+}
+
+.legacy-object-fit-cover img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+}
+
+/* Fallback pro aspect-ratio */
+.legacy-aspect-ratio-16-9 {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%;
+}
+
+.legacy-aspect-ratio-16-9 > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* ==========================================================================
+   FORM ELEMENTS FALLBACKS
+   ========================================================================== */
+
+/* Vylepšené styly pro starší prohlížeče */
+.legacy-input {
+    border: 1px solid #cbd5e1;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    background: white;
+    color: #1e293b;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.legacy-input:focus {
+    border-color: #0044cc;
+    outline: none;
+    background: #f8fafc;
+}
+
+.legacy-button {
+    background: #ff1493;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.legacy-button:hover {
+    background: #e91e63;
+}
+
+/* ==========================================================================
+   UTILITY CLASSES
+   ========================================================================== */
+
+.legacy-clearfix:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.legacy-text-center {
+    text-align: center;
+}
+
+.legacy-hidden {
+    display: none;
+}
+
+.legacy-visible {
+    display: block;
+}
+
+/* ==========================================================================
+   MEDIA QUERIES
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .legacy-mobile-stack {
+        display: block !important;
+    }
+    
+    .legacy-mobile-stack > * {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 10px;
+    }
+}
+
+/* ==========================================================================
+   BROWSER SPECIFIC HACKS
+   ========================================================================== */
+
+/* Chrome/Safari specific */
+@media screen and (-webkit-min-device-pixel-ratio:0) {
+    .webkit-only {
+        display: block;
+    }
+}
+
+/* Firefox specific */
+@-moz-document url-prefix() {
+    .firefox-only {
+        display: block;
+    }
+} 

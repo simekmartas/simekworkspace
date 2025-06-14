@@ -1,0 +1,615 @@
+/**
+ * CSS Compatibility Patches
+ * Specifické opravy pro starší verze prohlížečů
+ * Zaměřeno na konkrétní komponenty webu Mobil Maják
+ */
+
+/* ==========================================================================
+   BROWSER DETECTION AND FEATURE SUPPORT
+   ========================================================================== */
+
+/* Fallback pro @supports rule */
+.no-supports .modern-feature {
+    display: none;
+}
+
+.no-supports .fallback-feature {
+    display: block;
+}
+
+/* ==========================================================================
+   HEADER AND NAVIGATION FIXES
+   ========================================================================== */
+
+/* Header fallback pro starší prohlížeče */
+.legacy-header {
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    /* Odstranit backdrop-filter pro starší prohlížeče */
+}
+
+.legacy-header-content {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    height: 64px;
+    /* Použít table layout místo flexbox */
+    display: table;
+}
+
+.legacy-header-content > * {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.legacy-logo {
+    width: 200px;
+    text-align: left;
+}
+
+.legacy-nav {
+    text-align: center;
+}
+
+.legacy-controls {
+    width: 200px;
+    text-align: right;
+}
+
+/* Navigation fallback */
+.legacy-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+}
+
+.legacy-nav li {
+    display: inline-block;
+    margin: 0 10px;
+}
+
+.legacy-nav a {
+    color: #64748b;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.legacy-nav a:hover {
+    background-color: #f1f5f9;
+    color: #1e293b;
+}
+
+/* ==========================================================================
+   GRID LAYOUT FALLBACKS
+   ========================================================================== */
+
+/* Stats grid fallback */
+.legacy-stats-grid {
+    width: 100%;
+    margin: 20px 0;
+}
+
+.legacy-stats-grid:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.legacy-stat-card {
+    float: left;
+    width: 48%;
+    margin: 1%;
+    padding: 20px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.legacy-stat-card:hover {
+    border-color: #ff1493;
+    /* Zjednodušený hover efekt */
+}
+
+/* Pro 4 sloupce na desktopu */
+@media (min-width: 768px) {
+    .legacy-stat-card {
+        width: 23%;
+        margin: 1%;
+    }
+}
+
+/* ==========================================================================
+   FORM LAYOUT FALLBACKS
+   ========================================================================== */
+
+/* Formulářové layouty */
+.legacy-form-grid {
+    width: 100%;
+}
+
+.legacy-form-grid:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.legacy-form-column {
+    float: left;
+    width: 48%;
+    margin: 1%;
+    box-sizing: border-box;
+}
+
+.legacy-form-column.full {
+    width: 98%;
+}
+
+.legacy-form-group {
+    margin-bottom: 20px;
+}
+
+.legacy-form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #1e293b;
+}
+
+.legacy-form-group input,
+.legacy-form-group select,
+.legacy-form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.legacy-form-group input:focus,
+.legacy-form-group select:focus,
+.legacy-form-group textarea:focus {
+    border-color: #0044cc;
+    outline: none;
+    background-color: #f8fafc;
+}
+
+/* ==========================================================================
+   TABLE LAYOUTS FOR COMPLEX COMPONENTS
+   ========================================================================== */
+
+/* Leaderboard fallback */
+.legacy-leaderboard {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.legacy-leaderboard-row {
+    display: table-row;
+}
+
+.legacy-leaderboard-cell {
+    display: table-cell;
+    padding: 15px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: middle;
+}
+
+.legacy-leaderboard-header .legacy-leaderboard-cell {
+    background: #2196F3;
+    color: white;
+    font-weight: 600;
+}
+
+/* Podium fallback */
+.legacy-podium {
+    text-align: center;
+    margin: 40px 0;
+}
+
+.legacy-podium:after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+.legacy-podium-place {
+    float: left;
+    width: 30%;
+    margin: 1.67%;
+    padding: 30px 20px;
+    text-align: center;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+.legacy-podium-first {
+    background: linear-gradient(145deg, #FFD700 0%, #FFA500 100%);
+}
+
+.legacy-podium-second {
+    background: linear-gradient(145deg, #C0C0C0 0%, #A8A8A8 100%);
+}
+
+.legacy-podium-third {
+    background: linear-gradient(145deg, #CD7F32 0%, #B87333 100%);
+}
+
+/* ==========================================================================
+   CARD LAYOUTS
+   ========================================================================== */
+
+/* Karty pro různé komponenty */
+.legacy-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.legacy-card:hover {
+    border-color: #ff1493;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.legacy-card-header {
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.legacy-card-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.legacy-card-content {
+    line-height: 1.6;
+}
+
+/* ==========================================================================
+   BUTTON ENHANCEMENTS
+   ========================================================================== */
+
+/* Vylepšené tlačítka pro starší prohlížeče */
+.legacy-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.legacy-btn-primary {
+    background: #ff1493;
+    color: white;
+    border: 2px solid #ff1493;
+}
+
+.legacy-btn-primary:hover {
+    background: #e91e63;
+    border-color: #e91e63;
+}
+
+.legacy-btn-secondary {
+    background: #ffffff;
+    color: #64748b;
+    border: 2px solid #cbd5e1;
+}
+
+.legacy-btn-secondary:hover {
+    background: #f1f5f9;
+    border-color: #94a3b8;
+    color: #1e293b;
+}
+
+.legacy-btn-block {
+    width: 100%;
+    display: block;
+}
+
+/* Icon buttons */
+.legacy-btn-icon {
+    padding: 10px;
+    width: 40px;
+    height: 40px;
+}
+
+/* ==========================================================================
+   MODAL AND OVERLAY FALLBACKS
+   ========================================================================== */
+
+/* Modal fallback */
+.legacy-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.legacy-modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 90%;
+    max-width: 600px;
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    /* Manual centering pro starší prohlížeče */
+    margin-left: -300px; /* Polovina max-width */
+    margin-top: -200px; /* Odhadovaná polovina výšky */
+}
+
+.legacy-modal-header {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.legacy-modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    color: #1e293b;
+}
+
+.legacy-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #64748b;
+    padding: 5px;
+    line-height: 1;
+}
+
+.legacy-modal-close:hover {
+    color: #1e293b;
+}
+
+/* ==========================================================================
+   LOADING AND STATUS INDICATORS
+   ========================================================================== */
+
+/* Loading spinner fallback */
+.legacy-loading {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.legacy-spinner {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-left-color: #2196F3;
+    border-radius: 50%;
+    animation: legacy-spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes legacy-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.legacy-loading-text {
+    color: #64748b;
+    font-size: 16px;
+}
+
+/* Status messages */
+.legacy-message {
+    padding: 15px 20px;
+    border-radius: 6px;
+    margin: 15px 0;
+    font-weight: 500;
+}
+
+.legacy-message-success {
+    background: #d1f2eb;
+    color: #0c5c4c;
+    border: 1px solid #7fb8a3;
+}
+
+.legacy-message-error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.legacy-message-warning {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* ==========================================================================
+   RESPONSIVE UTILITIES
+   ========================================================================== */
+
+/* Responzivní utility třídy */
+.legacy-hide-mobile {
+    display: block;
+}
+
+.legacy-show-mobile {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .legacy-hide-mobile {
+        display: none;
+    }
+    
+    .legacy-show-mobile {
+        display: block;
+    }
+    
+    .legacy-form-column {
+        float: none;
+        width: 100%;
+        margin: 0 0 20px 0;
+    }
+    
+    .legacy-stat-card {
+        float: none;
+        width: 100%;
+        margin: 0 0 20px 0;
+    }
+    
+    .legacy-podium-place {
+        float: none;
+        width: 100%;
+        margin: 0 0 20px 0;
+    }
+    
+    .legacy-modal-content {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin: 20px auto;
+        width: 90%;
+        max-width: none;
+    }
+}
+
+/* ==========================================================================
+   PRINT STYLES
+   ========================================================================== */
+
+@media print {
+    .legacy-no-print {
+        display: none !important;
+    }
+    
+    .legacy-card {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .legacy-btn {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY IMPROVEMENTS
+   ========================================================================== */
+
+/* Vylepšení přístupnosti */
+.legacy-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.legacy-focus-visible:focus {
+    outline: 2px solid #2196F3;
+    outline-offset: 2px;
+}
+
+/* Vyšší kontrast pro starší monitory */
+.legacy-high-contrast {
+    background: #ffffff !important;
+    color: #000000 !important;
+    border-color: #000000 !important;
+}
+
+.legacy-high-contrast .legacy-btn-primary {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border-color: #000000 !important;
+}
+
+/* ==========================================================================
+   DARK MODE FALLBACKS
+   ========================================================================== */
+
+/* Základní dark mode pro starší prohlížeče */
+.legacy-dark {
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
+.legacy-dark .legacy-card {
+    background: #2d2d2d;
+    border-color: #404040;
+    color: #ffffff;
+}
+
+.legacy-dark .legacy-header {
+    background: #1a1a1a;
+    border-bottom-color: #404040;
+}
+
+.legacy-dark .legacy-nav a {
+    color: #cccccc;
+}
+
+.legacy-dark .legacy-nav a:hover {
+    background-color: #404040;
+    color: #ffffff;
+}
+
+.legacy-dark input,
+.legacy-dark select,
+.legacy-dark textarea {
+    background: #2d2d2d;
+    border-color: #404040;
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   JAVASCRIPT ENHANCEMENT CLASSES
+   ========================================================================== */
+
+/* Třídy pro JavaScript enhanced features */
+.js-enhanced .legacy-fallback {
+    display: none;
+}
+
+.no-js .js-only {
+    display: none;
+}
+
+.no-js .legacy-fallback {
+    display: block;
+} 

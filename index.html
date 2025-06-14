@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mobil Maják</title>
+    <!-- Legacy Browser Support First -->
+    <script src="legacy-browser-support.js"></script>
+    <link rel="stylesheet" href="legacy-browser-styles.css">
+    <link rel="stylesheet" href="css-compatibility-patches.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="progressive-enhancement.css">
 
@@ -456,277 +460,148 @@
     <script src="realtime-updates.js"></script>
     <script src="image-upload.js"></script>
 
-    <!-- Emergency Debug Button pro Windows Chrome -->
-    <div id="emergency-debug" style="
-        position: fixed; 
-        bottom: 20px; 
-        right: 20px; 
-        z-index: 99999;
-        background: linear-gradient(135deg, #ff4757, #ff3838);
-        color: white;
-        padding: 1rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
-        font-family: monospace;
-        font-size: 0.8rem;
-        max-width: 300px;
-        display: none;
-    " onclick="this.style.display='none'">
-        <h4 style="margin: 0 0 0.5rem 0; color: white;">🚨 DEBUG MODE</h4>
-        <div id="debug-info"></div>
-        <button onclick="window.emergencyDiagnostic()" style="
-            background: white; 
-            color: #ff4757; 
-            border: none; 
-            padding: 0.5rem; 
-            border-radius: 5px; 
-            cursor: pointer;
-            width: 100%;
-            margin-top: 0.5rem;
-        ">🔧 SPUSTIT DIAGNOSTIKU</button>
-    </div>
-
+    <!-- AI chatbot skrytý -->
+    <!-- <script src="ai-chatbot.js"></script> -->
+    
+    <!-- Service Worker Registration -->
     <script>
-        // Emergency diagnostic system
-        window.emergencyDiagnostic = function() {
-            console.log('🚨 EMERGENCY DIAGNOSTIC STARTING...');
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((registration) => {
+                        console.log('Service Worker registrován úspěšně:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('Service Worker registrace selhala:', error);
+                    });
+            });
+        }
+    </script>
+    
+    <script>
+        // Vytvoření animovaného emoji pozadí
+        function createEmojiBackground() {
+            const emojiBackground = document.getElementById('emojiBackground');
+            const emojis = ['📱', '🏆', '⭐', '💪', '🎯', '🚀', '💡', '📊', '🎉', '✨', '🌟', '💯', '🔥', '🎪', '🎊'];
             
-            const results = {
-                browser: navigator.userAgent,
-                isChrome: navigator.userAgent.includes('Chrome'),
-                isWindows: navigator.userAgent.includes('Windows'),
-                isLoggedIn: localStorage.getItem('isLoggedIn'),
-                userRole: localStorage.getItem('role'),
-                username: localStorage.getItem('username'),
-                scriptsLoaded: {
-                    navigation: typeof updateNavigation !== 'undefined',
-                    salesAssistant: typeof createSalesAssistantModal !== 'undefined',
-                    sessionStartTime: typeof sessionStartTime !== 'undefined'
+            // Vytvořit náhodná emoji
+            for (let i = 0; i < 15; i++) {
+                const emoji = document.createElement('div');
+                emoji.className = 'floating-emoji';
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.left = Math.random() * 100 + '%';
+                emoji.style.animationDelay = Math.random() * 10 + 's';
+                emoji.style.animationDuration = (8 + Math.random() * 4) + 's';
+                emojiBackground.appendChild(emoji);
+            }
+        }
+
+        // Rotace motivačních citátů
+        function rotateQuotes() {
+            const additionalQuotes = [
+                {
+                    emoji: "🎯",
+                    text: "Každý expert byl kdysi začátečník.",
+                    author: "Robin Sharma"
                 },
-                domElements: {
-                    nav: !!document.querySelector('nav ul'),
-                    plusButton: !!document.querySelector('a[onclick*="openSalesAssistant"]'),
-                    windowsFallback: !!document.querySelector('[data-windows-fallback="true"]'),
-                    floatingButton: !!document.querySelector('.nav-fallback-container')
+                {
+                    emoji: "🌟",
+                    text: "Buďte změnou, kterou chcete vidět ve světě.",
+                    author: "Mahatma Gandhi"
+                },
+                {
+                    emoji: "💎",
+                    text: "Úspěch je součtem malých úsilí, opakovaných den za dnem.",
+                    author: "Robert Collier"
+                },
+                {
+                    emoji: "🎪",
+                    text: "Jediný způsob, jak dosáhnout nemožného, je věřit, že je možné.",
+                    author: "Charles Kingsleigh"
                 }
-            };
-            
-            console.log('📊 DIAGNOSTIC RESULTS:', results);
-            
-            // Zobraz v emergency debug boxu
-            const debugInfo = document.getElementById('debug-info');
-            debugInfo.innerHTML = `
-                <div style="color: white; line-height: 1.4;">
-                    <div>🖥️ ${results.isWindows ? 'Windows' : 'Other'} ${results.isChrome ? 'Chrome' : 'Browser'}</div>
-                    <div>👤 Přihlášen: ${results.isLoggedIn ? '✅' : '❌'}</div>
-                    <div>🎭 Role: ${results.userRole || 'žádná'}</div>
-                    <div>📜 Navigation: ${results.scriptsLoaded.navigation ? '✅' : '❌'}</div>
-                    <div>🎯 Plus tlačítko: ${results.domElements.plusButton ? '✅' : '❌'}</div>
-                </div>
-            `;
-            
-            // Auto-opravy
-            if (!results.isLoggedIn) {
-                console.log('🔧 AUTO-FIX: Simuluji přihlášení...');
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('role', 'Prodejce');
-                localStorage.setItem('username', 'emergency-user');
-                
-                // Reload navigation
-                if (results.scriptsLoaded.navigation) {
-                    updateNavigation();
-                }
-            }
-            
-            if (!results.domElements.plusButton && results.scriptsLoaded.navigation) {
-                console.log('🔧 AUTO-FIX: Vytvářím plus tlačítko...');
-                if (typeof window.forceCreatePlusButton === 'function') {
-                    window.forceCreatePlusButton();
-                } else {
-                    // Manual creation
-                    createEmergencyPlusButton();
-                }
-            }
-            
-            if (!results.domElements.floatingButton) {
-                console.log('🔧 AUTO-FIX: Vytvářím floating tlačítko...');
-                createEmergencyPlusButton();
-            }
-            
-            // Update debug info
+            ];
+
+            // Náhodně přidat další citát po 10 sekundách
             setTimeout(() => {
-                window.emergencyDiagnostic();
-            }, 2000);
-        };
-        
-        // Emergency plus button creation
-        function createEmergencyPlusButton() {
-            // Remove existing
-            const existing = document.querySelector('.emergency-plus-button');
-            if (existing) existing.remove();
-            
-            const button = document.createElement('div');
-            button.className = 'emergency-plus-button';
-            button.innerHTML = '➕';
-            button.title = 'EMERGENCY Prodejní asistent';
-            button.style.cssText = `
-                position: fixed !important;
-                top: 50% !important;
-                right: 20px !important;
-                transform: translateY(-50%) !important;
-                width: 60px !important;
-                height: 60px !important;
-                background: linear-gradient(135deg, #ff1493, #e91e63) !important;
-                color: white !important;
-                border-radius: 50% !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 1.5rem !important;
-                font-weight: bold !important;
-                cursor: pointer !important;
-                z-index: 999999 !important;
-                box-shadow: 0 4px 20px rgba(255, 20, 147, 0.5) !important;
-                border: 3px solid white !important;
-                animation: emergencyPulse 2s infinite !important;
-            `;
-            
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log('🚨 EMERGENCY PLUS BUTTON CLICKED!');
+                const motivationSection = document.querySelector('.motivation-section');
+                const randomQuote = additionalQuotes[Math.floor(Math.random() * additionalQuotes.length)];
                 
-                if (typeof openSalesAssistant === 'function') {
-                    openSalesAssistant(e);
-                } else if (typeof createSalesAssistantModal === 'function') {
-                    createSalesAssistantModal();
-                    document.getElementById('salesAssistantModal').style.display = 'flex';
-                } else {
-                    alert('Prodejní asistent není dostupný. Obnovte stránku (F5).');
-                }
-            });
-            
-            document.body.appendChild(button);
-            console.log('🚨 Emergency plus button created!');
+                const newQuoteCard = document.createElement('div');
+                newQuoteCard.className = 'quote-card';
+                newQuoteCard.style.opacity = '0';
+                newQuoteCard.style.transform = 'translateY(20px)';
+                newQuoteCard.innerHTML = `
+                    <span class="quote-emoji">${randomQuote.emoji}</span>
+                    <p class="quote-text">"${randomQuote.text}"</p>
+                    <p class="quote-author">${randomQuote.author}</p>
+                `;
+                
+                motivationSection.appendChild(newQuoteCard);
+                
+                // Animace objevení
+                setTimeout(() => {
+                    newQuoteCard.style.transition = 'all 0.5s ease';
+                    newQuoteCard.style.opacity = '1';
+                    newQuoteCard.style.transform = 'translateY(0)';
+                }, 100);
+            }, 10000);
         }
-        
-        // Emergency pulse animation
-        const emergencyCSS = `
-            @keyframes emergencyPulse {
-                0% { transform: translateY(-50%) scale(1); }
-                50% { transform: translateY(-50%) scale(1.1); box-shadow: 0 8px 30px rgba(255, 20, 147, 0.7); }
-                100% { transform: translateY(-50%) scale(1); }
-            }
-        `;
-        
-        const emergencyStyle = document.createElement('style');
-        emergencyStyle.textContent = emergencyCSS;
-        document.head.appendChild(emergencyStyle);
-        
-        // Auto-start diagnostic for Windows Chrome
-        if (navigator.userAgent.includes('Windows') && navigator.userAgent.includes('Chrome')) {
-            window.addEventListener('load', function() {
-                setTimeout(() => {
-                    const isLoggedIn = localStorage.getItem('isLoggedIn');
-                    const hasPlus = document.querySelector('a[onclick*="openSalesAssistant"]');
-                    
-                    if (isLoggedIn && !hasPlus) {
-                        // Show emergency debug
-                        document.getElementById('emergency-debug').style.display = 'block';
-                        window.emergencyDiagnostic();
-                        
-                        // Auto-create emergency button
-                        setTimeout(() => {
-                            createEmergencyPlusButton();
-                        }, 1000);
-                    }
-                }, 3000);
-            });
-        }
-        
-        // MANUÁLNÍ DIAGNOSTIC COMMAND pro prodejce
-        window.showDebugInfo = function() {
-            console.log('\n🔍 ===== KOMPLETNÍ DIAGNOSTIKA SYSTÉMU =====');
-            console.log('🖥️  Prohlížeč:', navigator.userAgent);
-            console.log('📅  Čas:', new Date().toLocaleString());
-            console.log('👤  Přihlášení:', {
-                isLoggedIn: localStorage.getItem('isLoggedIn'),
-                role: localStorage.getItem('role'), 
-                username: localStorage.getItem('username')
-            });
+
+        // Personalizované uvítání podle času
+        function personalizeWelcome() {
+            const hour = new Date().getHours();
+            const welcomeMessage = document.querySelector('.welcome-message');
             
-            console.log('\n📜  SKRIPTY V MEMORY:');
-            console.log('   - updateNavigation:', typeof updateNavigation);
-            console.log('   - openSalesAssistant:', typeof openSalesAssistant);
-            console.log('   - createSalesAssistantModal:', typeof createSalesAssistantModal);
-            console.log('   - closeSalesAssistant:', typeof closeSalesAssistant);
+            let timeGreeting = '';
+            let emoji = '';
             
-            console.log('\n🎯  DOM ELEMENTY:');
-            console.log('   - nav ul:', !!document.querySelector('nav ul'));
-            console.log('   - plus tlačítko (normální):', !!document.querySelector('a[onclick*="openSalesAssistant"]'));
-            console.log('   - plus tlačítko (fallback):', !!document.querySelector('.windows-chrome-fallback'));
-            console.log('   - emergency button:', !!document.querySelector('.emergency-plus-button'));
-            console.log('   - modal:', !!document.getElementById('salesAssistantModal'));
-            
-            const navItems = document.querySelectorAll('nav ul li');
-            console.log('   - Počet nav položek:', navItems.length);
-            navItems.forEach((item, index) => {
-                console.log(`     ${index + 1}. ${item.textContent.trim()}`);
-            });
-            
-            console.log('\n🚨  EMERGENCY FUNKCE DOSTUPNÉ:');
-            console.log('   showDebugInfo() - Zobrazí kompletní diagnostiku');
-            console.log('   window.emergencyDiagnostic() - Spustí emergency diagnostic');
-            console.log('   window.forceCreatePlusButton() - Vytvoří plus tlačítko');
-            console.log('   updateNavigation() - Obnoví navigaci');
-            console.log('   createEmergencyPlusButton() - Floating tlačítko');
-            
-            // Pokud problém, automaticky spusť opravy
-            const hasLogin = localStorage.getItem('isLoggedIn');
-            const hasPlus = document.querySelector('a[onclick*="openSalesAssistant"]');
-            
-            if (hasLogin && !hasPlus) {
-                console.log('\n🔧  SPOUŠTÍM AUTOMATICKÉ OPRAVY...');
-                
-                setTimeout(() => {
-                    console.log('🔧  Aktualizuji navigaci...');
-                    if (typeof updateNavigation === 'function') {
-                        updateNavigation();
-                    }
-                }, 500);
-                
-                setTimeout(() => {
-                    console.log('🔧  Vytvářím emergency tlačítko...');  
-                    if (typeof window.forceCreatePlusButton === 'function') {
-                        window.forceCreatePlusButton();
-                    }
-                }, 1000);
-                
-                setTimeout(() => {
-                    console.log('🔧  Vytvářím floating tlačítko...');
-                    createEmergencyPlusButton();
-                }, 1500);
-                
-                console.log('✅  Automatické opravy spuštěny!');
+            if (hour < 6) {
+                timeGreeting = 'Jste skutečný ranní ptáček! 🌅';
+                emoji = '🌙';
+            } else if (hour < 12) {
+                timeGreeting = 'Dobré ráno a skvělý start do nového dne! ☀️';
+                emoji = '🌅';
+            } else if (hour < 17) {
+                timeGreeting = 'Příjemné odpoledne plné úspěchů! 📈';
+                emoji = '☀️';
+            } else if (hour < 22) {
+                timeGreeting = 'Dobrý večer, čas na review dnešních úspěchů! 🎯';
+                emoji = '🌆';
+            } else {
+                timeGreeting = 'Práce nikdy nespí! Obdivuji vaši dedikaci! 💪';
+                emoji = '🌙';
             }
             
-            console.log('\n🔍 ===== KONEC DIAGNOSTIKY =====\n');
-        };
-        
-        // Zobrazí návod v konzoli po načtení
-        window.addEventListener('load', function() {
+            if (welcomeMessage) {
+                welcomeMessage.innerHTML += `<br><br><strong>${emoji} ${timeGreeting}</strong>`;
+            }
+        }
+
+        // Ensure proper initialization order
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Index.html inicializace dokončena');
+            
+            // Vytvoř animované pozadí
+            createEmojiBackground();
+            
+            // Personalizuj uvítání
+            personalizeWelcome();
+            
+            // Spusť rotaci citátů
+            rotateQuotes();
+            
+            // Wait for theme manager to be ready
             setTimeout(() => {
-                console.log('\n🎯 ===== NÁVOD PRO PRODEJCE =====');
-                console.log('📝 Pokud nevidíte plus tlačítko (➕), napište do konzole:');
-                console.log('💡 showDebugInfo() - kompletní diagnostika + auto-oprava');
-                console.log('🔧 window.emergencyDiagnostic() - rychlá diagnostika');
-                console.log('🆘 createEmergencyPlusButton() - vytvoří emergency tlačítko');
-                console.log('🔄 updateNavigation() - obnoví navigaci');
-                console.log('\n🖥️  Jak otevřít konzoli:');
-                console.log('   • Stiskněte F12 nebo Ctrl+Shift+I');
-                console.log('   • Klikněte na záložku "Console"');
-                console.log('   • Napište příkaz a stiskněte Enter');
-                console.log('\n🔍 ===============================\n');
-            }, 2000);
+                if (window.themeManager) {
+                    window.themeManager.createThemeToggle();
+                    console.log('Theme toggle buttons aktualizovány na index.html');
+                }
+            }, 200);
+            
+            // Vymazání všech demo příspěvků z localStorage
+            localStorage.removeItem('simple_posts');
+            localStorage.removeItem('novinky_posts'); 
+            console.log('🧹 Vymazány všechny demo příspěvky z localStorage');
         });
     </script>
 </body>
