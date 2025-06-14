@@ -216,6 +216,26 @@
             display: block;
         }
         
+        /* Admin nástroje styly */
+        #admin-tools-toggle:hover {
+            background: rgba(255,255,255,0.2) !important;
+            color: var(--text-primary) !important;
+            transform: translateY(-1px);
+        }
+        
+        .admin-btn {
+            transition: all 0.2s ease !important;
+        }
+        
+        .admin-btn:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+        
+        #admin-tools-content {
+            transition: max-height 0.3s ease-out;
+        }
+
         @media (max-width: 768px) {
             .analytics-container {
                 padding: 1rem;
@@ -269,6 +289,16 @@
                 text-align: center;
                 justify-content: center;
             }
+            
+            /* Admin nástroje na mobilu */
+            #admin-tools-content div {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            .admin-btn {
+                font-size: 0.75rem !important;
+                padding: 0.5rem !important;
+            }
         }
     </style>
 </head>
@@ -292,6 +322,7 @@
             </div>
 
             <div class="filter-section">
+                <!-- Hlavní filtry - vždy viditelné -->
                 <div style="margin-bottom: 1.5rem;">
                     <h4 style="color: var(--primary-color, #ff1493); margin-bottom: 1rem; text-align: center; font-size: 1rem;">📅 Časové období</h4>
                     <div class="filter-controls">
@@ -310,16 +341,64 @@
                     </div>
                 </div>
                 
-                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-                        <button class="filter-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3;">🔄 Obnovit data</button>
-                        <button class="filter-btn" onclick="testServerConnection()" style="background: #2ed573; border-color: #2ed573;">🌐 Test serveru</button>
-                        <button class="filter-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500;">🔄 Sync se serverem</button>
-                        <button class="filter-btn" onclick="resetServerData()" style="background: #e74c3c; border-color: #e74c3c;">🌐 Reset serveru</button>
-                        <button class="filter-btn" onclick="cleanDuplicateSellerData()" style="background: #8e44ad; border-color: #8e44ad;">🔧 Opravit duplicity</button>
-                        <button class="filter-btn" onclick="showSellerNameManager()" style="background: #6c5ce7; border-color: #6c5ce7;">👤 Správa jmen</button>
-                        <button class="filter-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500;">🔄 Reset filtrů</button>
-                        <button class="filter-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757;">🗑️ Smazat data</button>
+                <!-- Jednoduché akce -->
+                <div style="margin-bottom: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                        <button class="filter-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3; font-weight: 600;">
+                            🔄 Obnovit data
+                        </button>
+                        <button class="filter-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500; font-weight: 600;">
+                            ↩️ Reset filtrů
+                        </button>
+                        <button class="filter-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757; font-weight: 600;">
+                            🗑️ Smazat data
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Pokročilé nástroje - skládací -->
+                <div style="text-align: center;">
+                    <button id="admin-tools-toggle" onclick="toggleAdminTools()" style="
+                        background: rgba(255,255,255,0.1); color: var(--text-secondary); 
+                        border: 1px solid rgba(255,255,255,0.2); padding: 0.5rem 1rem; 
+                        border-radius: 20px; cursor: pointer; font-size: 0.85rem; 
+                        transition: all 0.3s ease; font-weight: 500;
+                    ">
+                        ⚙️ Pokročilé nástroje 
+                        <span id="admin-tools-arrow" style="margin-left: 0.5rem; transition: transform 0.3s ease;">▼</span>
+                    </button>
+                    
+                    <div id="admin-tools-content" style="
+                        max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
+                        margin-top: 0;
+                    ">
+                        <div style="
+                            margin-top: 1rem; padding: 1rem; 
+                            background: rgba(255,255,255,0.03); border-radius: 10px;
+                            border: 1px solid rgba(255,255,255,0.1);
+                        ">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
+                                <button class="filter-btn admin-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500; font-size: 0.8rem; padding: 0.6rem;">
+                                    🔄 Sync server
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="testServerConnection()" style="background: #2ed573; border-color: #2ed573; font-size: 0.8rem; padding: 0.6rem;">
+                                    🌐 Test server
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="cleanDuplicateSellerData()" style="background: #8e44ad; border-color: #8e44ad; font-size: 0.8rem; padding: 0.6rem;">
+                                    🔧 Fix duplicity
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="showSellerNameManager()" style="background: #6c5ce7; border-color: #6c5ce7; font-size: 0.8rem; padding: 0.6rem;">
+                                    👤 Správa jmen
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="resetServerData()" style="background: #e74c3c; border-color: #e74c3c; font-size: 0.8rem; padding: 0.6rem;">
+                                    🌐 Reset server
+                                </button>
+                            </div>
+                            
+                            <div style="text-align: center; margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-secondary);">
+                                ⚠️ Nástroje pro správce systému
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1430,6 +1509,27 @@
             alert(`✅ Jména prodejců byla uložena!\n\nChanges saved: ${Object.keys(customDisplayNames).length} custom names`);
         }
 
+        // Toggle pokročilých nástrojů
+        function toggleAdminTools() {
+            const content = document.getElementById('admin-tools-content');
+            const arrow = document.getElementById('admin-tools-arrow');
+            const toggle = document.getElementById('admin-tools-toggle');
+            
+            if (content.style.maxHeight === '0px' || content.style.maxHeight === '') {
+                // Otevři
+                content.style.maxHeight = '200px';
+                arrow.style.transform = 'rotate(180deg)';
+                toggle.style.background = 'rgba(255,255,255,0.15)';
+                toggle.style.color = 'var(--text-primary)';
+            } else {
+                // Zavři
+                content.style.maxHeight = '0px';
+                arrow.style.transform = 'rotate(0deg)';
+                toggle.style.background = 'rgba(255,255,255,0.1)';
+                toggle.style.color = 'var(--text-secondary)';
+            }
+        }
+
         // Reset všech filtrů
         function resetAllFilters() {
             console.log('🔄 Resetuji všechny filtry...');
@@ -1580,18 +1680,19 @@
                     const result = await response.json();
                     console.log('✅ Server resetován:', result);
                     
-                    // Smaž i localStorage pro konzistenci
+                    // Kompletně smaž všechny lokální data
                     localStorage.setItem('sales_sessions', '[]');
-                    console.log('✅ localStorage také vymazán');
+                    localStorage.removeItem('seller_display_names'); // Smaž i custom jména
+                    console.log('✅ localStorage kompletně vymazán');
                     
-                    btn.textContent = '✅ Server resetován';
+                    btn.textContent = '✅ Kompletní reset';
                     btn.style.background = '#2ed573';
                     
-                    // Aktualizuj analytiku
-                    loadAvailableStores();
-                    loadAnalytics();
-                    
-                    alert('✅ Server i localStorage byly kompletně resetovány!\n\nVšechna data byla smazána.');
+                    // Vynuť refresh celé stránky aby se všechno načetlo znovu
+                    setTimeout(() => {
+                        alert('✅ Server i localStorage byly kompletně resetovány!\n\nStránka se obnoví pro načtení prázdných dat.');
+                        location.reload(); // Refresh celé stránky
+                    }, 1000);
                     
                 } else {
                     throw new Error(`Server error: ${response.status}`);
@@ -1949,6 +2050,13 @@
                 
                 // 1. Ulož filtrovaná data lokálně
                 localStorage.setItem('sales_sessions', JSON.stringify(filteredData));
+                
+                // Pokud mažeme všechna data, vymaž i další lokální věci
+                if (period === 'all' && filteredData.length === 0) {
+                    localStorage.removeItem('seller_display_names');
+                    console.log('🗑️ Smazána i custom jména prodejců');
+                }
+                
                 console.log(`🗑️ Lokálně smazáno: ${deletedCount} sessions`);
                 console.log(`📊 Lokálně zůstává: ${filteredData.length} sessions`);
                 
@@ -2048,55 +2156,81 @@
         function showDataStatus() {
             try {
                 const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                const customNames = JSON.parse(localStorage.getItem('seller_display_names') || '{}');
                 const statusDiv = document.getElementById('storage-info');
                 
                 if (statusDiv) {
                     const statusHTML = `
                         <div style="display: grid; gap: 0.5rem;">
-                            <div>💾 <strong>Lokální úložiště:</strong> ${localData.length} sessions uloženo</div>
+                            <div>💾 <strong>Lokální úložiště:</strong> ${localData.length} sessions + ${Object.keys(customNames).length} custom jmen</div>
                             <div>🌐 <strong>Server:</strong> <span id="server-status">Testuji...</span></div>
+                            <div>📊 <strong>Zdroj dat:</strong> <span id="data-source">Zjišťuji...</span></div>
                             <div>🔄 <strong>Synchronizace:</strong> <span id="sync-status">Automatická při uložení</span></div>
                             <div style="font-size: 0.8rem; margin-top: 0.5rem; color: var(--text-secondary);">
-                                ✅ Data jsou ukládána lokálně i na server pro dlouhodobé uchovávání
+                                ✅ Data jsou primárně načítána ze serveru, localStorage slouží jako záloha
                             </div>
                         </div>
                     `;
                     statusDiv.innerHTML = statusHTML;
                     
-                    // Test server status
-                    testServerStatusQuiet();
+                    // Test server status a zjisti zdroj dat
+                    checkDataSource();
                 }
             } catch (error) {
                 console.error('Chyba při zobrazování statusu dat:', error);
             }
         }
 
-        // Tichý test serveru pro status
-        async function testServerStatusQuiet() {
-            const statusElement = document.getElementById('server-status');
-            if (!statusElement) return;
+        // Zjištění zdroje dat
+        async function checkDataSource() {
+            const dataSourceElement = document.getElementById('data-source');
+            const serverStatusElement = document.getElementById('server-status');
             
             try {
-                // Chrome kompatibilní timeout implementace
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
-                
-                const response = await fetch('/api/sales-data?type=stats', { 
+                const response = await fetch('/api/sales-data', { 
                     method: 'GET',
-                    signal: controller.signal
+                    signal: AbortSignal.timeout(5000)
                 });
                 
-                clearTimeout(timeoutId);
-                
                 if (response.ok) {
-                    statusElement.innerHTML = '<span style="color: #2ed573;">✅ Připojen a funkční</span>';
+                    const serverData = await response.json();
+                    const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                    
+                    if (serverStatusElement) {
+                        serverStatusElement.innerHTML = '<span style="color: #2ed573;">✅ Připojen a funkční</span>';
+                    }
+                    
+                    if (dataSourceElement) {
+                        if (serverData.success && serverData.salesData) {
+                            const serverCount = serverData.salesData.length;
+                            const localCount = localData.length;
+                            
+                            if (serverCount === 0 && localCount === 0) {
+                                dataSourceElement.innerHTML = '<span style="color: #ff9500;">🔍 Žádná data (server ani local)</span>';
+                            } else if (serverCount > 0) {
+                                dataSourceElement.innerHTML = `<span style="color: #2ed573;">🌐 Server (${serverCount} sessions)</span>`;
+                            } else {
+                                dataSourceElement.innerHTML = `<span style="color: #ff9500;">💾 Local fallback (${localCount} sessions)</span>`;
+                            }
+                        } else {
+                            dataSourceElement.innerHTML = '<span style="color: #ff4757;">❌ Server nevrátil validní data</span>';
+                        }
+                    }
                 } else {
-                    throw new Error('Server nedostupný');
+                    throw new Error('Server error');
                 }
             } catch (error) {
-                statusElement.innerHTML = '<span style="color: #ff9500;">⚠️ Offline (data v localStorage)</span>';
+                if (serverStatusElement) {
+                    serverStatusElement.innerHTML = '<span style="color: #ff9500;">⚠️ Offline (data v localStorage)</span>';
+                }
+                if (dataSourceElement) {
+                    const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                    dataSourceElement.innerHTML = `<span style="color: #ff9500;">💾 Local fallback (${localData.length} sessions)</span>`;
+                }
             }
         }
+
+
 
         // Funkce pro kontrolu duplicit při startu
         function checkForDuplicates() {
@@ -2198,11 +2332,20 @@
                 setTimeout(showDataStatus, 200);
             }
             
+            // Debug info při startu
+            const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+            console.log('🚀 Inicializace analytiky:');
+            console.log('📱 localStorage sessions:', localData.length);
+            console.log('🌐 Načítám ze serveru...');
+            
             // Zkontroluj duplicity
             setTimeout(checkForDuplicates, 300);
             
             // Načti dostupné prodejny
             setTimeout(loadAvailableStores, 150);
+            
+            // Aktualizuj status
+            setTimeout(showDataStatus, 100);
             
             // Malé zpoždění aby se všechno načetlo
             setTimeout(() => {
