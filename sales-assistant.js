@@ -137,6 +137,71 @@ function addSalesAssistantStyles() {
             to { scroll-behavior: smooth; }
         }
         
+        .sales-tips-container {
+            margin-bottom: 1.5rem;
+        }
+        
+        .sales-tip {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .sales-tip h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--primary-color);
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .sales-tip p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            line-height: 1.4;
+            font-style: italic;
+        }
+        
+        .sales-result-buttons {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        
+        .sales-result-btn {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .sales-sold-btn {
+            background: linear-gradient(135deg, #2ed573, #17c0eb);
+            color: white;
+        }
+        
+        .sales-sold-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(46, 213, 115, 0.3);
+        }
+        
+        .sales-not-sold-btn {
+            background: linear-gradient(135deg, #ff4757, #ff3742);
+            color: white;
+        }
+        
+        .sales-not-sold-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3);
+        }
+        
         .scenario-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -619,23 +684,150 @@ function selectScenario(scenario) {
     }
 }
 
-// Zásilkovna scénář - krok 1 (obaly)
+// Zásilkovna scénář - krok 0 (tipy pro prodej)
 function renderZasilkovnaScenario() {
-    currentWizardStep = 1;
+    currentWizardStep = 0;
     selectedItems = { obaly: [], sklicka: [], prislusenstvi: [] };
     
     return `
         <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
         
         <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
-            📦 ZÁSILKOVNA - Krok 1/4
+            📦 ZÁSILKOVNA - Tipy pro prodej
         </h3>
         
-        <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
             <div style="color: var(--text-secondary); font-size: 0.9rem;">
                 💡 "Díky zásilkovně máte na všechno příslušenství 20% slevu!"
             </div>
         </div>
+        
+        <div class="sales-content">
+            <div class="sales-tips-container">
+                <div class="sales-tip">
+                    <h4>📱 POKUD MÁ ROZBITÉ SKLÍČKO NA TELEFONU:</h4>
+                    <p>"Vidím, že máte rozbité sklíčko, rovnou vám ho vyměním, chcete levnější sklíčko nebo kvalitnější?"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>📱 POKUD MÁ ROZBITÝ NEBO ŽLUTÝ OBAL:</h4>
+                    <p>"Vidím, že máte žlutý obal na telefonu, rovnou vám ho vyměním, chcete znovu takový průhledný nebo chcete nějaký barevný?"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🧽 POKUD MÁ ŠPINAVÝ TELEFON:</h4>
+                    <p>"Vidím, že máte špinavý telefon, co kdybych vám ho rovnou vyčistil když už jste tu?"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>✨ POKUD MÁ VŠECHNO V POŘÁDKU:</h4>
+                    <p>"Můžu vám nabídnout obal nebo sklíčko? Díky zásilkovně u nás teď máte 20% slevu na příslušenství."</p>
+                </div>
+            </div>
+            
+            <div class="sales-result-buttons">
+                <button class="sales-result-btn sales-sold-btn" onclick="proceedToProducts()">
+                    ✅ Prodal jsem
+                </button>
+                <button class="sales-result-btn sales-not-sold-btn" onclick="handleNotSold()">
+                    ❌ Neprodal jsem
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Pokračování na produkty po úspěšném prodeji
+function proceedToProducts() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZasilkovnaStep1();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zpracování neprodání při tipech
+function handleNotSold() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderNotSoldTipsForm();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Formulář pro neprodáno při tipech
+function renderNotSoldTipsForm() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaScenario();">← Zpět na tipy</button>
+        
+        <h3 style="text-align: center; color: #ff4757; margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Neprodáno
+        </h3>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff4757; text-align: center;">❌ Proč se neprodalo?</h4>
+                <textarea id="notSoldReasonTips" placeholder="Krátké odůvodnění proč se nic neprodalo..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn sales-not-sold-btn" onclick="completeNotSoldTips()" style="width: 100%;">
+                📝 Odeslat a dokončit
+            </button>
+        </div>
+    `;
+}
+
+// Dokončení neprodáno při tipech
+async function completeNotSoldTips() {
+    const reason = document.getElementById('notSoldReasonTips').value.trim();
+    
+    if (!reason) {
+        alert('Prosím uveďte alespoň krátké odůvodnění.');
+        return;
+    }
+    
+    const sessionData = {
+        ...currentSalesSession,
+        result: 'not-sold',
+        reason: reason,
+        items: [],
+        revenue: 0,
+        discount_used: false,
+        completed_at: Date.now(),
+        duration: sessionStartTime ? Date.now() - sessionStartTime : 0
+    };
+    
+    try {
+        await saveSalesSession(sessionData);
+        showSuccessMessage('Neprodáno úspěšně zaznamenáno!');
+        closeSalesAssistant();
+    } catch (error) {
+        console.error('Chyba při ukládání neprodáno:', error);
+        alert('Chyba při ukládání dat. Zkuste to znovu.');
+    }
+}
+
+// Zásilkovna scénář - krok 1 (obaly)
+function renderZasilkovnaStep1() {
+    currentWizardStep = 1;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaScenario();">← Zpět na tipy</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 1/4
+        </h3>
         
         <div class="sales-content">
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
@@ -688,7 +880,7 @@ function renderZasilkovnaStep2() {
     currentWizardStep = 2;
     
     return `
-        <button class="scenario-back-btn" onclick="renderZasilkovnaScenario(); document.getElementById('salesModalBody').innerHTML = renderZasilkovnaScenario();">← Zpět na obaly</button>
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep1();">← Zpět na obaly</button>
         
         <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
             📦 ZÁSILKOVNA - Krok 2/4
