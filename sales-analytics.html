@@ -350,8 +350,8 @@
                         <button class="filter-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500; font-weight: 600;">
                             ↩️ Reset filtrů
                         </button>
-                        <button class="filter-btn" onclick="forceDeleteAllData()" style="background: #e74c3c; border-color: #e74c3c; font-weight: 600;">
-                            💥 Vymazat VŠE
+                        <button class="filter-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757; font-weight: 600;">
+                            🗑️ Smazat data
                         </button>
                     </div>
                 </div>
@@ -390,11 +390,8 @@
                                 <button class="filter-btn admin-btn" onclick="showSellerNameManager()" style="background: #6c5ce7; border-color: #6c5ce7; font-size: 0.8rem; padding: 0.6rem;">
                                     👤 Správa jmen
                                 </button>
-                                <button class="filter-btn admin-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757; font-size: 0.8rem; padding: 0.6rem;">
-                                    🗑️ Smazat data
-                                </button>
                                 <button class="filter-btn admin-btn" onclick="resetServerData()" style="background: #e74c3c; border-color: #e74c3c; font-size: 0.8rem; padding: 0.6rem;">
-                                    🌐 Reset server
+                                    🌐 Reset serveru
                                 </button>
                             </div>
                             
@@ -567,73 +564,6 @@
             `;
             
             console.log(`📊 Načítám data s filtry: čas="${currentTimeFilter}", prodejna="${currentStoreFilter}"`);
-            
-            // Kontrola Local Mode
-            const forceLocalMode = localStorage.getItem('force_local_mode') === 'true';
-            const localModeReason = localStorage.getItem('local_mode_reason') || 'Neznámý důvod';
-            
-            if (forceLocalMode) {
-                console.log('📱 FORCE LOCAL MODE aktivní:', localModeReason);
-                
-                // Načti pouze z localStorage
-                const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
-                console.log('📱 Local Mode data:', localSalesData.length, 'sessions');
-                
-                if (localSalesData.length === 0) {
-                    contentDiv.innerHTML = `
-                        <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 2rem;">
-                            <h4 style="color: #ff9800; margin: 0 0 0.5rem 0;">📱 Local Mode - Žádná data</h4>
-                            <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
-                                ${localModeReason}
-                            </p>
-                        </div>
-                        <div class="no-data">
-                            <span class="no-data-emoji">📱</span>
-                            <h3>Local Mode - Žádná data</h3>
-                            <p>V Local Mode nejsou dostupná žádná lokální data.</p>
-                            <div style="margin-top: 1rem;">
-                                <button class="filter-btn" onclick="deactivateLocalMode()">🌐 Deaktivovat Local Mode</button>
-                            </div>
-                        </div>
-                    `;
-                    return;
-                }
-                
-                // Zpracuj local data
-                const filteredData = filterSalesData(localSalesData);
-                const stats = generateLocalStats(filteredData);
-                
-                if (stats) {
-                    // Přidej Local Mode warning
-                    contentDiv.innerHTML = `
-                        <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 2rem;">
-                            <h4 style="color: #ff9800; margin: 0 0 0.5rem 0;">📱 Local Mode aktivní</h4>
-                            <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
-                                ${localModeReason}
-                            </p>
-                            <button onclick="deactivateLocalMode()" style="
-                                background: #ff9800; color: white; border: none; 
-                                padding: 0.25rem 0.75rem; border-radius: 4px; cursor: pointer; 
-                                font-size: 0.8rem; margin-top: 0.5rem;
-                            ">🌐 Deaktivovat Local Mode</button>
-                        </div>
-                    `;
-                    
-                    renderAnalytics(stats);
-                    updateFilterInfo(localSalesData.length, filteredData.length);
-                    return;
-                } else {
-                    contentDiv.innerHTML = `
-                        <div class="no-data">
-                            <span class="no-data-emoji">⚠️</span>
-                            <h3>Local Mode - Chyba</h3>
-                            <p>Nepodařilo se zpracovat lokální data.</p>
-                            <button class="filter-btn" onclick="deactivateLocalMode()">🌐 Deaktivovat Local Mode</button>
-                        </div>
-                    `;
-                    return;
-                }
-            }
             
             try {
                 // Zkus načíst ze serveru - PRIMÁRNÍ zdroj dat
@@ -1780,36 +1710,70 @@
             try {
                 console.log('🌐 Resetuji server data...');
                 
-                // Pošli požadavek pro smazání všech dat na serveru
-                const response = await fetch('/api/sales-data/reset', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'delete_all',
-                        confirmation: 'yes_delete_everything'
-                    })
-                });
+                // Nejdřív načti všechna data ze serveru
+                const response = await fetch('/api/sales-data');
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('✅ Server resetován:', result);
-                    
-                    // Kompletně smaž všechny lokální data
-                    localStorage.setItem('sales_sessions', '[]');
-                    localStorage.removeItem('seller_display_names'); // Smaž i custom jména
-                    console.log('✅ localStorage kompletně vymazán');
-                    
+                if (!response.ok) {
+                    throw new Error(`Nelze načíst data ze serveru: ${response.status}`);
+                }
+                
+                const serverData = await response.json();
+                
+                if (!serverData.success || !serverData.salesData) {
+                    throw new Error('Server nevrátil validní data');
+                }
+                
+                const allSessions = serverData.salesData;
+                console.log(`🗑️ Mažu ${allSessions.length} sessions ze serveru...`);
+                
+                let deletedCount = 0;
+                let errorCount = 0;
+                
+                // Smaž všechny sessions jedna po druhé
+                for (const session of allSessions) {
+                    try {
+                        const sessionId = session.id || session.timestamp;
+                        const deleteResponse = await fetch(`/api/sales-data?id=${encodeURIComponent(sessionId)}`, {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' }
+                        });
+                        
+                        if (deleteResponse.ok) {
+                            deletedCount++;
+                            btn.textContent = `🔥 Mažu server (${deletedCount}/${allSessions.length})`;
+                        } else {
+                            errorCount++;
+                            console.warn(`⚠️ Nepodařilo se smazat session ${sessionId}`);
+                        }
+                    } catch (deleteError) {
+                        errorCount++;
+                        console.warn('⚠️ Chyba při mazání session:', deleteError);
+                    }
+                }
+                
+                console.log(`✅ Server reset dokončen: ${deletedCount} smazáno, ${errorCount} chyb`);
+                
+                // Kompletně smaž všechny lokální data
+                localStorage.setItem('sales_sessions', '[]');
+                localStorage.removeItem('seller_display_names');
+                console.log('✅ localStorage kompletně vymazán');
+                
+                if (errorCount === 0) {
                     btn.textContent = '✅ Kompletní reset';
                     btn.style.background = '#2ed573';
                     
-                    // Vynuť refresh celé stránky aby se všechno načetlo znovu
                     setTimeout(() => {
-                        alert('✅ Server i localStorage byly kompletně resetovány!\n\nStránka se obnoví pro načtení prázdných dat.');
-                        location.reload(); // Refresh celé stránky
+                        alert(`✅ Server i localStorage byly kompletně resetovány!\n\nSmazáno ${deletedCount} sessions.\n\nStránka se obnoví.`);
+                        location.reload();
                     }, 1000);
-                    
                 } else {
-                    throw new Error(`Server error: ${response.status}`);
+                    btn.textContent = `⚠️ Reset s ${errorCount} chybami`;
+                    btn.style.background = '#ff9500';
+                    
+                    setTimeout(() => {
+                        alert(`⚠️ Reset dokončen s chybami!\n\nSmazáno: ${deletedCount}/${allSessions.length} sessions\nChyby: ${errorCount}\n\nStránka se obnoví.`);
+                        location.reload();
+                    }, 1000);
                 }
                 
             } catch (error) {
@@ -2200,88 +2164,80 @@
                 console.log(`🗑️ Lokálně smazáno: ${deletedCount} sessions`);
                 console.log(`📊 Lokálně zůstává: ${filteredData.length} sessions`);
                 
-                // 2. Synchronizuj se serverem - pošli aktualizovaná data
+                // 2. Synchronizuj se serverem - skutečné mazání přes server API
                 btn.textContent = '🌐 Sync se serverem...';
                 
                 try {
-                    // Pokud mažeme všechna data, pošli prázdný array
-                    // Jinak pošli filtrovaná data
-                    const dataToSync = filteredData;
+                    console.log('🌐 Mažu data na serveru pomocí správného API...');
                     
-                    console.log('🌐 Synchronizuji smazání se serverem...');
-                    console.log('🌐 Data k odeslání:', dataToSync.length, 'sessions');
-                    
-                    // Možnost 1: Pošli všechna zbývající data na server (přepíše kompletně)
-                    const syncResponse = await fetch('/api/sales-data/bulk-update', {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'replace_all',
-                            salesData: dataToSync,
-                            deletedCount: deletedCount,
-                            period: period
-                        })
+                    // Najdi sessions k smazání (ty co nejsou ve filteredData)
+                    const sessionsToDelete = localData.filter(session => {
+                        return !filteredData.some(kept => 
+                            kept.id === session.id || 
+                            (kept.timestamp === session.timestamp && kept.seller === session.seller)
+                        );
                     });
                     
-                    if (syncResponse.ok) {
-                        const syncResult = await syncResponse.json();
-                        console.log('✅ Server synchronizace úspěšná:', syncResult);
-                        btn.textContent = '✅ Smazáno + Sync OK';
-                        btn.style.background = '#2ed573';
-                    } else {
-                        // Fallback: Zkus individuálně smazat sessions na serveru
-                        console.log('⚠️ Bulk update failed, zkouším individuální mazání...');
-                        
-                        // Najdi sessions k smazání
-                        const sessionsToDelete = localData.filter(session => {
-                            return !filteredData.some(kept => 
-                                kept.timestamp === session.timestamp && 
-                                kept.seller === session.seller
-                            );
-                        });
-                        
-                        console.log('🗑️ Individuálně mažu', sessionsToDelete.length, 'sessions na serveru');
-                        
-                        // Pošli DELETE requesty pro jednotlivé sessions
-                        let serverDeletedCount = 0;
-                        for (const session of sessionsToDelete) {
-                            try {
-                                const deleteResponse = await fetch('/api/sales-data/' + encodeURIComponent(session.timestamp), {
-                                    method: 'DELETE'
-                                });
-                                if (deleteResponse.ok) {
-                                    serverDeletedCount++;
-                                }
-                            } catch (deleteError) {
-                                console.warn('⚠️ Nepodařilo se smazat session:', session.timestamp);
+                    console.log('🗑️ Mažu', sessionsToDelete.length, 'sessions na serveru');
+                    
+                    let serverDeletedCount = 0;
+                    let serverErrors = 0;
+                    
+                    // Maž sessions pomocí správného server API
+                    for (const session of sessionsToDelete) {
+                        try {
+                            // Použij ID session nebo timestamp jako fallback
+                            const sessionId = session.id || session.timestamp;
+                            
+                            const deleteResponse = await fetch(`/api/sales-data?id=${encodeURIComponent(sessionId)}`, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            
+                            if (deleteResponse.ok) {
+                                serverDeletedCount++;
+                                console.log(`✅ Smazána session ${sessionId}`);
+                            } else {
+                                serverErrors++;
+                                console.warn(`⚠️ Nepodařilo se smazat session ${sessionId}:`, deleteResponse.status);
                             }
+                        } catch (deleteError) {
+                            serverErrors++;
+                            console.warn('⚠️ Chyba při mazání session:', deleteError);
                         }
-                        
-                        btn.textContent = `✅ Smazáno (${serverDeletedCount}/${sessionsToDelete.length} sync)`;
-                        btn.style.background = serverDeletedCount === sessionsToDelete.length ? '#2ed573' : '#ff9500';
+                    }
+                    
+                    // Zobraz výsledek mazání
+                    if (serverDeletedCount === sessionsToDelete.length) {
+                        btn.textContent = '✅ Smazáno + Server OK';
+                        btn.style.background = '#2ed573';
+                        console.log(`✅ Všechny sessions úspěšně smazány na serveru (${serverDeletedCount})`);
+                    } else if (serverDeletedCount > 0) {
+                        btn.textContent = `⚠️ Částečně smazáno (${serverDeletedCount}/${sessionsToDelete.length})`;
+                        btn.style.background = '#ff9500';
+                        console.log(`⚠️ Částečně úspěšné mazání: ${serverDeletedCount} úspěšných, ${serverErrors} chyb`);
+                    } else {
+                        btn.textContent = '❌ Server mazání selhalo';
+                        btn.style.background = '#ff4757';
+                        console.log(`❌ Mazání na serveru selhalo: ${serverErrors} chyb`);
                     }
                     
                 } catch (serverError) {
                     console.error('❌ Server sync error:', serverError);
-                    btn.textContent = '⚠️ Server nepodporuje mazání';
+                    btn.textContent = '⚠️ Server error - data smazána lokálně';
                     btn.style.background = '#ff9500';
                     
-                    // Zobraz detailní warning o server problému
+                    // Pokus o obnovu synchronizace
                     setTimeout(() => {
-                        const forceLocal = confirm(`⚠️ PROBLÉM SE SERVEREM\n\nData byla smazána lokálně, ale server:\n• Nepodporuje mazání dat (endpoints chybí)\n• Nebo vrací chyby (400/405)\n\nMožnosti:\n✅ OK = Pracovat v "Local Mode" (ignorovat server)\n❌ Cancel = Obnovit data ze serveru\n\nChcete pokračovat v Local Mode?`);
+                        const retry = confirm(`⚠️ PROBLÉM S MAZÁNÍM NA SERVERU\n\nData byla smazána lokálně, ale server má problém.\n\nMožnosti:\n✅ OK = Zkusit znovu načíst ze serveru (může obnovu data)\n❌ Cancel = Ponechat lokální změny\n\nChcete obnovit data ze serveru?`);
                         
-                        if (forceLocal) {
-                            // Aktivuj local mode
-                            localStorage.setItem('force_local_mode', 'true');
-                            localStorage.setItem('local_mode_reason', 'Server nepodporuje mazání dat');
-                            
-                            // Refresh analytiky v local mode
-                            loadAnalytics();
-                            
-                            alert('✅ Aktivován Local Mode\n\nAnalytika nyní používá pouze localStorage.\nData ze serveru se ignorují.\n\nPro deaktivaci použijte "🔄 Sync se serverem".');
-                        } else {
+                        if (retry) {
                             // Obnov data ze serveru
+                            console.log('🔄 Obnovuji data ze serveru...');
                             loadAnalytics();
+                        } else {
+                            console.log('📱 Ponechávám lokální změny');
+                            alert('ℹ️ Data zůstávají smazána lokálně.\n\nPokud chcete synchronizovat se serverem, použijte "🔄 Sync se serverem".');
                         }
                     }, 1000);
                 }
