@@ -2,6 +2,12 @@
 let currentSalesSession = null;
 let currentScenario = null;
 let sessionStartTime = null;
+let currentWizardStep = 1;
+let selectedItems = {
+    obaly: [],
+    sklicka: [],
+    prislusenstvi: []
+};
 
 // Globální inicializace pro kompatibilitu s Chrome
 if (typeof window !== 'undefined') {
@@ -607,51 +613,254 @@ function selectScenario(scenario) {
     }
 }
 
-// Zásilkovna scénář
+// Zásilkovna scénář - krok 1 (obaly)
 function renderZasilkovnaScenario() {
+    currentWizardStep = 1;
+    selectedItems = { obaly: [], sklicka: [], prislusenstvi: [] };
+    
     return `
         <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
         
-        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 2rem;">
-            📦 ZÁSILKOVNA - Než vydám balíček
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 1/4
         </h3>
         
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                💡 "Díky zásilkovně máte na všechno příslušenství 20% slevu!"
+            </div>
+        </div>
+        
         <div class="sales-content">
-            <div class="sales-step">
-                <h3>🔍 POKUD MÁ ROZBITÉ SKLÍČKO NA TELEFONU:</h3>
-                <div class="sales-advice">
-                    <p>"Vidím, že máte rozbité sklíčko, rovnou vám ho vyměním. Mám kvalitnější nebo levnější sklíčko? + A díky zásilkovně máte na všechno příslušenství 20% slevu!"</p>
+            <h4 style="color: var(--primary-color); margin-bottom: 1.5rem; text-align: center;">
+                📱 OBALY - Vyberte typ obalu:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectObal('pruhledny')">
+                    <span class="scenario-emoji">🔹</span>
+                    <h4 class="scenario-title">PRŮHLEDNÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectObal('barevny')">
+                    <span class="scenario-emoji">🌈</span>
+                    <h4 class="scenario-title">BAREVNÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectObal('klasicky')">
+                    <span class="scenario-emoji">📱</span>
+                    <h4 class="scenario-title">KLASICKÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectObal('knizkovy')">
+                    <span class="scenario-emoji">📖</span>
+                    <h4 class="scenario-title">KNÍŽKOVÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectObal('zadny')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÝ OBAL<br>NEPRODÁN</h4>
                 </div>
             </div>
+        </div>
+    `;
+}
+
+// Výběr obalu a přechod na krok 2
+function selectObal(typ) {
+    if (typ !== 'zadny') {
+        selectedItems.obaly = [typ];
+    } else {
+        selectedItems.obaly = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZasilkovnaStep2();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zásilkovna scénář - krok 2 (sklíčka)
+function renderZasilkovnaStep2() {
+    currentWizardStep = 2;
+    
+    return `
+        <button class="scenario-back-btn" onclick="renderZasilkovnaScenario(); document.getElementById('salesModalBody').innerHTML = renderZasilkovnaScenario();">← Zpět na obaly</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 2/4
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Obal: ${selectedItems.obaly.length > 0 ? selectedItems.obaly[0] : 'žádný'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1.5rem; text-align: center;">
+                🔍 SKLÍČKA - Vyberte typ sklíčka:
+            </h4>
             
-            <div class="sales-step">
-                <h3>📱 POKUD MÁ ROZBITÝ NEBO ŽLUTÝ OBAL:</h3>
-                <div class="sales-advice">
-                    <p>"Vidím, že máte žlutý obal na telefonu, rovnou vám ho vyměním. Chcete průhledný, barevný, klasický nebo knížkový obal? + A díky zásilkovně máte 20% slevu!"</p>
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectSklicko('kvalitnejsi')">
+                    <span class="scenario-emoji">💎</span>
+                    <h4 class="scenario-title">KVALITNĚJŠÍ<br>SKLÍČKO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectSklicko('levnejsi')">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">LEVNĚJŠÍ<br>SKLÍČKO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectSklicko('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SKLÍČKO<br>NEPRODÁNO</h4>
                 </div>
             </div>
+        </div>
+    `;
+}
+
+// Výběr sklíčka a přechod na krok 3
+function selectSklicko(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sklicka = [typ];
+    } else {
+        selectedItems.sklicka = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZasilkovnaStep3();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zásilkovna scénář - krok 3 (příslušenství)
+function renderZasilkovnaStep3() {
+    currentWizardStep = 3;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep2();">← Zpět na sklíčka</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 3/4
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Obal: ${selectedItems.obaly.length > 0 ? selectedItems.obaly[0] : 'žádný'} | 
+                Sklíčko: ${selectedItems.sklicka.length > 0 ? selectedItems.sklicka[0] : 'žádné'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1.5rem; text-align: center;">
+                🔌 OSTATNÍ PŘÍSLUŠENSTVÍ - Vyberte co se prodalo:
+            </h4>
             
-            <div class="sales-step">
-                <h3>🧽 POKUD MÁ ŠPINAVÝ TELEFON:</h3>
-                <div class="sales-advice">
-                    <p>"Vidím, že máte špinavý telefon, vyčistím vám ho zdarma! A můžu vám nabídnout obal nebo sklíčko? Díky zásilkovně máte 20% slevu!"</p>
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectPrislusenstvi('kabel')">
+                    <span class="scenario-emoji">🔌</span>
+                    <h4 class="scenario-title">KABEL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstvi('nabijeka')">
+                    <span class="scenario-emoji">🔋</span>
+                    <h4 class="scenario-title">NABÍJEČKA</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstvi('drzak')">
+                    <span class="scenario-emoji">🚗</span>
+                    <h4 class="scenario-title">DRŽÁK<br>DO AUTA</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstvi('ostatni')">
+                    <span class="scenario-emoji">📦</span>
+                    <h4 class="scenario-title">OSTATNÍ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstvi('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ PŘÍSLUŠENSTVÍ<br>NEPRODÁNO</h4>
                 </div>
             </div>
+        </div>
+    `;
+}
+
+// Výběr příslušenství a přechod na krok 4
+function selectPrislusenstvi(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.prislusenstvi = [typ];
+    } else {
+        selectedItems.prislusenstvi = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZasilkovnaStep4();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zásilkovna scénář - krok 4 (finální - sleva a dokončení)
+function renderZasilkovnaStep4() {
+    currentWizardStep = 4;
+    
+    // Spočítej co se prodalo
+    const soldItems = [];
+    if (selectedItems.obaly.length > 0) soldItems.push(selectedItems.obaly[0] + ' obal');
+    if (selectedItems.sklicka.length > 0) soldItems.push(selectedItems.sklicka[0] + ' sklíčko');
+    if (selectedItems.prislusenstvi.length > 0) soldItems.push(selectedItems.prislusenstvi[0]);
+    
+    const nothingSold = soldItems.length === 0;
+    
+    if (nothingSold) {
+        // Pokud se nic neprodalo, přejdi na "neprodáno" formulář
+        return renderNotSoldForm();
+    }
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep3();">← Zpět na příslušenství</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 4/4
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Prodáno:</h4>
+                <div style="font-size: 0.9rem;">
+                    ${soldItems.map(item => `• ${item}`).join('<br>')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--text-primary); margin: 1rem 0; text-align: center;">
+                Použil jste při argumentaci slevu?
+            </h4>
             
-            <div class="sales-step">
-                <h3>✨ POKUD MÁ VŠECHNO V POŘÁDKU:</h3>
-                <div class="sales-advice">
-                    <p>"Můžu vám nabídnout obal nebo sklíčko? Díky zásilkovně u nás teď máte 20% slevu na všechno příslušenství!"</p>
+            <div class="radio-group">
+                <div class="radio-item" onclick="selectDiscountUsed(true, this)">
+                    <input type="radio" id="discount-yes" name="discount-used" value="yes">
+                    <label for="discount-yes">ANO</label>
+                </div>
+                <div class="radio-item" onclick="selectDiscountUsed(false, this)">
+                    <input type="radio" id="discount-no" name="discount-used" value="no">
+                    <label for="discount-no">NE</label>
                 </div>
             </div>
         </div>
         
         <div class="sales-actions">
-            <button class="sales-btn success" onclick="handleSaleResult('sold')">
-                ✅ PRODÁNO
-            </button>
-            <button class="sales-btn danger" onclick="handleSaleResult('not-sold')">
-                ❌ NEPRODÁNO
+            <button class="sales-btn success" onclick="completeWizardSale()">
+                🎉 DOKONČIT PRODEJ
             </button>
         </div>
     `;
@@ -691,10 +900,10 @@ function handleSaleResult(result) {
     }
     
     // Scroll na začátek modalu
-    setTimeout(() => {
+    setTimeout(function() {
         modalBody.scrollTop = 0;
         modalBody.classList.add('scroll-top');
-        setTimeout(() => modalBody.classList.remove('scroll-top'), 300);
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
     }, 50);
 }
 
@@ -906,7 +1115,7 @@ async function completeSale() {
     
     if (saved) {
         showSuccessMessage('Prodej byl úspěšně zaznamenán! 🎉');
-        setTimeout(() => {
+        setTimeout(function() {
             closeSalesAssistant();
         }, 2000);
     } else {
@@ -938,7 +1147,7 @@ async function completeNotSold() {
     
     if (saved) {
         showSuccessMessage('Záznam byl úspěšně uložen. 📝');
-        setTimeout(() => {
+        setTimeout(function() {
             closeSalesAssistant();
         }, 2000);
     } else {
@@ -995,6 +1204,51 @@ function showSuccessMessage(message) {
     `;
 }
 
+// Dokončení prodeje z wizardu
+async function completeWizardSale() {
+    const discountUsed = document.querySelector('input[name="discount-used"]:checked');
+    
+    if (!discountUsed) {
+        alert('Prosím vyberte zda byla použita sleva.');
+        return;
+    }
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Sestavuj prodané položky z wizardu
+    const soldItems = [];
+    if (selectedItems.obaly.length > 0) {
+        soldItems.push(selectedItems.obaly[0] + ' obal');
+    }
+    if (selectedItems.sklicka.length > 0) {
+        soldItems.push(selectedItems.sklicka[0] + ' sklíčko');
+    }
+    if (selectedItems.prislusenstvi.length > 0) {
+        soldItems.push(selectedItems.prislusenstvi[0]);
+    }
+    
+    // Přidat data do session
+    currentSalesSession.result = 'sold';
+    currentSalesSession.soldItems = soldItems;
+    currentSalesSession.discountUsed = discountUsed.value === 'yes';
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100; // Minuty s 2 des. místy
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Prodej byl úspěšně zaznamenán! 🎉');
+        setTimeout(function() {
+            closeSalesAssistant();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
+    }
+}
+
 // Zavření prodejního asistenta
 function closeSalesAssistant() {
     const modal = document.getElementById('salesAssistantModal');
@@ -1005,4 +1259,6 @@ function closeSalesAssistant() {
     // Reset stavu
     currentSalesSession = null;
     currentScenario = null;
+    currentWizardStep = 1;
+    selectedItems = { obaly: [], sklicka: [], prislusenstvi: [] };
 } 

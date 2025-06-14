@@ -362,13 +362,27 @@ function openSalesAssistant(event) {
             console.log('🔧 Vytvářím nový modal');
             createSalesAssistantModal();
         } else {
-            console.log('🔧 Modal již existuje');
+            console.log('🔧 Modal již existuje - obnovuji obsah');
+            // Resetuj obsah modalu na začátek (výběr scénářů)
+            const modalBody = document.getElementById('salesModalBody');
+            if (modalBody && typeof renderScenarioSelection !== 'undefined') {
+                modalBody.innerHTML = renderScenarioSelection();
+                console.log('✅ Obsah modalu obnoven');
+            }
+        }
+        
+        // Resetuj stav pro novou session
+        if (typeof currentSalesSession !== 'undefined') {
+            currentSalesSession = null;
+        }
+        if (typeof currentScenario !== 'undefined') {
+            currentScenario = null;
         }
         
         const modal = document.getElementById('salesAssistantModal');
         if (modal) {
             modal.style.display = 'flex';
-            console.log('✅ Modal zobrazený');
+            console.log('✅ Modal zobrazený s čistým obsahem');
         } else {
             throw new Error('Modal se nepodařilo vytvořit');
         }
