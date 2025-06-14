@@ -643,17 +643,13 @@ function renderZasilkovnaScenario() {
             </h4>
             
             <div class="scenario-grid">
-                <div class="scenario-tile" onclick="selectObal('pruhledny')">
+                <div class="scenario-tile" onclick="selectObal('transparentni')">
                     <span class="scenario-emoji">🔹</span>
-                    <h4 class="scenario-title">PRŮHLEDNÝ<br>OBAL</h4>
+                    <h4 class="scenario-title">TRANSPARENTNÍ<br>OBAL</h4>
                 </div>
                 <div class="scenario-tile" onclick="selectObal('barevny')">
                     <span class="scenario-emoji">🌈</span>
                     <h4 class="scenario-title">BAREVNÝ<br>OBAL</h4>
-                </div>
-                <div class="scenario-tile" onclick="selectObal('klasicky')">
-                    <span class="scenario-emoji">📱</span>
-                    <h4 class="scenario-title">KLASICKÝ<br>OBAL</h4>
                 </div>
                 <div class="scenario-tile" onclick="selectObal('knizkovy')">
                     <span class="scenario-emoji">📖</span>
@@ -925,20 +921,15 @@ function renderSoldForm() {
         <div class="sales-content">
             <h4 style="color: var(--primary-color); margin-bottom: 1rem;">📱 OBALY:</h4>
             <div class="checkbox-grid">
-                <div class="checkbox-item" data-checkbox="pruhledny-obal">
+                <div class="checkbox-item" data-checkbox="transparentni-obal">
                     <span class="item-icon">🔹</span>
-                    <input type="checkbox" id="pruhledny-obal" name="sold-items">
-                    <label for="pruhledny-obal">PRŮHLEDNÝ<br>OBAL</label>
+                    <input type="checkbox" id="transparentni-obal" name="sold-items">
+                    <label for="transparentni-obal">TRANSPARENTNÍ<br>OBAL</label>
                 </div>
                 <div class="checkbox-item" data-checkbox="barevny-obal">
                     <span class="item-icon">🌈</span>
                     <input type="checkbox" id="barevny-obal" name="sold-items">
                     <label for="barevny-obal">BAREVNÝ<br>OBAL</label>
-                </div>
-                <div class="checkbox-item" data-checkbox="klasicky-obal">
-                    <span class="item-icon">📱</span>
-                    <input type="checkbox" id="klasicky-obal" name="sold-items">
-                    <label for="klasicky-obal">KLASICKÝ<br>OBAL</label>
                 </div>
                 <div class="checkbox-item" data-checkbox="knizkovy-obal">
                     <span class="item-icon">📖</span>
