@@ -365,17 +365,31 @@
         function loadAvailableStores() {
             try {
                 const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
-                const stores = new Set();
+                console.log('🏪 Načítám prodejny ze', localData.length, 'sessions');
                 
-                localData.forEach(session => {
+                const stores = new Set();
+                const storeDebug = {};
+                
+                localData.forEach((session, index) => {
                     const store = session.store || session.prodejna || 'Neznámá prodejna';
                     if (store && store !== 'undefined' && store !== '') {
                         stores.add(store);
+                        storeDebug[store] = (storeDebug[store] || 0) + 1;
+                    }
+                    
+                    // Debug první 3 sessions
+                    if (index < 3) {
+                        console.log(`🏪 Session ${index}:`, {
+                            store: session.store,
+                            prodejna: session.prodejna,
+                            keys: Object.keys(session)
+                        });
                     }
                 });
                 
                 availableStores = Array.from(stores).sort();
                 console.log('🏪 Dostupné prodejny:', availableStores);
+                console.log('🏪 Počty podle prodejen:', storeDebug);
                 
                 // Aktualizuj UI filtrů prodejen
                 updateStoreFilters();
@@ -502,9 +516,30 @@
                         // Filtruj data podle aktuálních filtrů
                         const filteredData = filterSalesData(localSalesData);
                         console.log(`📊 Po filtrování: ${filteredData.length} sessions (z ${localSalesData.length})`);
+                        console.log('📊 Filtrovaná data sample:', filteredData.slice(0, 3));
+                        
+                        if (filteredData.length === 0) {
+                            console.warn('⚠️ Po filtrování nezůstala žádná data!');
+                            console.log('🔍 Debug filtry:', { currentTimeFilter, currentStoreFilter });
+                            console.log('🔍 Sample původních dat:', localSalesData.slice(0, 3));
+                        }
                         
                         const stats = generateLocalStats(filteredData);
                         console.log('📊 Vygenerované statistiky:', stats);
+                        
+                        if (!stats || Object.keys(stats).length === 0) {
+                            console.error('❌ Statistiky se nevygenerovaly správně!');
+                            contentDiv.innerHTML = `
+                                <div class="no-data">
+                                    <span class="no-data-emoji">⚠️</span>
+                                    <h3>Chyba při generování statistik</h3>
+                                    <p>Data jsou k dispozici (${filteredData.length} sessions), ale statistiky se nepodařilo vygenerovat.</p>
+                                    <button class="filter-btn" onclick="debugLoadData()">🔍 Debug info</button>
+                                </div>
+                            `;
+                            return;
+                        }
+                        
                         analyticsData = stats;
                         renderAnalytics(analyticsData);
                         
@@ -539,11 +574,33 @@
 
         // Filtrování dat podle času a prodejny
         function filterSalesData(salesData) {
-            return salesData.filter(session => {
+            console.log('🔍 Filtrování dat:', {
+                inputData: salesData.length,
+                timeFilter: currentTimeFilter,
+                storeFilter: currentStoreFilter
+            });
+            
+            const filtered = salesData.filter(session => {
+                // Debug pro první session
+                if (salesData.indexOf(session) === 0) {
+                    console.log('🔍 Sample session struktura:', {
+                        timestamp: session.timestamp,
+                        store: session.store,
+                        prodejna: session.prodejna,
+                        seller: session.seller,
+                        keys: Object.keys(session)
+                    });
+                }
+                
                 // Časový filtr
                 if (currentTimeFilter !== 'all') {
                     const sessionDate = new Date(session.timestamp);
                     const now = new Date();
+                    
+                    if (!session.timestamp) {
+                        console.warn('⚠️ Session bez timestamp:', session);
+                        return false;
+                    }
                     
                     switch(currentTimeFilter) {
                         case 'today':
@@ -578,6 +635,9 @@
                 
                 return true;
             });
+            
+            console.log(`🔍 Výsledek filtrování: ${filtered.length} z ${salesData.length} sessions`);
+            return filtered;
         }
 
         // Aktualizace informací o filtrování
@@ -632,6 +692,16 @@
         
         // Generování statistik z lokálních dat
         function generateLocalStats(salesData) {
+            console.log('🏭 Generuji statistiky z dat:', {
+                inputLength: salesData.length,
+                sampleData: salesData.slice(0, 2)
+            });
+            
+            if (!salesData || salesData.length === 0) {
+                console.warn('⚠️ Žádná data pro generování statistik!');
+                return null;
+            }
+            
             const stats = {
                 totalSessions: salesData.length,
                 successfulSales: 0,
@@ -766,12 +836,41 @@
                 }
             });
             
+            console.log('🏭 Statistiky vygenerovány:', {
+                totalSessions: stats.totalSessions,
+                successfulSales: stats.successfulSales,
+                unsuccessfulSales: stats.unsuccessfulSales,
+                conversionRate: stats.conversionRate,
+                sellersCount: Object.keys(stats.topSellers).length,
+                scenariosCount: Object.keys(stats.scenarioStats).length,
+                storesCount: Object.keys(stats.storeStats).length,
+                stats: stats
+            });
+            
             return stats;
         }
 
         // Renderování analytiky
         function renderAnalytics(stats) {
+            console.log('🎨 Renderuji analytiku s daty:', stats);
+            
             const contentDiv = document.getElementById('analyticsContent');
+            if (!contentDiv) {
+                console.error('❌ Element analyticsContent nenalezen!');
+                return;
+            }
+            
+            if (!stats) {
+                console.error('❌ Žádná data pro renderování!');
+                contentDiv.innerHTML = `
+                    <div class="no-data">
+                        <span class="no-data-emoji">⚠️</span>
+                        <h3>Chyba při renderování</h3>
+                        <p>Statistiky nebyly předány funkci renderAnalytics.</p>
+                    </div>
+                `;
+                return;
+            }
             
             if (stats.totalSessions === 0) {
                 contentDiv.innerHTML = `
@@ -846,6 +945,8 @@
                 </div>
                 ` : ''}
             `;
+            
+            console.log('🎨 Renderování analytiky dokončeno úspěšně');
         }
 
         // Tabulka prodejců
