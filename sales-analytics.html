@@ -565,6 +565,73 @@
             
             console.log(`📊 Načítám data s filtry: čas="${currentTimeFilter}", prodejna="${currentStoreFilter}"`);
             
+            // Kontrola Local Mode
+            const forceLocalMode = localStorage.getItem('force_local_mode') === 'true';
+            const localModeReason = localStorage.getItem('local_mode_reason') || 'Neznámý důvod';
+            
+            if (forceLocalMode) {
+                console.log('📱 FORCE LOCAL MODE aktivní:', localModeReason);
+                
+                // Načti pouze z localStorage
+                const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                console.log('📱 Local Mode data:', localSalesData.length, 'sessions');
+                
+                if (localSalesData.length === 0) {
+                    contentDiv.innerHTML = `
+                        <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 2rem;">
+                            <h4 style="color: #ff9800; margin: 0 0 0.5rem 0;">📱 Local Mode - Žádná data</h4>
+                            <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                                ${localModeReason}
+                            </p>
+                        </div>
+                        <div class="no-data">
+                            <span class="no-data-emoji">📱</span>
+                            <h3>Local Mode - Žádná data</h3>
+                            <p>V Local Mode nejsou dostupná žádná lokální data.</p>
+                            <div style="margin-top: 1rem;">
+                                <button class="filter-btn" onclick="deactivateLocalMode()">🌐 Deaktivovat Local Mode</button>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Zpracuj local data
+                const filteredData = filterSalesData(localSalesData);
+                const stats = generateLocalStats(filteredData);
+                
+                if (stats) {
+                    // Přidej Local Mode warning
+                    contentDiv.innerHTML = `
+                        <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 2rem;">
+                            <h4 style="color: #ff9800; margin: 0 0 0.5rem 0;">📱 Local Mode aktivní</h4>
+                            <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                                ${localModeReason}
+                            </p>
+                            <button onclick="deactivateLocalMode()" style="
+                                background: #ff9800; color: white; border: none; 
+                                padding: 0.25rem 0.75rem; border-radius: 4px; cursor: pointer; 
+                                font-size: 0.8rem; margin-top: 0.5rem;
+                            ">🌐 Deaktivovat Local Mode</button>
+                        </div>
+                    `;
+                    
+                    renderAnalytics(stats);
+                    updateFilterInfo(localSalesData.length, filteredData.length);
+                    return;
+                } else {
+                    contentDiv.innerHTML = `
+                        <div class="no-data">
+                            <span class="no-data-emoji">⚠️</span>
+                            <h3>Local Mode - Chyba</h3>
+                            <p>Nepodařilo se zpracovat lokální data.</p>
+                            <button class="filter-btn" onclick="deactivateLocalMode()">🌐 Deaktivovat Local Mode</button>
+                        </div>
+                    `;
+                    return;
+                }
+            }
+            
             try {
                 // Zkus načíst ze serveru - PRIMÁRNÍ zdroj dat
                 console.log('🌐 Načítám data ze serveru...');
@@ -1509,6 +1576,20 @@
             alert(`✅ Jména prodejců byla uložena!\n\nChanges saved: ${Object.keys(customDisplayNames).length} custom names`);
         }
 
+        // Deaktivace Local Mode
+        function deactivateLocalMode() {
+            if (confirm('Opravdu chcete deaktivovat Local Mode?\n\nAnalytika se přepne zpět na server data.')) {
+                localStorage.removeItem('force_local_mode');
+                localStorage.removeItem('local_mode_reason');
+                console.log('🌐 Local Mode deaktivován');
+                
+                // Refresh analytiky
+                loadAnalytics();
+                
+                alert('✅ Local Mode deaktivován\n\nAnalytika nyní používá server data.');
+            }
+        }
+
         // Toggle pokročilých nástrojů
         function toggleAdminTools() {
             const content = document.getElementById('admin-tools-content');
@@ -1703,7 +1784,26 @@
                 btn.textContent = '❌ Reset selhal';
                 btn.style.background = '#ff4757';
                 
-                alert('❌ Nepodařilo se resetovat server!\n\nServer může být offline nebo nepodporuje reset endpoint.');
+                const forceLocal = confirm('❌ Nepodařilo se resetovat server!\n\nServer může být offline nebo nepodporuje reset endpoint.\n\nChcete smazat pouze lokální data a aktivovat Local Mode?');
+                
+                if (forceLocal) {
+                    // Smaž lokální data
+                    localStorage.setItem('sales_sessions', '[]');
+                    localStorage.removeItem('seller_display_names');
+                    
+                    // Aktivuj Local Mode
+                    localStorage.setItem('force_local_mode', 'true');
+                    localStorage.setItem('local_mode_reason', 'Server nepodporuje reset - pracuji pouze lokálně');
+                    
+                    btn.textContent = '✅ Local reset';
+                    btn.style.background = '#ff9500';
+                    
+                    // Refresh analytiky
+                    loadAvailableStores();
+                    loadAnalytics();
+                    
+                    alert('✅ Lokální data byla smazána!\n\nAktivován Local Mode - analytika používá pouze localStorage.');
+                }
             }
             
             setTimeout(() => {
@@ -1734,6 +1834,13 @@
                         
                         btn.textContent = '✅ Synchronizováno';
                         btn.style.background = '#2ed573';
+                        
+                        // Deaktivuj Local Mode pokud je aktivní
+                        if (localStorage.getItem('force_local_mode') === 'true') {
+                            localStorage.removeItem('force_local_mode');
+                            localStorage.removeItem('local_mode_reason');
+                            console.log('🌐 Local Mode automaticky deaktivován po úspěšné synchronizaci');
+                        }
                         
                         // Aktualizuj seznam prodejen a refresh analytiky
                         loadAvailableStores();
@@ -2123,12 +2230,26 @@
                     
                 } catch (serverError) {
                     console.error('❌ Server sync error:', serverError);
-                    btn.textContent = '⚠️ Smazáno lokálně (server offline)';
+                    btn.textContent = '⚠️ Server nepodporuje mazání';
                     btn.style.background = '#ff9500';
                     
-                    // Zobraz warning o offline režimu
+                    // Zobraz detailní warning o server problému
                     setTimeout(() => {
-                        alert(`⚠️ Data byla smazána lokálně, ale server není dostupný.\n\nPro kompletní smazání použijte později tlačítko "🔄 Sync se serverem"`);
+                        const forceLocal = confirm(`⚠️ PROBLÉM SE SERVEREM\n\nData byla smazána lokálně, ale server:\n• Nepodporuje mazání dat (endpoints chybí)\n• Nebo vrací chyby (400/405)\n\nMožnosti:\n✅ OK = Pracovat v "Local Mode" (ignorovat server)\n❌ Cancel = Obnovit data ze serveru\n\nChcete pokračovat v Local Mode?`);
+                        
+                        if (forceLocal) {
+                            // Aktivuj local mode
+                            localStorage.setItem('force_local_mode', 'true');
+                            localStorage.setItem('local_mode_reason', 'Server nepodporuje mazání dat');
+                            
+                            // Refresh analytiky v local mode
+                            loadAnalytics();
+                            
+                            alert('✅ Aktivován Local Mode\n\nAnalytika nyní používá pouze localStorage.\nData ze serveru se ignorují.\n\nPro deaktivaci použijte "🔄 Sync se serverem".');
+                        } else {
+                            // Obnov data ze serveru
+                            loadAnalytics();
+                        }
                     }, 1000);
                 }
                 
@@ -2185,6 +2306,22 @@
         async function checkDataSource() {
             const dataSourceElement = document.getElementById('data-source');
             const serverStatusElement = document.getElementById('server-status');
+            
+            // Kontrola Local Mode
+            const forceLocalMode = localStorage.getItem('force_local_mode') === 'true';
+            const localModeReason = localStorage.getItem('local_mode_reason') || 'Neznámý důvod';
+            
+            if (forceLocalMode) {
+                const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                
+                if (serverStatusElement) {
+                    serverStatusElement.innerHTML = '<span style="color: #ff9500;">📱 Ignorováno (Local Mode)</span>';
+                }
+                if (dataSourceElement) {
+                    dataSourceElement.innerHTML = `<span style="color: #ff9500;">📱 Local Mode (${localData.length} sessions)</span>`;
+                }
+                return;
+            }
             
             try {
                 const response = await fetch('/api/sales-data', { 
