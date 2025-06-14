@@ -122,8 +122,8 @@ function addSalesAssistantStyles() {
         }
         
         .sales-modal-body {
-            padding: 1.5rem;
-            max-height: 65vh;
+            padding: 1rem;
+            max-height: 70vh;
             overflow-y: auto;
             scroll-behavior: smooth;
         }
@@ -139,21 +139,26 @@ function addSalesAssistantStyles() {
         
         .scenario-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
         }
         
         .scenario-tile {
             background: linear-gradient(135deg, rgba(255, 20, 147, 0.1) 0%, rgba(33, 150, 243, 0.1) 100%);
             border: 2px solid rgba(255, 20, 147, 0.2);
-            border-radius: 12px;
-            padding: 1rem;
+            border-radius: 8px;
+            padding: 0.75rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             position: relative;
             overflow: hidden;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
         
         .scenario-tile:hover {
@@ -173,16 +178,17 @@ function addSalesAssistantStyles() {
         }
         
         .scenario-emoji {
-            font-size: 2rem;
-            margin-bottom: 0.75rem;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
             display: block;
         }
         
         .scenario-title {
             color: var(--text-primary);
-            font-size: 0.9rem;
+            font-size: 0.75rem;
             font-weight: 600;
             margin: 0;
+            line-height: 1.2;
         }
         
         .scenario-back-btn {
@@ -205,9 +211,9 @@ function addSalesAssistantStyles() {
         
         .sales-content {
             background: rgba(255, 255, 255, 0.05);
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1rem;
+            border-radius: 8px;
+            padding: 0.75rem;
+            margin-bottom: 0.75rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
@@ -632,7 +638,7 @@ function renderZasilkovnaScenario() {
         </div>
         
         <div class="sales-content">
-            <h4 style="color: var(--primary-color); margin-bottom: 1.5rem; text-align: center;">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 📱 OBALY - Vyberte typ obalu:
             </h4>
             
@@ -699,7 +705,7 @@ function renderZasilkovnaStep2() {
         </div>
         
         <div class="sales-content">
-            <h4 style="color: var(--primary-color); margin-bottom: 1.5rem; text-align: center;">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 🔍 SKLÍČKA - Vyberte typ sklíčka:
             </h4>
             
@@ -759,7 +765,7 @@ function renderZasilkovnaStep3() {
         </div>
         
         <div class="sales-content">
-            <h4 style="color: var(--primary-color); margin-bottom: 1.5rem; text-align: center;">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 🔌 OSTATNÍ PŘÍSLUŠENSTVÍ - Vyberte co se prodalo:
             </h4>
             
@@ -1117,6 +1123,8 @@ async function completeSale() {
         showSuccessMessage('Prodej byl úspěšně zaznamenán! 🎉');
         setTimeout(function() {
             closeSalesAssistant();
+            // Aktualizuj stránku pro čistý nový začátek
+            location.reload();
         }, 2000);
     } else {
         alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
@@ -1149,6 +1157,8 @@ async function completeNotSold() {
         showSuccessMessage('Záznam byl úspěšně uložen. 📝');
         setTimeout(function() {
             closeSalesAssistant();
+            // Aktualizuj stránku pro čistý nový začátek
+            location.reload();
         }, 2000);
     } else {
         alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
@@ -1243,6 +1253,8 @@ async function completeWizardSale() {
         showSuccessMessage('Prodej byl úspěšně zaznamenán! 🎉');
         setTimeout(function() {
             closeSalesAssistant();
+            // Aktualizuj stránku pro čistý nový začátek
+            location.reload();
         }, 2000);
     } else {
         alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
