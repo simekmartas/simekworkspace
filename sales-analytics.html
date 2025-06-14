@@ -485,87 +485,159 @@
             console.log(`📊 Načítám data s filtry: čas="${currentTimeFilter}", prodejna="${currentStoreFilter}"`);
             
             try {
-                // Zkus načíst ze serveru
-                const response = await fetch('/api/sales-data?type=stats');
+                // Zkus načíst ze serveru - PRIMÁRNÍ zdroj dat
+                console.log('🌐 Načítám data ze serveru...');
+                const response = await fetch('/api/sales-data');
                 
                 if (response.ok) {
-                    const data = await response.json();
+                    const serverData = await response.json();
+                    console.log('🌐 Server response:', serverData);
                     
-                    if (data.success) {
+                    if (serverData.success && serverData.salesData && Array.isArray(serverData.salesData)) {
+                        console.log(`🌐 Server vrátil ${serverData.salesData.length} sessions`);
+                        console.log('🌐 Sample server data:', serverData.salesData.slice(0, 2));
+                        
+                        // Synchronizuj server data do localStorage pro konzistenci
+                        localStorage.setItem('sales_sessions', JSON.stringify(serverData.salesData));
+                        
                         // Filtruj server data podle filtrů
-                        const filteredData = filterSalesData(data.salesData || []);
+                        const filteredData = filterSalesData(serverData.salesData);
+                        console.log(`🌐 Po filtrování: ${filteredData.length} sessions`);
+                        
+                        if (filteredData.length === 0) {
+                            console.warn('⚠️ Server data po filtrování prázdná');
+                            // Zkus bez filtrů
+                            const unfilteredStats = generateLocalStats(serverData.salesData);
+                            if (unfilteredStats) {
+                                // Reset filtrů a zobraz warning
+                                currentTimeFilter = 'all';
+                                currentStoreFilter = 'all';
+                                updateFilterButtons();
+                                
+                                contentDiv.innerHTML = `
+                                    <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 2rem;">
+                                        <h4 style="color: #ff9800; margin: 0 0 0.5rem 0;">⚠️ Filtry resetovány</h4>
+                                        <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                                            Aktivní filtry nevrátily žádná data ze serveru. Zobrazuji všechna data.
+                                        </p>
+                                    </div>
+                                `;
+                                
+                                renderAnalytics(unfilteredStats);
+                                return;
+                            }
+                        }
+                        
                         const stats = generateLocalStats(filteredData);
-                        analyticsData = stats;
-                        renderAnalytics(analyticsData);
-                        return;
+                        if (stats) {
+                            analyticsData = stats;
+                            renderAnalytics(analyticsData);
+                            
+                            // Aktualizuj info o filtrování
+                            updateFilterInfo(serverData.salesData.length, filteredData.length);
+                            return;
+                        }
+                    } else {
+                        console.warn('⚠️ Server nevrátil validní data:', serverData);
                     }
+                } else {
+                    console.warn('⚠️ Server error:', response.status, response.statusText);
                 }
                 
                 // Fallback na localStorage data
+                console.log('📱 Fallback na localStorage...');
                 throw new Error('Server nedostupný');
                 
             } catch (error) {
                 console.warn('⚠️ Server nedostupný, načítám data z localStorage:', error.message);
                 
-                // Načti data z localStorage
+                // Načti data z localStorage jako fallback
                 try {
                     const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
-                    console.log('📊 Načítám data z localStorage:', localSalesData.length, 'sessions');
+                    console.log('📱 localStorage fallback:', localSalesData.length, 'sessions');
                     
-                    if (localSalesData.length > 0) {
-                        // Filtruj data podle aktuálních filtrů
-                        const filteredData = filterSalesData(localSalesData);
-                        console.log(`📊 Po filtrování: ${filteredData.length} sessions (z ${localSalesData.length})`);
-                        console.log('📊 Filtrovaná data sample:', filteredData.slice(0, 3));
-                        
-                        if (filteredData.length === 0) {
-                            console.warn('⚠️ Po filtrování nezůstala žádná data!');
-                            console.log('🔍 Debug filtry:', { currentTimeFilter, currentStoreFilter });
-                            console.log('🔍 Sample původních dat:', localSalesData.slice(0, 3));
-                        }
-                        
-                        const stats = generateLocalStats(filteredData);
-                        console.log('📊 Vygenerované statistiky:', stats);
-                        
-                        if (!stats || Object.keys(stats).length === 0) {
-                            console.error('❌ Statistiky se nevygenerovaly správně!');
-                            contentDiv.innerHTML = `
-                                <div class="no-data">
-                                    <span class="no-data-emoji">⚠️</span>
-                                    <h3>Chyba při generování statistik</h3>
-                                    <p>Data jsou k dispozici (${filteredData.length} sessions), ale statistiky se nepodařilo vygenerovat.</p>
-                                    <button class="filter-btn" onclick="debugLoadData()">🔍 Debug info</button>
-                                </div>
-                            `;
-                            return;
-                        }
-                        
-                        analyticsData = stats;
-                        renderAnalytics(analyticsData);
-                        
-                        // Aktualizuj info o filtrování
-                        updateFilterInfo(localSalesData.length, filteredData.length);
-                    } else {
-                        console.log('📊 Žádná data v localStorage');
+                    if (localSalesData.length === 0) {
                         contentDiv.innerHTML = `
                             <div class="no-data">
                                 <span class="no-data-emoji">📈</span>
                                 <h3>Zatím žádná data</h3>
+                                <p>Server není dostupný a v localStorage nejsou žádná data.</p>
                                 <p>Jakmile prodejci začnou používat prodejní asistent, zde se zobrazí analytické údaje.</p>
-                                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 1rem;">
-                                    Debug: localStorage má ${localSalesData.length} sessions
+                                <div style="margin-top: 1rem;">
+                                    <button class="filter-btn" onclick="loadAnalytics()">🔄 Zkusit znovu</button>
+                                    <button class="filter-btn" onclick="syncWithServer()">🌐 Sync se serverem</button>
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Zpracuj localStorage data stejně jako server data
+                    const filteredData = filterSalesData(localSalesData);
+                    console.log(`📱 Po filtrování localStorage: ${filteredData.length} sessions`);
+                    
+                    if (filteredData.length === 0) {
+                        console.warn('⚠️ localStorage data po filtrování prázdná');
+                        // Zobraz všechna data bez filtrů
+                        const unfilteredStats = generateLocalStats(localSalesData);
+                        if (unfilteredStats) {
+                            // Reset filtrů
+                            currentTimeFilter = 'all';
+                            currentStoreFilter = 'all';
+                            updateFilterButtons();
+                            
+                            contentDiv.innerHTML = `
+                                <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 2rem;">
+                                    <h4 style="color: #ff9800; margin: 0 0 0.5rem 0;">⚠️ Filtry resetovány (Offline)</h4>
+                                    <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                                        Server není dostupný. Zobrazuji všechna localStorage data bez filtrů.
+                                    </p>
+                                </div>
+                            `;
+                            
+                            renderAnalytics(unfilteredStats);
+                            return;
+                        }
+                    }
+                    
+                    const stats = generateLocalStats(filteredData);
+                    if (stats) {
+                        analyticsData = stats;
+                        
+                        // Přidej info o offline režimu
+                        contentDiv.innerHTML = `
+                            <div style="background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; border-radius: 10px; padding: 1rem; margin-bottom: 2rem;">
+                                <h4 style="color: #ff9800; margin: 0 0 0.5rem 0;">📱 Offline režim</h4>
+                                <p style="margin: 0; color: var(--text-primary); font-size: 0.9rem;">
+                                    Server není dostupný. Zobrazuji data z localStorage.
                                 </p>
                             </div>
                         `;
+                        
+                        renderAnalytics(analyticsData);
+                        updateFilterInfo(localSalesData.length, filteredData.length);
+                    } else {
+                        contentDiv.innerHTML = `
+                            <div class="no-data">
+                                <span class="no-data-emoji">⚠️</span>
+                                <h3>Chyba při zpracování dat</h3>
+                                <p>Data jsou dostupná (${localSalesData.length} sessions), ale nelze je zpracovat.</p>
+                                <div style="margin-top: 1rem;">
+                                    <button class="filter-btn" onclick="debugLoadData()">🔍 Debug info</button>
+                                    <button class="filter-btn" onclick="resetAllFilters()">🔄 Reset filtrů</button>
+                                </div>
+                            </div>
+                        `;
                     }
+                    
                 } catch (localError) {
-                    console.error('Chyba při načítání lokálních dat:', localError);
+                    console.error('❌ Chyba při načítání localStorage:', localError);
                     contentDiv.innerHTML = `
                         <div class="no-data">
-                            <span class="no-data-emoji">⚠️</span>
-                            <h3>Chyba při načítání dat</h3>
-                            <p>Nelze načíst ani lokální data. Zkuste obnovit stránku.</p>
-                            <button class="filter-btn" onclick="loadAnalytics()">Zkusit znovu</button>
+                            <span class="no-data-emoji">💥</span>
+                            <h3>Kritická chyba</h3>
+                            <p>Server není dostupný a nelze načíst ani localStorage data.</p>
+                            <button class="filter-btn" onclick="location.reload()">🔄 Obnovit stránku</button>
                         </div>
                     `;
                 }
@@ -688,6 +760,28 @@
                 case 'month': return 'Tento měsíc';
                 default: return currentTimeFilter;
             }
+        }
+
+        // Aktualizace stavu tlačítek filtrů
+        function updateFilterButtons() {
+            // Aktualizuj časové filtry
+            document.querySelectorAll('.time-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.store-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Aktivuj správná tlačítka
+            const allTimeBtn = Array.from(document.querySelectorAll('.time-filter')).find(btn => 
+                btn.textContent.includes('Všechna data')
+            );
+            if (allTimeBtn) allTimeBtn.classList.add('active');
+            
+            const allStoreBtn = Array.from(document.querySelectorAll('.store-filter')).find(btn => 
+                btn.textContent.includes('Všechny prodejny')
+            );
+            if (allStoreBtn) allStoreBtn.classList.add('active');
         }
         
         // Generování statistik z lokálních dat
