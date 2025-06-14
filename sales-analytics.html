@@ -315,6 +315,7 @@
                         <button class="filter-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3;">🔄 Obnovit data</button>
                         <button class="filter-btn" onclick="testServerConnection()" style="background: #2ed573; border-color: #2ed573;">🌐 Test serveru</button>
                         <button class="filter-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500;">🔄 Sync se serverem</button>
+                        <button class="filter-btn" onclick="resetServerData()" style="background: #e74c3c; border-color: #e74c3c;">🌐 Reset serveru</button>
                         <button class="filter-btn" onclick="cleanDuplicateSellerData()" style="background: #8e44ad; border-color: #8e44ad;">🔧 Opravit duplicity</button>
                         <button class="filter-btn" onclick="showSellerNameManager()" style="background: #6c5ce7; border-color: #6c5ce7;">👤 Správa jmen</button>
                         <button class="filter-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500;">🔄 Reset filtrů</button>
@@ -1546,6 +1547,71 @@
             }, 3000);
         }
 
+        // Reset server dat
+        async function resetServerData() {
+            if (!confirm('⚠️ POZOR: Reset serveru\n\nToto KOMPLETNĚ SMAŽE všechna data na serveru!\n\nTato akce je NEVRATNÁ!\n\nOpravdu chcete pokračovat?')) {
+                return;
+            }
+            
+            if (!confirm('🔴 FINÁLNÍ POTVRZENÍ\n\nPo kliknutí na OK budou VŠECHNA DATA NA SERVERU SMAZÁNA!\n\nTuto akci NELZE vzít zpět!\n\nJste si jisti?')) {
+                return;
+            }
+            
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.textContent = '🔥 Mažu server...';
+            btn.disabled = true;
+            btn.style.background = '#e74c3c';
+            
+            try {
+                console.log('🌐 Resetuji server data...');
+                
+                // Pošli požadavek pro smazání všech dat na serveru
+                const response = await fetch('/api/sales-data/reset', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'delete_all',
+                        confirmation: 'yes_delete_everything'
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Server resetován:', result);
+                    
+                    // Smaž i localStorage pro konzistenci
+                    localStorage.setItem('sales_sessions', '[]');
+                    console.log('✅ localStorage také vymazán');
+                    
+                    btn.textContent = '✅ Server resetován';
+                    btn.style.background = '#2ed573';
+                    
+                    // Aktualizuj analytiku
+                    loadAvailableStores();
+                    loadAnalytics();
+                    
+                    alert('✅ Server i localStorage byly kompletně resetovány!\n\nVšechna data byla smazána.');
+                    
+                } else {
+                    throw new Error(`Server error: ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Reset server failed:', error);
+                btn.textContent = '❌ Reset selhal';
+                btn.style.background = '#ff4757';
+                
+                alert('❌ Nepodařilo se resetovat server!\n\nServer může být offline nebo nepodporuje reset endpoint.');
+            }
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                btn.style.background = '#e74c3c';
+            }, 5000);
+        }
+
         // Synchronizace se serverem
         async function syncWithServer() {
             const btn = event.target;
@@ -1879,23 +1945,101 @@
                     filteredData = [];
                 }
                 
-                // Ulož filtrovaná data
+                const deletedCount = localData.length - filteredData.length;
+                
+                // 1. Ulož filtrovaná data lokálně
                 localStorage.setItem('sales_sessions', JSON.stringify(filteredData));
+                console.log(`🗑️ Lokálně smazáno: ${deletedCount} sessions`);
+                console.log(`📊 Lokálně zůstává: ${filteredData.length} sessions`);
                 
-                console.log(`🗑️ Smazáno: ${localData.length - filteredData.length} sessions`);
-                console.log(`📊 Zůstává: ${filteredData.length} sessions`);
+                // 2. Synchronizuj se serverem - pošli aktualizovaná data
+                btn.textContent = '🌐 Sync se serverem...';
                 
-                // Aktualizuj seznam prodejen a refresh analytiky
+                try {
+                    // Pokud mažeme všechna data, pošli prázdný array
+                    // Jinak pošli filtrovaná data
+                    const dataToSync = filteredData;
+                    
+                    console.log('🌐 Synchronizuji smazání se serverem...');
+                    console.log('🌐 Data k odeslání:', dataToSync.length, 'sessions');
+                    
+                    // Možnost 1: Pošli všechna zbývající data na server (přepíše kompletně)
+                    const syncResponse = await fetch('/api/sales-data/bulk-update', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'replace_all',
+                            salesData: dataToSync,
+                            deletedCount: deletedCount,
+                            period: period
+                        })
+                    });
+                    
+                    if (syncResponse.ok) {
+                        const syncResult = await syncResponse.json();
+                        console.log('✅ Server synchronizace úspěšná:', syncResult);
+                        btn.textContent = '✅ Smazáno + Sync OK';
+                        btn.style.background = '#2ed573';
+                    } else {
+                        // Fallback: Zkus individuálně smazat sessions na serveru
+                        console.log('⚠️ Bulk update failed, zkouším individuální mazání...');
+                        
+                        // Najdi sessions k smazání
+                        const sessionsToDelete = localData.filter(session => {
+                            return !filteredData.some(kept => 
+                                kept.timestamp === session.timestamp && 
+                                kept.seller === session.seller
+                            );
+                        });
+                        
+                        console.log('🗑️ Individuálně mažu', sessionsToDelete.length, 'sessions na serveru');
+                        
+                        // Pošli DELETE requesty pro jednotlivé sessions
+                        let serverDeletedCount = 0;
+                        for (const session of sessionsToDelete) {
+                            try {
+                                const deleteResponse = await fetch('/api/sales-data/' + encodeURIComponent(session.timestamp), {
+                                    method: 'DELETE'
+                                });
+                                if (deleteResponse.ok) {
+                                    serverDeletedCount++;
+                                }
+                            } catch (deleteError) {
+                                console.warn('⚠️ Nepodařilo se smazat session:', session.timestamp);
+                            }
+                        }
+                        
+                        btn.textContent = `✅ Smazáno (${serverDeletedCount}/${sessionsToDelete.length} sync)`;
+                        btn.style.background = serverDeletedCount === sessionsToDelete.length ? '#2ed573' : '#ff9500';
+                    }
+                    
+                } catch (serverError) {
+                    console.error('❌ Server sync error:', serverError);
+                    btn.textContent = '⚠️ Smazáno lokálně (server offline)';
+                    btn.style.background = '#ff9500';
+                    
+                    // Zobraz warning o offline režimu
+                    setTimeout(() => {
+                        alert(`⚠️ Data byla smazána lokálně, ale server není dostupný.\n\nPro kompletní smazání použijte později tlačítko "🔄 Sync se serverem"`);
+                    }, 1000);
+                }
+                
+                // 3. Aktualizuj UI
                 loadAvailableStores();
                 loadAnalytics();
                 
                 // Zavři modal
                 closeDeleteModal();
                 
-                alert(`✅ Úspěšně smazáno ${localData.length - filteredData.length} záznamů!`);
+                // Zobraz výsledek
+                setTimeout(() => {
+                    alert(`✅ Úspěšně smazáno ${deletedCount} záznamů!\n\n${filteredData.length} záznamů zůstává.`);
+                }, 500);
                 
             } catch (error) {
                 console.error('❌ Chyba při mazání:', error);
+                btn.textContent = '❌ Chyba při mazání';
+                btn.style.background = '#ff4757';
                 alert('❌ Chyba při mazání dat!');
             }
         }
