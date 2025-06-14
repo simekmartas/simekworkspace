@@ -316,6 +316,7 @@
                         <button class="filter-btn" onclick="testServerConnection()" style="background: #2ed573; border-color: #2ed573;">🌐 Test serveru</button>
                         <button class="filter-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500;">🔄 Sync se serverem</button>
                         <button class="filter-btn" onclick="cleanDuplicateSellerData()" style="background: #8e44ad; border-color: #8e44ad;">🔧 Opravit duplicity</button>
+                        <button class="filter-btn" onclick="showSellerNameManager()" style="background: #6c5ce7; border-color: #6c5ce7;">👤 Správa jmen</button>
                         <button class="filter-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500;">🔄 Reset filtrů</button>
                         <button class="filter-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757;">🗑️ Smazat data</button>
                     </div>
@@ -857,23 +858,39 @@
                     seller = nameMapping[seller];
                 }
                 
-                // Pokud je seller už username, nech ho být
-                // Ale zobrazuj ho s celým jménem pro lepší čitelnost
-                const displayNames = {
+                // Načti custom jména z localStorage
+                const customDisplayNames = JSON.parse(localStorage.getItem('seller_display_names') || '{}');
+                
+                // Výchozí zobrazovací jména (fallback)
+                const defaultDisplayNames = {
                     'tvalenta': 'Tomáš Valenta',
                     'admin': 'Admin Administrátor', 
                     'sgabriel': 'Šimon Gabriel',
-                    // Přidej další zobrazovací jména
+                    'malek': 'Pavel Malek',  // Předpokládaná hodnota - změnit přes "👤 Správa jmen"
                 };
                 
                 if (!stats.topSellers[seller]) {
+                    // Vytvoř lepší zobrazovací jméno
+                    let displayName = customDisplayNames[seller] || defaultDisplayNames[seller];
+                    
+                    if (!displayName) {
+                        // Automatické generování lepšího zobrazení pro neznámé usernames
+                        if (seller.length > 1) {
+                            // Kapitalizuj první písmeno
+                            displayName = seller.charAt(0).toUpperCase() + seller.slice(1);
+                        } else {
+                            displayName = seller;
+                        }
+                    }
+                    
                     stats.topSellers[seller] = { 
                         total: 0, 
                         sold: 0, 
                         notSold: 0, 
                         totalTime: 0, 
                         avgTime: 0,
-                        displayName: displayNames[seller] || seller
+                        displayName: displayName,
+                        username: seller  // Ulož i původní username
                     };
                 }
                 stats.topSellers[seller].total++;
@@ -1266,6 +1283,150 @@
             // Načti prodejny znovu a vynutí načtení
             loadAvailableStores();
             loadAnalytics();
+        }
+
+        // Správa jmen prodejců
+        function showSellerNameManager() {
+            // Načti aktuální prodejce z dat
+            const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+            const sellers = new Set();
+            
+            localData.forEach(session => {
+                const seller = session.seller || session.sellerId || 'Unknown';
+                if (seller && seller !== 'Unknown') {
+                    sellers.add(seller);
+                }
+            });
+            
+            const sellerList = Array.from(sellers).sort();
+            console.log('👤 Nalezení prodejci:', sellerList);
+            
+            // Načti aktuální mapování jmen z localStorage
+            const customDisplayNames = JSON.parse(localStorage.getItem('seller_display_names') || '{}');
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 10000; display: flex; 
+                align-items: center; justify-content: center; padding: 1rem; overflow-y: auto;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-primary, #ffffff); border-radius: 15px; padding: 2rem; 
+                    max-width: 600px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5); max-height: 80vh; overflow-y: auto;
+                ">
+                    <h3 style="color: var(--text-primary, #333); margin: 0 0 1.5rem 0; text-align: center;">
+                        👤 Správa jmen prodejců
+                    </h3>
+                    
+                    <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(108, 92, 231, 0.1); border-radius: 8px; border-left: 4px solid #6c5ce7;">
+                        <h4 style="color: #6c5ce7; margin: 0 0 0.5rem 0; font-size: 0.9rem;">ℹ️ Jak to funguje</h4>
+                        <p style="margin: 0; color: var(--text-primary); font-size: 0.85rem; line-height: 1.4;">
+                            Zde můžete nastavit zobrazovací jména pro prodejce. Změny se projeví okamžitě v analytice.
+                        </p>
+                    </div>
+                    
+                    <div id="seller-name-list" style="margin-bottom: 2rem;">
+                        ${sellerList.map(seller => {
+                            const currentDisplayName = customDisplayNames[seller] || getDefaultDisplayName(seller);
+                            return `
+                                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                                    <div style="flex: 1;">
+                                        <div style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 0.25rem;">Username:</div>
+                                        <div style="color: var(--text-primary); font-weight: 500; font-family: monospace;">${seller}</div>
+                                    </div>
+                                    <div style="flex: 2;">
+                                        <div style="color: var(--text-secondary); font-size: 0.8rem; margin-bottom: 0.25rem;">Zobrazované jméno:</div>
+                                        <input type="text" 
+                                               value="${currentDisplayName}" 
+                                               data-seller="${seller}"
+                                               style="width: 100%; padding: 0.5rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; background: rgba(255,255,255,0.1); color: var(--text-primary);"
+                                               placeholder="Zadejte celé jméno">
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button onclick="closeSellerNameManager()" style="
+                            background: rgba(255,255,255,0.1); color: var(--text-primary, #333); 
+                            border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; 
+                            border-radius: 8px; cursor: pointer; font-weight: 500;
+                        ">Zrušit</button>
+                        
+                        <button onclick="saveSellerNames()" style="
+                            background: #6c5ce7; color: white; border: none; 
+                            padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600;
+                        ">💾 Uložit změny</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.className = 'modal';
+            modal.id = 'seller-name-modal';
+            document.body.appendChild(modal);
+            
+            // Zavření na klik mimo
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+        }
+
+        // Získání výchozího zobrazovacího jména
+        function getDefaultDisplayName(seller) {
+            // Načti custom jména nejdříve
+            const customDisplayNames = JSON.parse(localStorage.getItem('seller_display_names') || '{}');
+            if (customDisplayNames[seller]) {
+                return customDisplayNames[seller];
+            }
+            
+                         // Fallback na výchozí jména
+            const defaultDisplayNames = {
+                'tvalenta': 'Tomáš Valenta',
+                'admin': 'Admin Administrátor', 
+                'sgabriel': 'Šimon Gabriel',
+                'malek': 'Pavel Malek',  // Předpokládaná hodnota - změnit přes "👤 Správa jmen"
+            };
+            
+            return defaultDisplayNames[seller] || (seller.charAt(0).toUpperCase() + seller.slice(1));
+        }
+
+        // Zavření správce jmen
+        function closeSellerNameManager() {
+            const modal = document.getElementById('seller-name-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Uložení jmen prodejců
+        function saveSellerNames() {
+            const inputs = document.querySelectorAll('#seller-name-list input[data-seller]');
+            const customDisplayNames = {};
+            
+            inputs.forEach(input => {
+                const seller = input.dataset.seller;
+                const displayName = input.value.trim();
+                if (displayName && displayName !== getDefaultDisplayName(seller)) {
+                    customDisplayNames[seller] = displayName;
+                }
+            });
+            
+            // Ulož do localStorage
+            localStorage.setItem('seller_display_names', JSON.stringify(customDisplayNames));
+            
+            console.log('👤 Uložená jména prodejců:', customDisplayNames);
+            
+            // Zavři modal
+            closeSellerNameManager();
+            
+            // Refresh analytiky
+            loadAnalytics();
+            
+            alert(`✅ Jména prodejců byla uložena!\n\nChanges saved: ${Object.keys(customDisplayNames).length} custom names`);
         }
 
         // Reset všech filtrů
