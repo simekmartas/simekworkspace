@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Prodejní analytika - Mobil Maják</title>
+    <!-- Legacy Browser Support First -->
+    <script src="legacy-browser-support.js"></script>
+    <link rel="stylesheet" href="legacy-browser-styles.css">
+    <link rel="stylesheet" href="css-compatibility-patches.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="progressive-enhancement.css">
 
@@ -237,10 +241,33 @@
             
             .filter-controls {
                 flex-direction: column;
+                gap: 0.5rem;
             }
             
             .filter-btn {
                 width: 100%;
+                min-width: auto;
+                font-size: 0.85rem;
+            }
+            
+            /* Zmenši text v tlačítkách prodejen na mobilu */
+            .store-filter {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                max-width: 100%;
+            }
+            
+            /* Na mobilech zobraz méně tlačítek v řádku pro prodejny */
+            #store-filters {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            #store-filters .filter-btn {
+                text-align: center;
+                justify-content: center;
             }
         }
     </style>
@@ -265,11 +292,22 @@
             </div>
 
             <div class="filter-section">
-                <div class="filter-controls">
-                    <button class="filter-btn active" onclick="loadAnalytics('all')">Všechna data</button>
-                    <button class="filter-btn" onclick="loadAnalytics('today')">Dnes</button>
-                    <button class="filter-btn" onclick="loadAnalytics('week')">Tento týden</button>
-                    <button class="filter-btn" onclick="loadAnalytics('month')">Tento měsíc</button>
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="color: var(--primary-color, #ff1493); margin-bottom: 1rem; text-align: center; font-size: 1rem;">📅 Časové období</h4>
+                    <div class="filter-controls">
+                        <button class="filter-btn time-filter active" onclick="setTimeFilter('all')">Všechna data</button>
+                        <button class="filter-btn time-filter" onclick="setTimeFilter('today')">Dnes</button>
+                        <button class="filter-btn time-filter" onclick="setTimeFilter('week')">Tento týden</button>
+                        <button class="filter-btn time-filter" onclick="setTimeFilter('month')">Tento měsíc</button>
+                    </div>
+                </div>
+                
+                <div style="margin-bottom: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <h4 style="color: var(--primary-color, #ff1493); margin-bottom: 1rem; text-align: center; font-size: 1rem;">🏪 Prodejna</h4>
+                    <div class="filter-controls" id="store-filters">
+                        <button class="filter-btn store-filter active" onclick="setStoreFilter('all')">Všechny prodejny</button>
+                        <!-- Dynamicky načtené prodejny -->
+                    </div>
                 </div>
                 
                 <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -277,6 +315,8 @@
                         <button class="filter-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3;">🔄 Obnovit data</button>
                         <button class="filter-btn" onclick="testServerConnection()" style="background: #2ed573; border-color: #2ed573;">🌐 Test serveru</button>
                         <button class="filter-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500;">🔄 Sync se serverem</button>
+                        <button class="filter-btn" onclick="cleanDuplicateSellerData()" style="background: #8e44ad; border-color: #8e44ad;">🔧 Opravit duplicity</button>
+                        <button class="filter-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500;">🔄 Reset filtrů</button>
                         <button class="filter-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757;">🗑️ Smazat data</button>
                     </div>
                 </div>
@@ -303,8 +343,10 @@
     <script src="access-control.js"></script>
     
     <script>
-        let currentFilter = 'all';
+        let currentTimeFilter = 'all';
+        let currentStoreFilter = 'all';
         let analyticsData = null;
+        let availableStores = [];
 
         // Kontrola přístupu - pouze pro administrátory
         function checkAdminAccess() {
@@ -319,29 +361,104 @@
             return true;
         }
 
-        // Načtení analytických dat
-        async function loadAnalytics(filter = 'all') {
-            if (!checkAdminAccess()) return;
+        // Načtení dostupných prodejen z dat
+        function loadAvailableStores() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                const stores = new Set();
+                
+                localData.forEach(session => {
+                    const store = session.store || session.prodejna || 'Neznámá prodejna';
+                    if (store && store !== 'undefined' && store !== '') {
+                        stores.add(store);
+                    }
+                });
+                
+                availableStores = Array.from(stores).sort();
+                console.log('🏪 Dostupné prodejny:', availableStores);
+                
+                // Aktualizuj UI filtrů prodejen
+                updateStoreFilters();
+                
+            } catch (error) {
+                console.error('Chyba při načítání prodejen:', error);
+            }
+        }
+
+        // Aktualizace UI filtrů prodejen
+        function updateStoreFilters() {
+            const storeFiltersContainer = document.getElementById('store-filters');
+            if (!storeFiltersContainer) return;
             
-            currentFilter = filter;
+            // Zachovej tlačítko "Všechny prodejny"
+            const allButton = storeFiltersContainer.querySelector('.store-filter[onclick*="all"]');
+            storeFiltersContainer.innerHTML = '';
+            if (allButton) {
+                storeFiltersContainer.appendChild(allButton);
+            } else {
+                storeFiltersContainer.innerHTML = '<button class="filter-btn store-filter active" onclick="setStoreFilter(\'all\')">Všechny prodejny</button>';
+            }
+            
+            // Přidej tlačítka pro jednotlivé prodejny
+            availableStores.forEach(store => {
+                const button = document.createElement('button');
+                button.className = 'filter-btn store-filter';
+                button.textContent = `🏪 ${store}`;
+                button.onclick = () => setStoreFilter(store);
+                storeFiltersContainer.appendChild(button);
+            });
+        }
+
+        // Nastavení časového filtru
+        function setTimeFilter(filter) {
+            currentTimeFilter = filter;
             
             // Aktualizuj aktivní tlačítko
-            document.querySelectorAll('.filter-btn').forEach(btn => {
+            document.querySelectorAll('.time-filter').forEach(btn => {
                 btn.classList.remove('active');
             });
             
             // Najdi a aktivuj správné tlačítko
-            if (event && event.target) {
-                event.target.classList.add('active');
+            const targetBtn = Array.from(document.querySelectorAll('.time-filter')).find(btn => 
+                btn.onclick.toString().includes(filter)
+            );
+            if (targetBtn) {
+                targetBtn.classList.add('active');
+            }
+            
+            console.log('📅 Nastaven časový filtr:', filter);
+            loadAnalytics();
+        }
+
+        // Nastavení filtru prodejny
+        function setStoreFilter(store) {
+            currentStoreFilter = store;
+            
+            // Aktualizuj aktivní tlačítko
+            document.querySelectorAll('.store-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Najdi a aktivuj správné tlačítko
+            if (store === 'all') {
+                const allBtn = document.querySelector('.store-filter[onclick*="all"]');
+                if (allBtn) allBtn.classList.add('active');
             } else {
-                // Při automatickém načtení aktivuj tlačítko podle filtru
-                const targetBtn = Array.from(document.querySelectorAll('.filter-btn')).find(btn => 
-                    btn.textContent.toLowerCase().includes(filter === 'all' ? 'všechna' : filter)
+                const targetBtn = Array.from(document.querySelectorAll('.store-filter')).find(btn => 
+                    btn.textContent.includes(store)
                 );
                 if (targetBtn) {
                     targetBtn.classList.add('active');
                 }
             }
+            
+            console.log('🏪 Nastaven filtr prodejny:', store);
+            loadAnalytics();
+        }
+
+        // Načtení analytických dat
+        async function loadAnalytics() {
+            if (!checkAdminAccess()) return;
             
             const contentDiv = document.getElementById('analyticsContent');
             contentDiv.innerHTML = `
@@ -351,6 +468,8 @@
                 </div>
             `;
             
+            console.log(`📊 Načítám data s filtry: čas="${currentTimeFilter}", prodejna="${currentStoreFilter}"`);
+            
             try {
                 // Zkus načíst ze serveru
                 const response = await fetch('/api/sales-data?type=stats');
@@ -359,7 +478,10 @@
                     const data = await response.json();
                     
                     if (data.success) {
-                        analyticsData = data.stats;
+                        // Filtruj server data podle filtrů
+                        const filteredData = filterSalesData(data.salesData || []);
+                        const stats = generateLocalStats(filteredData);
+                        analyticsData = stats;
                         renderAnalytics(analyticsData);
                         return;
                     }
@@ -375,13 +497,19 @@
                 try {
                     const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
                     console.log('📊 Načítám data z localStorage:', localSalesData.length, 'sessions');
-                    console.log('📊 Data detail:', localSalesData);
                     
                     if (localSalesData.length > 0) {
-                        const stats = generateLocalStats(localSalesData);
+                        // Filtruj data podle aktuálních filtrů
+                        const filteredData = filterSalesData(localSalesData);
+                        console.log(`📊 Po filtrování: ${filteredData.length} sessions (z ${localSalesData.length})`);
+                        
+                        const stats = generateLocalStats(filteredData);
                         console.log('📊 Vygenerované statistiky:', stats);
                         analyticsData = stats;
                         renderAnalytics(analyticsData);
+                        
+                        // Aktualizuj info o filtrování
+                        updateFilterInfo(localSalesData.length, filteredData.length);
                     } else {
                         console.log('📊 Žádná data v localStorage');
                         contentDiv.innerHTML = `
@@ -402,10 +530,103 @@
                             <span class="no-data-emoji">⚠️</span>
                             <h3>Chyba při načítání dat</h3>
                             <p>Nelze načíst ani lokální data. Zkuste obnovit stránku.</p>
-                            <button class="filter-btn" onclick="loadAnalytics('${currentFilter}')">Zkusit znovu</button>
+                            <button class="filter-btn" onclick="loadAnalytics()">Zkusit znovu</button>
                         </div>
                     `;
                 }
+            }
+        }
+
+        // Filtrování dat podle času a prodejny
+        function filterSalesData(salesData) {
+            return salesData.filter(session => {
+                // Časový filtr
+                if (currentTimeFilter !== 'all') {
+                    const sessionDate = new Date(session.timestamp);
+                    const now = new Date();
+                    
+                    switch(currentTimeFilter) {
+                        case 'today':
+                            if (sessionDate.toDateString() !== now.toDateString()) {
+                                return false;
+                            }
+                            break;
+                        case 'week':
+                            const weekAgo = new Date(now);
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            if (sessionDate < weekAgo) {
+                                return false;
+                            }
+                            break;
+                        case 'month':
+                            const monthAgo = new Date(now);
+                            monthAgo.setMonth(monthAgo.getMonth() - 1);
+                            if (sessionDate < monthAgo) {
+                                return false;
+                            }
+                            break;
+                    }
+                }
+                
+                // Filtr prodejny
+                if (currentStoreFilter !== 'all') {
+                    const sessionStore = session.store || session.prodejna || 'Neznámá prodejna';
+                    if (sessionStore !== currentStoreFilter) {
+                        return false;
+                    }
+                }
+                
+                return true;
+            });
+        }
+
+        // Aktualizace informací o filtrování
+        function updateFilterInfo(totalSessions, filteredSessions) {
+            const filterInfo = document.getElementById('filter-info');
+            if (filterInfo) {
+                filterInfo.remove();
+            }
+            
+            // Pouze pokud jsou nějaké filtry aktivní
+            if (currentTimeFilter !== 'all' || currentStoreFilter !== 'all') {
+                const analyticsContainer = document.querySelector('.analytics-container');
+                const contentDiv = document.getElementById('analyticsContent');
+                
+                if (analyticsContainer && contentDiv) {
+                    const infoDiv = document.createElement('div');
+                    infoDiv.id = 'filter-info';
+                    infoDiv.innerHTML = `
+                        <div style="
+                            background: rgba(33, 150, 243, 0.1); border: 1px solid #2196F3; 
+                            border-radius: 10px; padding: 1rem; margin-bottom: 2rem; 
+                            border-left: 4px solid #2196F3; text-align: center;
+                        ">
+                            <div style="color: #2196F3; font-weight: 600; margin-bottom: 0.5rem;">
+                                📊 Aktivní filtry
+                            </div>
+                            <div style="color: var(--text-primary, #333); font-size: 0.9rem;">
+                                📅 <strong>Období:</strong> ${getTimeFilterName()} | 
+                                🏪 <strong>Prodejna:</strong> ${currentStoreFilter === 'all' ? 'Všechny' : currentStoreFilter}
+                            </div>
+                            <div style="color: var(--text-secondary, #666); font-size: 0.8rem; margin-top: 0.5rem;">
+                                Zobrazuji ${filteredSessions} z ${totalSessions} celkových sessions
+                            </div>
+                        </div>
+                    `;
+                    
+                    analyticsContainer.insertBefore(infoDiv, contentDiv);
+                }
+            }
+        }
+
+        // Název časového filtru pro zobrazení
+        function getTimeFilterName() {
+            switch(currentTimeFilter) {
+                case 'all': return 'Všechna data';
+                case 'today': return 'Dnes';
+                case 'week': return 'Tento týden';
+                case 'month': return 'Tento měsíc';
+                default: return currentTimeFilter;
             }
         }
         
@@ -456,10 +677,40 @@
                     stats.sessionsWithTime++;
                 }
                 
-                // Top prodejci
-                const seller = session.seller || session.sellerId || 'Unknown';
+                // Top prodejci - normalizace jména
+                let seller = session.seller || session.sellerId || 'Unknown';
+                
+                // Normalizace jmen - mapování celých jmen na usernames
+                const nameMapping = {
+                    'Tomáš Valenta': 'tvalenta',
+                    'Admin Administrátor': 'admin',
+                    'Šimon Gabriel': 'sgabriel',
+                    // Přidej další mapování podle potřeby
+                };
+                
+                // Pokud je seller celé jméno, převeď na username
+                if (nameMapping[seller]) {
+                    seller = nameMapping[seller];
+                }
+                
+                // Pokud je seller už username, nech ho být
+                // Ale zobrazuj ho s celým jménem pro lepší čitelnost
+                const displayNames = {
+                    'tvalenta': 'Tomáš Valenta',
+                    'admin': 'Admin Administrátor', 
+                    'sgabriel': 'Šimon Gabriel',
+                    // Přidej další zobrazovací jména
+                };
+                
                 if (!stats.topSellers[seller]) {
-                    stats.topSellers[seller] = { total: 0, sold: 0, notSold: 0, totalTime: 0, avgTime: 0 };
+                    stats.topSellers[seller] = { 
+                        total: 0, 
+                        sold: 0, 
+                        notSold: 0, 
+                        totalTime: 0, 
+                        avgTime: 0,
+                        displayName: displayNames[seller] || seller
+                    };
                 }
                 stats.topSellers[seller].total++;
                 if (session.result === 'sold') {
@@ -604,8 +855,9 @@
             }
             
             const sellers = Object.entries(topSellers)
-                .map(([name, stats]) => ({
-                    name,
+                .map(([username, stats]) => ({
+                    username,
+                    displayName: stats.displayName || username,
                     ...stats,
                     successRate: stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(1) : 0
                 }))
@@ -626,7 +878,7 @@
                     <tbody>
                         ${sellers.map(seller => `
                             <tr>
-                                <td><strong>${seller.name}</strong></td>
+                                <td><strong>${seller.displayName}</strong></td>
                                 <td>${seller.total}</td>
                                 <td style="color: #2ed573;">${seller.sold}</td>
                                 <td style="color: #ff4757;">${seller.notSold}</td>
@@ -749,6 +1001,11 @@
         // Debug funkce
         function debugLoadData() {
             console.log('🔍 DEBUG: Kontroluji localStorage...');
+            console.log('🔍 Aktuální filtry:', {
+                časový: currentTimeFilter,
+                prodejna: currentStoreFilter
+            });
+            
             const localData = localStorage.getItem('sales_sessions');
             console.log('🔍 Raw localStorage data:', localData);
             
@@ -760,13 +1017,144 @@
                 if (parsed.length > 0) {
                     console.log('🔍 První session:', parsed[0]);
                     console.log('🔍 Poslední session:', parsed[parsed.length - 1]);
+                    
+                    // Analýza prodejců
+                    const sellers = new Set();
+                    parsed.forEach(session => {
+                        const seller = session.seller || session.sellerId || 'Unknown';
+                        sellers.add(seller);
+                    });
+                    console.log('🔍 Unikátní prodejci v datech:', Array.from(sellers));
+                    
+                    // Zkontroluj duplicity
+                    const sellerCounts = {};
+                    parsed.forEach(session => {
+                        const seller = session.seller || session.sellerId || 'Unknown';
+                        sellerCounts[seller] = (sellerCounts[seller] || 0) + 1;
+                    });
+                    console.log('🔍 Počty sessions podle prodejců:', sellerCounts);
+                    
+                    // Detekce možných duplicit
+                    const possibleDuplicates = [];
+                    const checkPairs = [
+                        ['Tomáš Valenta', 'tvalenta'],
+                        ['Admin Administrátor', 'admin'],
+                        ['Šimon Gabriel', 'sgabriel']
+                    ];
+                    
+                    checkPairs.forEach(([fullName, username]) => {
+                        if (sellerCounts[fullName] && sellerCounts[username]) {
+                            possibleDuplicates.push({
+                                fullName,
+                                username,
+                                fullNameCount: sellerCounts[fullName],
+                                usernameCount: sellerCounts[username],
+                                total: sellerCounts[fullName] + sellerCounts[username]
+                            });
+                        }
+                    });
+                    
+                    if (possibleDuplicates.length > 0) {
+                        console.warn('⚠️ NALEZENY DUPLICITNÍ PRODEJCI:');
+                        possibleDuplicates.forEach(dup => {
+                            console.warn(`   👤 ${dup.fullName} (${dup.fullNameCount}) + ${dup.username} (${dup.usernameCount}) = ${dup.total} sessions`);
+                        });
+                        console.warn('💡 Použijte tlačítko "🔧 Opravit duplicity" pro sloučení');
+                    } else {
+                        console.log('✅ Žádné duplicitní prodejci nenalezeni');
+                    }
                 }
             } catch (e) {
                 console.error('🔍 Chyba při parsování:', e);
             }
             
-            // Vynutí načtení
-            loadAnalytics('all');
+            // Načti prodejny znovu a vynutí načtení
+            loadAvailableStores();
+            loadAnalytics();
+        }
+
+        // Reset všech filtrů
+        function resetAllFilters() {
+            console.log('🔄 Resetuji všechny filtry...');
+            
+            // Reset filtrů
+            currentTimeFilter = 'all';
+            currentStoreFilter = 'all';
+            
+            // Aktivuj správná tlačítka
+            document.querySelectorAll('.time-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.store-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Aktivuj "Všechna data"
+            const allTimeBtn = Array.from(document.querySelectorAll('.time-filter')).find(btn => 
+                btn.textContent.includes('Všechna data')
+            );
+            if (allTimeBtn) allTimeBtn.classList.add('active');
+            
+            // Aktivuj "Všechny prodejny"
+            const allStoreBtn = Array.from(document.querySelectorAll('.store-filter')).find(btn => 
+                btn.textContent.includes('Všechny prodejny')
+            );
+            if (allStoreBtn) allStoreBtn.classList.add('active');
+            
+            // Načti data
+            loadAnalytics();
+        }
+
+        // Nová funkce pro normalizaci existujících dat
+        function cleanDuplicateSellerData() {
+            if (!confirm('Opravdu chcete normalizovat jména prodejců v existujících datech?\n\nToto sloučí duplicitní záznamy pro stejné prodejce.')) {
+                return;
+            }
+            
+            try {
+                const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                
+                // Mapování pro normalizaci jmen
+                const nameMapping = {
+                    'Tomáš Valenta': 'tvalenta',
+                    'Admin Administrátor': 'admin',
+                    'Šimon Gabriel': 'sgabriel',
+                };
+                
+                let changedCount = 0;
+                
+                // Projdi všechny sessions a normalizuj jména
+                localData.forEach(session => {
+                    const originalSeller = session.seller || session.sellerId;
+                    
+                    if (nameMapping[originalSeller]) {
+                        // Aktualizuj seller i sellerId
+                        session.seller = nameMapping[originalSeller];
+                        session.sellerId = nameMapping[originalSeller];
+                        changedCount++;
+                        console.log(`✅ Normalizováno: "${originalSeller}" → "${nameMapping[originalSeller]}"`);
+                    }
+                });
+                
+                // Ulož opravená data
+                localStorage.setItem('sales_sessions', JSON.stringify(localData));
+                
+                console.log(`🔧 Normalizace dokončena! Změněno ${changedCount} záznamů.`);
+                
+                if (changedCount > 0) {
+                    alert(`✅ Normalizace dokončena!\n\nZměněno ${changedCount} záznamů.\n\nDuplicité prodejci (např. "Tomáš Valenta" + "tvalenta") jsou nyní sloučeni pod jednotným jménem.\n\nAnalytika se automaticky obnoví.`);
+                } else {
+                    alert('ℹ️ Žádné duplicity k opravě nebyly nalezeny.\n\nData jsou již v pořádku.');
+                }
+                
+                // Aktualizuj seznam prodejen a refresh analytiky
+                loadAvailableStores();
+                loadAnalytics();
+                
+            } catch (error) {
+                console.error('❌ Chyba při normalizaci dat:', error);
+                alert('❌ Chyba při normalizaci dat!');
+            }
         }
 
         // Test serveru
@@ -824,8 +1212,9 @@
                         btn.textContent = '✅ Synchronizováno';
                         btn.style.background = '#2ed573';
                         
-                        // Refresh analytiky
-                        loadAnalytics('all');
+                        // Aktualizuj seznam prodejen a refresh analytiky
+                        loadAvailableStores();
+                        loadAnalytics();
                     } else {
                         throw new Error('Server nevrátil validní data');
                     }
@@ -878,73 +1267,219 @@
             
             modal.innerHTML = `
                 <div style="
-                    background: var(--bg-primary); border-radius: 15px; padding: 2rem; 
+                    background: var(--bg-primary, #ffffff); border-radius: 15px; padding: 2rem; 
                     max-width: 500px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
                 ">
-                    <h3 style="color: var(--text-primary); margin: 0 0 1.5rem 0; text-align: center;">
+                    <h3 style="color: var(--text-primary, #333); margin: 0 0 1.5rem 0; text-align: center;">
                         🗑️ Smazat prodejní data
                     </h3>
                     
                     <div style="margin-bottom: 2rem;">
-                        <h4 style="color: var(--primary-color); margin-bottom: 1rem;">Vyberte období:</h4>
+                        <h4 style="color: var(--primary-color, #ff1493); margin-bottom: 1rem;">Vyberte období:</h4>
                         
-                        <div style="display: grid; gap: 0.75rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                                <input type="radio" name="deleteOption" value="today" style="accent-color: var(--primary-color);">
-                                <span style="color: var(--text-primary);">Pouze dnešní data</span>
-                            </label>
+                        <div style="display: block;">
+                            <div class="radio-option" data-value="today" style="
+                                display: flex; align-items: center; gap: 0.75rem; cursor: pointer; 
+                                padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; 
+                                margin-bottom: 0.75rem; border: 2px solid transparent; transition: all 0.3s ease;
+                            ">
+                                <div class="radio-circle" style="
+                                    width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 50%; 
+                                    position: relative; background: white;
+                                ">
+                                    <div class="radio-dot" style="
+                                        width: 8px; height: 8px; background: #ff1493; border-radius: 50%; 
+                                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                        opacity: 0; transition: opacity 0.3s ease;
+                                    "></div>
+                                </div>
+                                <span style="color: var(--text-primary, #333); font-weight: 500;">Pouze dnešní data</span>
+                            </div>
                             
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                                <input type="radio" name="deleteOption" value="week" style="accent-color: var(--primary-color);">
-                                <span style="color: var(--text-primary);">Tento týden</span>
-                            </label>
+                            <div class="radio-option" data-value="week" style="
+                                display: flex; align-items: center; gap: 0.75rem; cursor: pointer; 
+                                padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; 
+                                margin-bottom: 0.75rem; border: 2px solid transparent; transition: all 0.3s ease;
+                            ">
+                                <div class="radio-circle" style="
+                                    width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 50%; 
+                                    position: relative; background: white;
+                                ">
+                                    <div class="radio-dot" style="
+                                        width: 8px; height: 8px; background: #ff1493; border-radius: 50%; 
+                                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                        opacity: 0; transition: opacity 0.3s ease;
+                                    "></div>
+                                </div>
+                                <span style="color: var(--text-primary, #333); font-weight: 500;">Tento týden</span>
+                            </div>
                             
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,255,255,0.05); border-radius: 8px;">
-                                <input type="radio" name="deleteOption" value="month" style="accent-color: var(--primary-color);">
-                                <span style="color: var(--text-primary);">Tento měsíc</span>
-                            </label>
+                            <div class="radio-option" data-value="month" style="
+                                display: flex; align-items: center; gap: 0.75rem; cursor: pointer; 
+                                padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; 
+                                margin-bottom: 0.75rem; border: 2px solid transparent; transition: all 0.3s ease;
+                            ">
+                                <div class="radio-circle" style="
+                                    width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 50%; 
+                                    position: relative; background: white;
+                                ">
+                                    <div class="radio-dot" style="
+                                        width: 8px; height: 8px; background: #ff1493; border-radius: 50%; 
+                                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                        opacity: 0; transition: opacity 0.3s ease;
+                                    "></div>
+                                </div>
+                                <span style="color: var(--text-primary, #333); font-weight: 500;">Tento měsíc</span>
+                            </div>
                             
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.75rem; background: rgba(255,71,87,0.1); border-radius: 8px; border: 1px solid rgba(255,71,87,0.3);">
-                                <input type="radio" name="deleteOption" value="all" style="accent-color: #ff4757;">
+                            <div class="radio-option" data-value="all" style="
+                                display: flex; align-items: center; gap: 0.75rem; cursor: pointer; 
+                                padding: 1rem; background: rgba(255,71,87,0.1); border-radius: 8px; 
+                                border: 2px solid rgba(255,71,87,0.3); transition: all 0.3s ease;
+                            ">
+                                <div class="radio-circle" style="
+                                    width: 18px; height: 18px; border: 2px solid #ff4757; border-radius: 50%; 
+                                    position: relative; background: white;
+                                ">
+                                    <div class="radio-dot" style="
+                                        width: 8px; height: 8px; background: #ff4757; border-radius: 50%; 
+                                        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                        opacity: 0; transition: opacity 0.3s ease;
+                                    "></div>
+                                </div>
                                 <span style="color: #ff4757; font-weight: 600;">⚠️ Všechna data (POZOR!)</span>
-                            </label>
+                            </div>
+                        </div>
+                        
+                        <div id="selected-info" style="
+                            margin-top: 1rem; padding: 0.75rem; background: rgba(33, 150, 243, 0.1); 
+                            border-radius: 8px; border-left: 4px solid #2196F3; display: none;
+                        ">
+                            <span style="color: #2196F3; font-weight: 500;">📋 Vybráno: </span>
+                            <span id="selected-text" style="color: var(--text-primary, #333);"></span>
                         </div>
                     </div>
                     
                     <div style="display: flex; gap: 1rem; justify-content: center;">
-                        <button onclick="this.closest('.modal').remove()" style="
-                            background: rgba(255,255,255,0.1); color: var(--text-primary); 
+                        <button onclick="closeDeleteModal()" style="
+                            background: rgba(255,255,255,0.1); color: var(--text-primary, #333); 
                             border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; 
-                            border-radius: 8px; cursor: pointer;
+                            border-radius: 8px; cursor: pointer; font-weight: 500;
                         ">Zrušit</button>
                         
-                        <button onclick="confirmDeleteData(this)" style="
-                            background: #ff4757; color: white; border: none; 
-                            padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600;
-                        ">🗑️ Smazat</button>
+                        <button id="confirm-delete-btn" onclick="confirmDeleteData(this)" style="
+                            background: #cccccc; color: #666666; border: none; 
+                            padding: 0.75rem 1.5rem; border-radius: 8px; cursor: not-allowed; font-weight: 600;
+                        " disabled>🗑️ Smazat</button>
                     </div>
                 </div>
             `;
             
             modal.className = 'modal';
+            modal.id = 'delete-modal';
             document.body.appendChild(modal);
+            
+            // Přidej event listenery pro radio buttony
+            const radioOptions = modal.querySelectorAll('.radio-option');
+            let selectedValue = null;
+            
+                         radioOptions.forEach(option => {
+                 // Hover efekt
+                 option.addEventListener('mouseenter', function() {
+                     if (selectedValue !== this.dataset.value) {
+                         this.style.background = this.dataset.value === 'all' 
+                             ? 'rgba(255,71,87,0.15)' 
+                             : 'rgba(255,255,255,0.1)';
+                     }
+                 });
+                 
+                 option.addEventListener('mouseleave', function() {
+                     if (selectedValue !== this.dataset.value) {
+                         this.style.background = this.dataset.value === 'all' 
+                             ? 'rgba(255,71,87,0.1)' 
+                             : 'rgba(255,255,255,0.05)';
+                     }
+                 });
+                 
+                 option.addEventListener('click', function() {
+                    // Odznač všechny ostatní
+                    radioOptions.forEach(opt => {
+                        opt.style.borderColor = 'transparent';
+                        opt.style.background = opt.dataset.value === 'all' 
+                            ? 'rgba(255,71,87,0.1)' 
+                            : 'rgba(255,255,255,0.05)';
+                        const dot = opt.querySelector('.radio-dot');
+                        if (dot) dot.style.opacity = '0';
+                    });
+                    
+                    // Označ aktuální
+                    this.style.borderColor = this.dataset.value === 'all' ? '#ff4757' : '#2196F3';
+                    this.style.background = this.dataset.value === 'all' 
+                        ? 'rgba(255,71,87,0.2)' 
+                        : 'rgba(33, 150, 243, 0.1)';
+                    const dot = this.querySelector('.radio-dot');
+                    if (dot) dot.style.opacity = '1';
+                    
+                    selectedValue = this.dataset.value;
+                    
+                    // Aktualizuj info a tlačítko
+                    const infoDiv = modal.querySelector('#selected-info');
+                    const textSpan = modal.querySelector('#selected-text');
+                    const deleteBtn = modal.querySelector('#confirm-delete-btn');
+                    
+                    const optionTexts = {
+                        today: 'Pouze dnešní data',
+                        week: 'Tento týden',
+                        month: 'Tento měsíc',
+                        all: 'VŠECHNA DATA (POZOR!)'
+                    };
+                    
+                    if (infoDiv && textSpan && deleteBtn) {
+                        infoDiv.style.display = 'block';
+                        textSpan.textContent = optionTexts[selectedValue];
+                        
+                        deleteBtn.disabled = false;
+                        deleteBtn.style.cursor = 'pointer';
+                        deleteBtn.style.background = '#ff4757';
+                        deleteBtn.style.color = 'white';
+                    }
+                    
+                    console.log('🎯 Vybráno:', selectedValue);
+                });
+            });
             
             // Zavření na klik mimo
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) modal.remove();
             });
+            
+            // Ulož selected value pro pozdější použití
+            modal.selectedValue = null;
+            modal.getSelectedValue = () => selectedValue;
+        }
+
+        // Zavření delete modalu
+        function closeDeleteModal() {
+            const modal = document.getElementById('delete-modal');
+            if (modal) {
+                modal.remove();
+            }
         }
 
         // Potvrzení smazání dat
         async function confirmDeleteData(btn) {
-            const selectedOption = document.querySelector('input[name="deleteOption"]:checked');
+            const modal = document.getElementById('delete-modal');
+            const selectedValue = modal ? modal.getSelectedValue() : null;
             
-            if (!selectedOption) {
+            console.log('🗑️ Attempting delete with selection:', selectedValue);
+            
+            if (!selectedValue) {
                 alert('Prosím vyberte období pro smazání.');
                 return;
             }
             
-            const period = selectedOption.value;
+            const period = selectedValue;
             const periodNames = {
                 today: 'dnešní data',
                 week: 'data z tohoto týdne',
@@ -994,11 +1529,12 @@
                 console.log(`🗑️ Smazáno: ${localData.length - filteredData.length} sessions`);
                 console.log(`📊 Zůstává: ${filteredData.length} sessions`);
                 
-                // Refresh analytiky
-                loadAnalytics('all');
+                // Aktualizuj seznam prodejen a refresh analytiky
+                loadAvailableStores();
+                loadAnalytics();
                 
                 // Zavři modal
-                document.querySelector('.modal').remove();
+                closeDeleteModal();
                 
                 alert(`✅ Úspěšně smazáno ${localData.length - filteredData.length} záznamů!`);
                 
@@ -1062,6 +1598,76 @@
             }
         }
 
+        // Funkce pro kontrolu duplicit při startu
+        function checkForDuplicates() {
+            try {
+                const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                if (localData.length === 0) return;
+                
+                const sellerCounts = {};
+                localData.forEach(session => {
+                    const seller = session.seller || session.sellerId || 'Unknown';
+                    sellerCounts[seller] = (sellerCounts[seller] || 0) + 1;
+                });
+                
+                const checkPairs = [
+                    ['Tomáš Valenta', 'tvalenta'],
+                    ['Admin Administrátor', 'admin'],
+                    ['Šimon Gabriel', 'sgabriel']
+                ];
+                
+                const duplicates = [];
+                checkPairs.forEach(([fullName, username]) => {
+                    if (sellerCounts[fullName] && sellerCounts[username]) {
+                        duplicates.push({ fullName, username });
+                    }
+                });
+                
+                if (duplicates.length > 0) {
+                    // Zobraz upozornění o duplicitách
+                    const analyticsContainer = document.querySelector('.analytics-container');
+                    if (analyticsContainer) {
+                        const warningDiv = document.createElement('div');
+                        warningDiv.innerHTML = `
+                            <div style="
+                                background: rgba(255, 152, 0, 0.1); border: 1px solid #ff9800; 
+                                border-radius: 10px; padding: 1rem; margin-bottom: 2rem; 
+                                border-left: 4px solid #ff9800;
+                            ">
+                                <h4 style="color: #ff9800; margin: 0 0 0.5rem 0; font-size: 1rem;">
+                                    ⚠️ Nalezeny duplicitní prodejci
+                                </h4>
+                                <p style="color: var(--text-primary); margin: 0 0 1rem 0; font-size: 0.9rem;">
+                                    V datech se našli duplicitní záznamy pro stejné prodejce. To způsobuje rozdělení statistik.
+                                </p>
+                                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                    <button onclick="cleanDuplicateSellerData()" style="
+                                        background: #8e44ad; color: white; border: none; 
+                                        padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; 
+                                        font-size: 0.9rem; font-weight: 500;
+                                    ">🔧 Opravit automaticky</button>
+                                    <button onclick="this.closest('div').style.display='none'" style="
+                                        background: rgba(255,255,255,0.1); color: var(--text-primary); 
+                                        border: 1px solid rgba(255,255,255,0.2); padding: 0.5rem 1rem; 
+                                        border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+                                    ">Zavřít upozornění</button>
+                                </div>
+                            </div>
+                        `;
+                        
+                        const filterSection = document.querySelector('.filter-section');
+                        if (filterSection) {
+                            analyticsContainer.insertBefore(warningDiv, filterSection);
+                        }
+                    }
+                    
+                    console.warn('⚠️ Nalezeny duplicitní prodejci při startu aplikace');
+                }
+            } catch (error) {
+                console.error('Chyba při kontrole duplicit:', error);
+            }
+        }
+
         // Inicializace při načtení stránky
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Analytika se inicializuje...');
@@ -1092,10 +1698,16 @@
                 setTimeout(showDataStatus, 200);
             }
             
+            // Zkontroluj duplicity
+            setTimeout(checkForDuplicates, 300);
+            
+            // Načti dostupné prodejny
+            setTimeout(loadAvailableStores, 150);
+            
             // Malé zpoždění aby se všechno načetlo
             setTimeout(() => {
-                loadAnalytics('all');
-            }, 100);
+                loadAnalytics();
+            }, 500);
         });
     </script>
 </body>
