@@ -89,7 +89,7 @@
         /* Hlavní metriky nahoře */
         .main-metrics {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 2rem;
             margin-bottom: 3rem;
         }
@@ -709,6 +709,11 @@
                     <div class="metric-value" id="totalServicesSold">0</div>
                     <div class="metric-label">Celkem prodané služby</div>
                 </div>
+                <div class="metric-card" style="background: linear-gradient(145deg, #FF9800 0%, #F57C00 100%); color: white; border-color: #F57C00;">
+                    <div class="metric-icon">📊</div>
+                    <div class="metric-value" id="averageItemsPerReceipt">0</div>
+                    <div class="metric-label">Průměr položek na účtenku</div>
+                </div>
             </div>
 
             <!-- Historie data picker -->
@@ -765,6 +770,14 @@
                             </div>
                         </div>
                         <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-content">
+                                <div class="stat-label">PRŮMĚR POLOŽEK</div>
+                                <div class="stat-value" id="currentAverageItems">0</div>
+                                <div class="stat-subtitle">na účtenku dnes</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
                             <div class="stat-icon">⭐</div>
                             <div class="stat-content">
                                 <div class="stat-label">POZICE V ŽEBŘÍČKU</div>
@@ -796,6 +809,14 @@
                                 <div class="stat-label">MĚSÍČNÍ CELKEM</div>
                                 <div class="stat-value" id="monthlyTotalSales">0</div>
                                 <div class="stat-subtitle">všech položek</div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📊</div>
+                            <div class="stat-content">
+                                <div class="stat-label">PRŮMĚR POLOŽEK</div>
+                                <div class="stat-value" id="monthlyAverageItems">0</div>
+                                <div class="stat-subtitle">na účtenku tento měsíc</div>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -973,6 +994,7 @@
     <script src="history-ui-components.js"></script>
     <script src="performance-monitor.js"></script>
     <script src="accessibility-enhancements.js"></script>
+    <script src="leaderboards-data-loader.js"></script>
     <script src="user-profile-data-loader.js"></script>
     <script src="user-profile.js"></script>
     

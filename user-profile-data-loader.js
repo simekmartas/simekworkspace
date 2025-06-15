@@ -644,10 +644,12 @@ class UserProfileDataLoader {
         let totalItems = 0;
         let totalServices = 0;
         let aligatorSales = 0;
+        let averageItemsPerReceipt = 0;
 
         // Najít indexy sloupců podle názvů
         const polozkyIndex = headers.findIndex(h => h.toLowerCase().includes('polozky'));
         const sluzbyIndex = headers.findIndex(h => h.toLowerCase().includes('sluzby'));
+        const polDokIndex = headers.findIndex(h => h.toLowerCase().includes('pol_dok'));
         
         // Hledat ALIGATOR různými způsoby
         let aligatorIndex = headers.findIndex(h => h.toLowerCase() === 'aligator');
@@ -661,7 +663,7 @@ class UserProfileDataLoader {
             ct300Index = headers.findIndex(h => h.toLowerCase() === 'ct300');
         }
         
-        console.log(`Indexy sloupců: položky=${polozkyIndex}, služby=${sluzbyIndex}, aligator=${aligatorIndex}, ct300=${ct300Index}`);
+        console.log(`Indexy sloupců: položky=${polozkyIndex}, služby=${sluzbyIndex}, aligator=${aligatorIndex}, ct300=${ct300Index}, pol_dok=${polDokIndex}`);
 
         rows.forEach(row => {
             console.log('Zpracovávám řádek:', row);
@@ -678,6 +680,13 @@ class UserProfileDataLoader {
                 totalServices += parseInt(row[sluzbyIndex]) || 0;
             } else {
                 totalServices += parseInt(row[4]) || 0; // fallback na index 4
+            }
+            
+            // Průměr položek na účtenku (POL_DOK)
+            if (polDokIndex >= 0) {
+                const polDokValue = parseFloat(row[polDokIndex]) || 0;
+                averageItemsPerReceipt = polDokValue; // Používáme poslední hodnotu (je stejná pro všechny řádky)
+                console.log(`POL_DOK z indexu ${polDokIndex}: ${polDokValue}`);
             }
             
             // ALIGATOR - hledat přímo sloupec ALIGATOR
@@ -698,11 +707,12 @@ class UserProfileDataLoader {
             }
         });
 
-        console.log(`Celkové metriky (${isMonthly ? 'měsíční' : 'aktuální'}):`, { totalItems, totalServices, aligatorSales });
+        console.log(`Celkové metriky (${isMonthly ? 'měsíční' : 'aktuální'}):`, { totalItems, totalServices, aligatorSales, averageItemsPerReceipt });
 
         // Aktualizovat hlavní metriky (zobrazují se vždy - berou se z aktuálně aktivního tabu)
         const totalItemsElement = document.getElementById('totalItemsSold');
         const totalServicesElement = document.getElementById('totalServicesSold');
+        const averageItemsElement = document.getElementById('averageItemsPerReceipt');
         
         if (totalItemsElement) {
             totalItemsElement.textContent = totalItems;
@@ -710,16 +720,89 @@ class UserProfileDataLoader {
         if (totalServicesElement) {
             totalServicesElement.textContent = totalServices;
         }
+        if (averageItemsElement) {
+            averageItemsElement.textContent = averageItemsPerReceipt.toFixed(1);
+        }
 
         // Aktualizovat tab-specifické metriky
         const prefix = isMonthly ? 'monthly' : 'current';
         const aligatorElement = document.getElementById(`${prefix}AligatorSales`);
         const totalElement = document.getElementById(`${prefix}TotalSales`);
+        const averageElement = document.getElementById(`${prefix}AverageItems`);
         const rankingElement = document.getElementById(`${prefix}Ranking`);
 
         if (aligatorElement) aligatorElement.textContent = aligatorSales;
         if (totalElement) totalElement.textContent = totalItems;
-        if (rankingElement) rankingElement.textContent = '1'; // Hardcodované zatím
+        if (averageElement) averageElement.textContent = averageItemsPerReceipt.toFixed(1);
+        
+        // Získat skutečnou pozici v žebříčku místo hardcodované hodnoty
+        if (rankingElement) {
+            this.updateUserRanking(rankingElement, isMonthly);
+        }
+    }
+
+    // NOVÁ metoda pro aktualizaci skutečné pozice v žebříčku
+    async updateUserRanking(rankingElement, isMonthly) {
+        console.log(`🏆 Aktualizuji pozici v žebříčku pro ${isMonthly ? 'měsíční' : 'aktuální'} data`);
+        
+        try {
+            // Použít LeaderboardsDataLoader pro získání žebříčku
+            if (window.LeaderboardsDataLoader) {
+                const tempLoader = new window.LeaderboardsDataLoader('temp-container');
+                
+                // Počkat na načtení dat
+                await new Promise(resolve => {
+                    const checkInterval = setInterval(() => {
+                        if (tempLoader.leaderboardData && tempLoader.leaderboardData.length > 0) {
+                            clearInterval(checkInterval);
+                            resolve();
+                        }
+                    }, 100);
+                    
+                    // Timeout po 10 sekundách
+                    setTimeout(() => {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }, 10000);
+                });
+                
+                // Najít pozici uživatele v žebříčku
+                const userSellerIdStr = String(this.userSellerId);
+                const userIndex = tempLoader.leaderboardData.findIndex(seller => 
+                    String(seller.sellerId) === userSellerIdStr
+                );
+                
+                if (userIndex !== -1) {
+                    const position = userIndex + 1;
+                    const totalPlayers = tempLoader.leaderboardData.length;
+                    
+                    console.log(`✅ Pozice nalezena: ${position}/${totalPlayers}`);
+                    
+                    // Aktualizovat UI s pozicí
+                    let rankingText = `${position}`;
+                    if (position === 1) {
+                        rankingText = '🥇 1';
+                    } else if (position === 2) {
+                        rankingText = '🥈 2';
+                    } else if (position === 3) {
+                        rankingText = '🥉 3';
+                    }
+                    
+                    rankingElement.textContent = rankingText;
+                } else {
+                    console.log('⚠️ Uživatel nenalezen v žebříčku');
+                    rankingElement.textContent = '?';
+                }
+                
+            } else {
+                console.log('⚠️ LeaderboardsDataLoader není dostupný');
+                rankingElement.textContent = '?';
+            }
+            
+        } catch (error) {
+            console.error('❌ Chyba při získávání pozice v žebříčku:', error);
+            rankingElement.textContent = '?';
+        }
     }
 
     // Helper metoda pro získání správného jména uživatele
@@ -858,7 +941,11 @@ class UserProfileDataLoader {
 
         if (totalPointsElement) totalPointsElement.textContent = totalPoints;
         if (averagePointsElement) averagePointsElement.textContent = averagePerDay;
-        if (pointsRankingElement) pointsRankingElement.textContent = '1'; // Hardcodované zatím
+        
+        // Získat skutečnou pozici v žebříčku místo hardcodované hodnoty
+        if (pointsRankingElement) {
+            this.updateUserRanking(pointsRankingElement, true); // true = měsíční data pro body
+        }
 
         // Uložit data pro zobrazení v tabulce
         this.pointsData = {
@@ -910,7 +997,7 @@ class UserProfileDataLoader {
                         <h3>📊 ${headerText}</h3>
                         ${dateInfo && !isHistorical ? `<p><strong>Datum:</strong> ${dateInfo}</p>` : ''}
                         <p><strong>ID prodejce:</strong> ${this.escapeHtml(this.userSellerId)}</p>
-                        <p><strong>Pozice v žebříčku:</strong> 🥇 #1</p>
+                        <p><strong>Pozice v žebříčku:</strong> <span id="tableUserRanking">Načítám...</span></p>
                     </div>
 
                     <!-- Tabulka dat - STEJNÝ formát jako ProdejnyDataLoader -->
@@ -948,6 +1035,12 @@ class UserProfileDataLoader {
         `;
 
         this.setupEventListeners();
+        
+        // Aktualizovat pozici v žebříčku v tabulce
+        const tableRankingElement = document.getElementById('tableUserRanking');
+        if (tableRankingElement) {
+            this.updateUserRanking(tableRankingElement, isMonthly);
+        }
     }
 
     // NOVÁ metoda - zobrazení bodové tabulky s podporou historie
