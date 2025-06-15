@@ -439,6 +439,48 @@ function addSalesAssistantStyles() {
             color: var(--primary-color);
         }
         
+        /* Tooltip styly pro služby */
+        .service-tooltip {
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .service-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px;
+            position: absolute;
+            z-index: 10000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.75rem;
+            line-height: 1.3;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .service-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+        }
+        
+        .service-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
         .sales-form {
             margin-top: 1.5rem;
         }
@@ -830,6 +872,11 @@ function renderZasilkovnaStep1() {
         </h3>
         
         <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>📱 PRODEJNÍ TIP - OBALY:</h4>
+                <p>"Nový telefon určitě potřebuje ochranu! Můžu vám nabídnout transparentní obal který nezmění design, barevný obal pro osobitost, nebo knížkový obal s extra ochranou displeje."</p>
+            </div>
+            
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 📱 OBALY - Vyberte typ obalu:
             </h4>
@@ -893,6 +940,11 @@ function renderZasilkovnaStep2() {
         </div>
         
         <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🔍 PRODEJNÍ TIP - SKLÍČKA:</h4>
+                <p>"Displej je nejdražší část telefonu na opravu! Kvalitní ochranné sklíčko vás vyjde levněji než jedna oprava. Mám tu levnější i kvalitnější variantu podle vašich potřeb."</p>
+            </div>
+            
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 🔍 SKLÍČKA - Vyberte typ sklíčka:
             </h4>
@@ -953,6 +1005,11 @@ function renderZasilkovnaStep3() {
         </div>
         
         <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🔌 PRODEJNÍ TIP - PŘÍSLUŠENSTVÍ:</h4>
+                <p>"K novému telefonu se hodí i praktické doplňky! Náhradní kabel pro práci, rychlonabíječka pro rychlé dobíjení, nebo držák do auta pro bezpečnou jízdu."</p>
+            </div>
+            
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 🔌 OSTATNÍ PŘÍSLUŠENSTVÍ - Vyberte co se prodalo:
             </h4>
@@ -1481,21 +1538,6 @@ function renderNovyTelefonScenario() {
                     <h4>❓ NEJDŘÍV SE ZEPTEJ:</h4>
                     <p>"Vybereme nový nebo bazarový telefon? Co máte teď za telefon? Kolik byste chtěl investovat? Co na telefonu budete dělat?"</p>
                 </div>
-                
-                <div class="sales-tip">
-                    <h4>📱 NABÍDNI TELEFON TÍMTO STYLEM:</h4>
-                    <p>"Na základě toho co jste říkal, tak tento telefon pro vás bude ideální, můžete na něm [doplň využití] a vychází cca na [rozpočet +-]. V ceně máte telefon, příslušenství i služby."</p>
-                </div>
-                
-                <div class="sales-tip">
-                    <h4>💰 STARÝ TELEFON - POKUD HO NECHCE:</h4>
-                    <p>"Co budete dělat se starým telefonem? Můžeme ho od vás rovnou vykoupit a díky tomu budete mít nový telefon levnější!"</p>
-                </div>
-                
-                <div class="sales-tip">
-                    <h4>✨ STARÝ TELEFON - POKUD HO CHCE NECHAT:</h4>
-                    <p>"Tak vám ten starý telefon dám rovnou do gala a vyčistím vám ho a dáme na něj i obal a sklíčko ať ho předáte v dobrém stavu."</p>
-                </div>
             </div>
             
             <div class="sales-result-buttons">
@@ -1548,6 +1590,11 @@ function renderNovyTelefonStep1() {
         </h3>
         
         <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>📱 NABÍDNI TELEFON TÍMTO STYLEM:</h4>
+                <p>"Na základě toho co jste říkal, tak tento telefon pro vás bude ideální, můžete na něm [doplň využití] a vychází cca na [rozpočet +-]. V ceně máte telefon, příslušenství i služby."</p>
+            </div>
+            
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 📱 Jaký typ telefonu zákazník chce?
             </h4>
@@ -1603,9 +1650,16 @@ function renderNovyTelefonStep2() {
         </div>
         
         <div class="sales-content">
-            <div class="sales-tip" style="margin-bottom: 1.5rem;">
-                <h4>📱 NABÍDNI TELEFON:</h4>
-                <p>"Na základě toho co jste říkal, tak tento telefon pro vás bude ideální..."</p>
+            <div class="sales-tips-container" style="margin-bottom: 1.5rem;">
+                <div class="sales-tip">
+                    <h4>💰 STARÝ TELEFON - POKUD HO NECHCE:</h4>
+                    <p>"Co budete dělat se starým telefonem? Můžeme ho od vás rovnou vykoupit a díky tomu budete mít nový telefon levnější!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>✨ STARÝ TELEFON - POKUD HO CHCE NECHAT:</h4>
+                    <p>"Tak vám ten starý telefon dám rovnou do gala a vyčistím vám ho a dáme na něj i obal a sklíčko ať ho předáte v dobrém stavu."</p>
+                </div>
             </div>
             
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
@@ -1853,30 +1907,39 @@ function renderNovyTelefonStep4() {
         </div>
         
         <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🛠️ PRODEJNÍ TIP - SLUŽBY:</h4>
+                <p>"Nový telefon si zaslouží perfektní nastavení! Nabídnu vám služby které vám ušetří čas a starosti. Najeďte myší na službu pro detaily."</p>
+            </div>
+            
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
                 🛠️ SLUŽBY - Vyberte prodané služby:
             </h4>
             
             <div class="checkbox-grid">
-                <div class="checkbox-item" data-checkbox="kopirovani-dat">
+                <div class="checkbox-item service-tooltip" data-checkbox="kopirovani-dat">
                     <span class="item-icon">📲</span>
                     <input type="checkbox" id="kopirovani-dat" name="sluzby">
                     <label for="kopirovani-dat">KOPÍROVÁNÍ<br>DAT</label>
+                    <span class="tooltip-text">"Ušetřím vám hodiny práce! Všechny kontakty, fotky a aplikace přenesu do nového telefonu."</span>
                 </div>
-                <div class="checkbox-item" data-checkbox="prodlouzena-zaruka">
+                <div class="checkbox-item service-tooltip" data-checkbox="prodlouzena-zaruka">
                     <span class="item-icon">🛡️</span>
                     <input type="checkbox" id="prodlouzena-zaruka" name="sluzby">
                     <label for="prodlouzena-zaruka">PRODLOUŽENÁ<br>ZÁRUKA</label>
+                    <span class="tooltip-text">"Klid na další roky! Pokud se cokoliv pokazí, máte krytou opravu i náhradu."</span>
                 </div>
-                <div class="checkbox-item" data-checkbox="nastaveni-telefonu">
+                <div class="checkbox-item service-tooltip" data-checkbox="nastaveni-telefonu">
                     <span class="item-icon">⚙️</span>
                     <input type="checkbox" id="nastaveni-telefonu" name="sluzby">
                     <label for="nastaveni-telefonu">NASTAVENÍ<br>TELEFONU</label>
+                    <span class="tooltip-text">"Telefon připravím přesně podle vašich potřeb - email, aplikace, všechno nastaveno."</span>
                 </div>
-                <div class="checkbox-item" data-checkbox="aktualizace-sw">
+                <div class="checkbox-item service-tooltip" data-checkbox="aktualizace-sw">
                     <span class="item-icon">🔄</span>
                     <input type="checkbox" id="aktualizace-sw" name="sluzby">
                     <label for="aktualizace-sw">AKTUALIZACE<br>SOFTWARE</label>
+                    <span class="tooltip-text">"Telefon bude mít nejnovější funkce a bezpečnostní aktualizace hned od začátku."</span>
                 </div>
             </div>
             
