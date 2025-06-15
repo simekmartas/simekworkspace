@@ -719,7 +719,7 @@ function selectScenario(scenario) {
             modalBody.innerHTML = renderComingSoon('CHCE KONZULTACI', '💬');
             break;
         case 'servis':
-            modalBody.innerHTML = renderComingSoon('CHCE SERVIS TELEFONU', '🔧');
+            modalBody.innerHTML = renderServisScenario();
             break;
         default:
             modalBody.innerHTML = renderScenarioSelection();
@@ -2406,6 +2406,596 @@ async function completeNovyTelefonFinalNotSold() {
         closeSalesAssistant();
     } catch (error) {
         console.error('Chyba při ukládání neprodáno:', error);
+        alert('Chyba při ukládání dat. Zkuste to znovu.');
+    }
+}
+
+
+// === SERVIS TELEFONU SCÉNÁŘ ===
+
+// Servis telefonu scénář - krok 0 (tipy pro servis)
+function renderServisScenario() {
+    currentWizardStep = 0;
+    selectedItems = { 
+        sklickoFolie: '', 
+        typOchrany: '',
+        obal: [], 
+        cisteni: [],
+        sluzby: []
+    };
+    
+    return `
+        <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Tipy pro prodej
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                💡 "Zákazník přichází pro servis - využij příležitost k prodeji!"
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tips-container">
+                <div class="sales-tip">
+                    <h4>🔍 ZAČNI OTÁZKOU:</h4>
+                    <p>"Chcete kvalitnější nebo levnější sklíčko? Chcete ochranné sklo nebo folii?"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>📱 ROZBITÝ/ŽLUTÝ OBAL:</h4>
+                    <p>"Vidím, že máte žlutý obal na telefonu, rovnou vám ho vyměním, chcete znovu takový průhledný nebo chcete nějaký barevný?"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🧽 ŠPINAVÝ TELEFON:</h4>
+                    <p>"Vidím, že máte špinavý telefon, co kdybych vám ho rovnou vyčistil když už měním to sklíčko/folii?"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🔄 UNIVERZÁLNÍ VĚTA:</h4>
+                    <p>"Máte aktualizovaný telefon? Můžeme to ověřit a případně aktualizovat když už jste tu."</p>
+                </div>
+            </div>
+            
+            <div class="sales-result-buttons">
+                <button class="sales-result-btn sales-sold-btn" onclick="proceedToServisStep1()">
+                    ✅ Začínám servis
+                </button>
+                <button class="sales-result-btn sales-not-sold-btn" onclick="handleServisNotSold()">
+                    ❌ Zákazník odmítl
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Pokračování na krok 1 - typ ochrany
+function proceedToServisStep1() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderServisStep1();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zpracování odmítnutí servisu
+function handleServisNotSold() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderServisNotSoldForm();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Servis scénář - krok 1 (typ ochrany)
+function renderServisStep1() {
+    currentWizardStep = 1;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisScenario();">← Zpět na tipy</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Krok 1/5
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🔍 PRODEJNÍ TIP - OCHRANA:</h4>
+                <p>"Chcete kvalitnější nebo levnější? Ochranné sklo je odolnější, folie je tenčí a levnější."</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔍 OCHRANA DISPLEJE - Nejdřív vyberte kvalitu:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectServisKvalita('kvalitnejsi')">
+                    <span class="scenario-emoji">💎</span>
+                    <h4 class="scenario-title">KVALITNĚJŠÍ<br>OCHRANA</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectServisKvalita('levnejsi')">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">LEVNĚJŠÍ<br>OCHRANA</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr kvality a přechod na typ ochrany
+function selectServisKvalita(kvalita) {
+    selectedItems.sklickoFolie = kvalita;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderServisStep1Typ();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Podkrok 1 - typ ochrany
+function renderServisStep1Typ() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisStep1();">← Zpět na kvalitu</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Krok 1/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Kvalita: ${selectedItems.sklickoFolie}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔍 TYP OCHRANY - Vyberte typ:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectServisTyp('sklo')">
+                    <span class="scenario-emoji">💎</span>
+                    <h4 class="scenario-title">OCHRANNÉ<br>SKLO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectServisTyp('folie')">
+                    <span class="scenario-emoji">📱</span>
+                    <h4 class="scenario-title">OCHRANNÁ<br>FOLIE</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr typu ochrany a přechod na krok 2
+function selectServisTyp(typ) {
+    selectedItems.typOchrany = typ;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderServisStep2();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Servis scénář - krok 2 (kontrola obalu)
+function renderServisStep2() {
+    currentWizardStep = 2;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisStep1Typ();">← Zpět na typ ochrany</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Krok 2/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Ochrana: ${selectedItems.sklickoFolie} ${selectedItems.typOchrany}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>📱 PRODEJNÍ TIP - KONTROLA OBALU:</h4>
+                <p>"Vidím, že máte žlutý/rozbitý obal na telefonu, rovnou vám ho vyměním!"</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                📱 STAV OBALU - Jak vypadá obal zákazníka?
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectServisObal('transparentni')">
+                    <span class="scenario-emoji">🔹</span>
+                    <h4 class="scenario-title">ŽLUTÝ → NOVÝ<br>TRANSPARENTNÍ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectServisObal('barevny')">
+                    <span class="scenario-emoji">🌈</span>
+                    <h4 class="scenario-title">ROZBITÝ → NOVÝ<br>BAREVNÝ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectServisObal('knizkovy')">
+                    <span class="scenario-emoji">📖</span>
+                    <h4 class="scenario-title">STARÝ → NOVÝ<br>KNÍŽKOVÝ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectServisObal('zadny')" style="border-color: #2ed573; background: linear-gradient(135deg, rgba(46, 213, 115, 0.1) 0%, rgba(46, 213, 115, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #2ed573;">✅</span>
+                    <h4 class="scenario-title" style="color: #2ed573;">OBAL JE<br>V POŘÁDKU</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr obalu a přechod na krok 3
+function selectServisObal(typ) {
+    if (typ !== 'zadny') {
+        selectedItems.obal = [typ];
+    } else {
+        selectedItems.obal = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderServisStep3();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Servis scénář - krok 3 (čištění)
+function renderServisStep3() {
+    currentWizardStep = 3;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisStep2();">← Zpět na obal</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Krok 3/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Obal: ${selectedItems.obal.length > 0 ? selectedItems.obal[0] : 'v pořádku'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🧽 PRODEJNÍ TIP - ČIŠTĚNÍ:</h4>
+                <p>"Vidím, že máte špinavý telefon, co kdybych vám ho rovnou vyčistil když už měním to sklíčko/folii?"</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🧹 ČIŠTĚNÍ TELEFONU - Jak je telefon špinavý?
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile service-tooltip" onclick="selectServisCisteni('CT300')">
+                    <span class="scenario-emoji">🧽</span>
+                    <h4 class="scenario-title">TROCHU ŠPINAVÝ<br>CT300</h4>
+                    <span class="tooltip-text">"Klasické čištění konektoru a z venku - základní údržba telefonu."</span>
+                </div>
+                <div class="scenario-tile service-tooltip" onclick="selectServisCisteni('CT600')">
+                    <span class="scenario-emoji">💡</span>
+                    <h4 class="scenario-title">HODNĚ ŠPINAVÝ<br>CT600</h4>
+                    <span class="tooltip-text">"Důkladnější čištění s UV lampou - odstraní bakterie a dezinfikuje telefon."</span>
+                </div>
+                <div class="scenario-tile service-tooltip" onclick="selectServisCisteni('CT1200')">
+                    <span class="scenario-emoji">🔧</span>
+                    <h4 class="scenario-title">VELMI ŠPINAVÝ<br>CT1200</h4>
+                    <span class="tooltip-text">"Nejdůkladnější čištění - rozebereme telefon a vyčistíme i zevnitř."</span>
+                </div>
+                <div class="scenario-tile" onclick="selectServisCisteni('zadne')" style="border-color: #2ed573; background: linear-gradient(135deg, rgba(46, 213, 115, 0.1) 0%, rgba(46, 213, 115, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #2ed573;">✨</span>
+                    <h4 class="scenario-title" style="color: #2ed573;">TELEFON JE<br>ČISTÝ</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr čištění a přechod na krok 4
+function selectServisCisteni(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.cisteni = [typ];
+    } else {
+        selectedItems.cisteni = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderServisStep4();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Servis scénář - krok 4 (služby)
+function renderServisStep4() {
+    currentWizardStep = 4;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisStep3();">← Zpět na čištění</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Krok 4/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Čištění: ${selectedItems.cisteni.length > 0 ? selectedItems.cisteni[0] : 'není potřeba'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🔄 PRODEJNÍ TIP - SLUŽBY:</h4>
+                <p>"Máte aktualizovaný telefon? Můžeme to ověřit a když už jste tu, můžu nabídnout další služby!"</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🛠️ DODATEČNÉ SLUŽBY - Najeďte myší pro detaily:
+            </h4>
+            
+            <div class="checkbox-grid">
+                <div class="checkbox-item service-tooltip" data-checkbox="aktualizace-servis">
+                    <span class="item-icon">🔄</span>
+                    <input type="checkbox" id="aktualizace-servis" name="servis-sluzby">
+                    <label for="aktualizace-servis">AKTUALIZACE<br>SYSTÉMU</label>
+                    <span class="tooltip-text">"Ověřím a nainstaluji nejnovější verzi systému s novými funkcemi."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="zalohovani-servis">
+                    <span class="item-icon">💾</span>
+                    <input type="checkbox" id="zalohovani-servis" name="servis-sluzby">
+                    <label for="zalohovani-servis">ZÁLOHOVÁNÍ<br>DAT</label>
+                    <span class="tooltip-text">"Zazálohuju všechna důležitá data aby jste o nic nepřišel."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="optimalizace">
+                    <span class="item-icon">⚡</span>
+                    <input type="checkbox" id="optimalizace" name="servis-sluzby">
+                    <label for="optimalizace">OPTIMALIZACE<br>VÝKONU</label>
+                    <span class="tooltip-text">"Vyčistím telefon od nepotřebných souborů a zrychlím ho."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="konzultace-servis">
+                    <span class="item-icon">💬</span>
+                    <input type="checkbox" id="konzultace-servis" name="servis-sluzby">
+                    <label for="konzultace-servis">KONZULTACE</label>
+                    <span class="tooltip-text">"Ukážu vám nové funkce a poradím jak telefon lépe využít."</span>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="sales-btn" onclick="proceedToServisFinal()">
+                    ➡️ POKRAČOVAT NA DOKONČENÍ
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Pokračování na finální krok
+function proceedToServisFinal() {
+    // Uložení vybraných služeb
+    const selectedSluzby = [];
+    document.querySelectorAll('input[name="servis-sluzby"]:checked').forEach(item => {
+        const label = document.querySelector(`label[for="${item.id}"]`);
+        const itemName = label ? label.textContent.replace(/\s+/g, ' ').trim() : item.id;
+        selectedSluzby.push(itemName);
+    });
+    selectedItems.sluzby = selectedSluzby;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderServisStep5();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Servis scénář - krok 5 (finální dokončení)
+function renderServisStep5() {
+    currentWizardStep = 5;
+    
+    // Spočítej všechno co se prodalo
+    const allItems = [];
+    allItems.push(`${selectedItems.sklickoFolie} ${selectedItems.typOchrany}`);
+    if (selectedItems.obal.length > 0) allItems.push(selectedItems.obal[0] + ' obal');
+    if (selectedItems.cisteni.length > 0) allItems.push('čištění ' + selectedItems.cisteni[0]);
+    allItems.push(...selectedItems.sluzby);
+    
+    const nothingSold = allItems.length <= 1; // Pouze základní servis se nepočítá jako extra prodej
+    
+    if (nothingSold) {
+        return renderServisNotSoldFinalForm();
+    }
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisStep4();">← Zpět na služby</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Dokončení
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Celkově prodáno:</h4>
+                <div style="font-size: 0.9rem; line-height: 1.4;">
+                    ${allItems.map(item => `• ${item}`).join('<br>')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-actions">
+            <button class="sales-btn success" onclick="completeServisSale()">
+                🎉 DOKONČIT SERVIS
+            </button>
+        </div>
+    `;
+}
+
+// Formulář pro neprodáno při odmítnutí
+function renderServisNotSoldForm() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisScenario();">← Zpět na tipy</button>
+        
+        <h3 style="text-align: center; color: #ff4757; margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Neprodáno
+        </h3>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff4757; text-align: center;">❌ Proč zákazník odmítl servis?</h4>
+                <textarea id="servisNotSoldReason" placeholder="Krátké odůvodnění proč zákazník odmítl servis..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn sales-not-sold-btn" onclick="completeServisNotSold()" style="width: 100%;">
+                📝 Odeslat a dokončit
+            </button>
+        </div>
+    `;
+}
+
+// Formulář pro finální neprodáno
+function renderServisNotSoldFinalForm() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisStep4();">← Zpět na služby</button>
+        
+        <h3 style="text-align: center; color: #ff4757; margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Minimální prodej
+        </h3>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff9500; text-align: center;">⚠️ Pouze základní servis</h4>
+                <textarea id="servisFinalNotSoldReason" placeholder="Poznámka o průběhu servisu..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn" onclick="completeServisFinalNotSold()" style="width: 100%; background: linear-gradient(135deg, #ff9500, #ff7700);">
+                📝 Dokončit pouze se základním servisem
+            </button>
+        </div>
+    `;
+}
+
+// Dokončení úspěšného servisu
+async function completeServisSale() {
+    // Sestavuj všechny prodané položky
+    const allSoldItems = [];
+    allSoldItems.push(`${selectedItems.sklickoFolie} ${selectedItems.typOchrany}`);
+    
+    if (selectedItems.obal.length > 0) allSoldItems.push(selectedItems.obal[0] + ' obal');
+    if (selectedItems.cisteni.length > 0) allSoldItems.push('čištění ' + selectedItems.cisteni[0]);
+    allSoldItems.push(...selectedItems.sluzby);
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'sold';
+    currentSalesSession.soldItems = allSoldItems;
+    currentSalesSession.servisData = selectedItems; // Specifická data pro analýzu
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100;
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Servis byl úspěšně zaznamenán! 🎉');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
+    }
+}
+
+// Dokončení neprodání při odmítnutí
+async function completeServisNotSold() {
+    const reason = document.getElementById('servisNotSoldReason').value.trim();
+    
+    if (!reason) {
+        alert('Prosím uveďte alespoň krátké odůvodnění.');
+        return;
+    }
+    
+    const sessionData = {
+        ...currentSalesSession,
+        result: 'not-sold',
+        reason: reason,
+        items: [],
+        revenue: 0,
+        completed_at: Date.now(),
+        duration: sessionStartTime ? Date.now() - sessionStartTime : 0
+    };
+    
+    try {
+        await saveSalesSession(sessionData);
+        showSuccessMessage('Neprodáno úspěšně zaznamenáno!');
+        closeSalesAssistant();
+    } catch (error) {
+        console.error('Chyba při ukládání neprodáno:', error);
+        alert('Chyba při ukládání dat. Zkuste to znovu.');
+    }
+}
+
+// Dokončení finálního neprodání
+async function completeServisFinalNotSold() {
+    const reason = document.getElementById('servisFinalNotSoldReason').value.trim();
+    
+    const sessionData = {
+        ...currentSalesSession,
+        result: 'basic-service-only',
+        reason: reason || 'Pouze základní servis bez přidaných služeb',
+        items: [`${selectedItems.sklickoFolie} ${selectedItems.typOchrany}`],
+        revenue: 0,
+        completed_at: Date.now(),
+        duration: sessionStartTime ? Date.now() - sessionStartTime : 0
+    };
+    
+    try {
+        await saveSalesSession(sessionData);
+        showSuccessMessage('Základní servis zaznamenán!');
+        closeSalesAssistant();
+    } catch (error) {
+        console.error('Chyba při ukládání:', error);
         alert('Chyba při ukládání dat. Zkuste to znovu.');
     }
 }
