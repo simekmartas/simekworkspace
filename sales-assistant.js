@@ -729,7 +729,14 @@ function selectScenario(scenario) {
 // Zásilkovna scénář - krok 0 (tipy pro prodej)
 function renderZasilkovnaScenario() {
     currentWizardStep = 0;
-    selectedItems = { obaly: [], sklicka: [], prislusenstvi: [] };
+    selectedItems = { 
+        obaly: [], 
+        sklicka: [], 
+        prislusenstvi: [],
+        cisteni: [],
+        sluzby: [],
+        hadrik: false
+    };
     
     return `
         <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
@@ -868,7 +875,7 @@ function renderZasilkovnaStep1() {
         <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaScenario();">← Zpět na tipy</button>
         
         <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
-            📦 ZÁSILKOVNA - Krok 1/4
+            📦 ZÁSILKOVNA - Krok 1/5
         </h3>
         
         <div class="sales-content">
@@ -930,7 +937,7 @@ function renderZasilkovnaStep2() {
         <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep1();">← Zpět na obaly</button>
         
         <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
-            📦 ZÁSILKOVNA - Krok 2/4
+            📦 ZÁSILKOVNA - Krok 2/5
         </h3>
         
         <div style="text-align: center; margin-bottom: 2rem;">
@@ -994,7 +1001,7 @@ function renderZasilkovnaStep3() {
         <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep2();">← Zpět na sklíčka</button>
         
         <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
-            📦 ZÁSILKOVNA - Krok 3/4
+            📦 ZÁSILKOVNA - Krok 3/5
         </h3>
         
         <div style="text-align: center; margin-bottom: 2rem;">
@@ -1040,7 +1047,7 @@ function renderZasilkovnaStep3() {
     `;
 }
 
-// Výběr příslušenství a přechod na krok 4
+// Výběr příslušenství a přechod na krok 4 (služby)
 function selectPrislusenstvi(typ) {
     if (typ !== 'zadne') {
         selectedItems.prislusenstvi = [typ];
@@ -1059,15 +1066,243 @@ function selectPrislusenstvi(typ) {
     }, 50);
 }
 
-// Zásilkovna scénář - krok 4 (finální - sleva a dokončení)
+// Zásilkovna scénář - krok 4 (služby)
 function renderZasilkovnaStep4() {
     currentWizardStep = 4;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep3();">← Zpět na příslušenství</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 4/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Příslušenství: ${selectedItems.obaly.length + selectedItems.sklicka.length + selectedItems.prislusenstvi.length} položek
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🧹 PRODEJNÍ TIP - ČIŠTĚNÍ:</h4>
+                <p>"Když už jste tu, můžu vám telefon rovnou vyčistit! Máme různé varianty podle toho jak moc je špinavý."</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🧹 ČIŠTĚNÍ TELEFONU - Vyberte variantu:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile service-tooltip" onclick="selectZasilkovnaCisteni('CT300')">
+                    <span class="scenario-emoji">🧽</span>
+                    <h4 class="scenario-title">CT300<br>KLASICKÉ</h4>
+                    <span class="tooltip-text">"Klasické čištění konektoru a z venku - základní údržba telefonu."</span>
+                </div>
+                <div class="scenario-tile service-tooltip" onclick="selectZasilkovnaCisteni('CT600')">
+                    <span class="scenario-emoji">💡</span>
+                    <h4 class="scenario-title">CT600<br>+ UV LAMPA</h4>
+                    <span class="tooltip-text">"Důkladnější čištění s UV lampou - odstraní bakterie a dezinfikuje telefon."</span>
+                </div>
+                <div class="scenario-tile service-tooltip" onclick="selectZasilkovnaCisteni('CT1200')">
+                    <span class="scenario-emoji">🔧</span>
+                    <h4 class="scenario-title">CT1200<br>VNITŘNÍ</h4>
+                    <span class="tooltip-text">"Nejdůkladnější čištění - rozebereme telefon a vyčistíme i zevnitř."</span>
+                </div>
+                <div class="scenario-tile" onclick="selectZasilkovnaCisteni('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ<br>ČIŠTĚNÍ</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr čištění a přechod na ostatní služby
+function selectZasilkovnaCisteni(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.cisteni = [typ];
+    } else {
+        selectedItems.cisteni = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZasilkovnaStep4Sluzby();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zásilkovna krok 4 - ostatní služby
+function renderZasilkovnaStep4Sluzby() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep4();">← Zpět na čištění</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 4/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Čištění: ${selectedItems.cisteni.length > 0 ? selectedItems.cisteni[0] : 'žádné'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🛠️ PRODEJNÍ TIP - SLUŽBY:</h4>
+                <p>"Když už máte telefon u nás, můžu ho rovnou aktualizovat a zazálohovat! Najeďte myší na službu pro detaily."</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🛠️ OSTATNÍ SLUŽBY - Vyberte prodané služby:
+            </h4>
+            
+            <div class="checkbox-grid">
+                <div class="checkbox-item service-tooltip" data-checkbox="aktualizace">
+                    <span class="item-icon">🔄</span>
+                    <input type="checkbox" id="aktualizace" name="zasilkovna-sluzby">
+                    <label for="aktualizace">AKTUALIZACE<br>SYSTÉMU</label>
+                    <span class="tooltip-text">"Telefon bude mít nejnovější verzi systému s novými funkcemi a opravami."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="zalohovani-dat">
+                    <span class="item-icon">💾</span>
+                    <input type="checkbox" id="zalohovani-dat" name="zasilkovna-sluzby">
+                    <label for="zalohovani-dat">ZÁLOHOVÁNÍ<br>DAT</label>
+                    <span class="tooltip-text">"Zazálohuju všechna vaša důležitá data - fotky, kontakty, zprávy."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="aktualizace-telefonu">
+                    <span class="item-icon">📱</span>
+                    <input type="checkbox" id="aktualizace-telefonu" name="zasilkovna-sluzby">
+                    <label for="aktualizace-telefonu">AKTUALIZACE<br>TELEFONU</label>
+                    <span class="tooltip-text">"Aktualizace všech aplikací a nastavení pro optimální výkon telefonu."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="konzultace">
+                    <span class="item-icon">💬</span>
+                    <input type="checkbox" id="konzultace" name="zasilkovna-sluzby">
+                    <label for="konzultace">KONZULTACE</label>
+                    <span class="tooltip-text">"Poradím vám s používáním telefonu a ukážu nové funkce."</span>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="sales-btn" onclick="proceedToZasilkovnaHadrik()">
+                    ➡️ POKRAČOVAT NA HADŘÍK
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Pokračování na hadřík
+function proceedToZasilkovnaHadrik() {
+    // Uložení vybraných služeb
+    const selectedSluzby = [];
+    document.querySelectorAll('input[name="zasilkovna-sluzby"]:checked').forEach(item => {
+        const label = document.querySelector(`label[for="${item.id}"]`);
+        const itemName = label ? label.textContent.replace(/\s+/g, ' ').trim() : item.id;
+        selectedSluzby.push(itemName);
+    });
+    selectedItems.sluzby = selectedSluzby;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZasilkovnaStep4Hadrik();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zásilkovna krok 4 - hadřík
+function renderZasilkovnaStep4Hadrik() {  
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep4Sluzby();">← Zpět na služby</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 ZÁSILKOVNA - Krok 4/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Služby: ${selectedItems.sluzby.length} položek
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🧽 PRODEJNÍ TIP - HADŘÍK:</h4>
+                <p>"A nakonec, můžu vám nabídnout speciální hadřík na čištění displeje - budete mít telefon vždy čistý!"</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🧽 HADŘÍK NA ČIŠTĚNÍ:
+            </h4>
+            
+            <div class="radio-group">
+                <div class="radio-item" onclick="selectZasilkovnaHadrik(true, this)">
+                    <input type="radio" id="hadrik-ano" name="hadrik" value="ano">
+                    <label for="hadrik-ano">ANO</label>
+                </div>
+                <div class="radio-item" onclick="selectZasilkovnaHadrik(false, this)">
+                    <input type="radio" id="hadrik-ne" name="hadrik" value="ne">
+                    <label for="hadrik-ne">NE</label>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="sales-btn" onclick="proceedToZasilkovnaFinal()">
+                    ➡️ POKRAČOVAT NA DOKONČENÍ
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr hadříku
+function selectZasilkovnaHadrik(selected, element) {
+    selectedItems.hadrik = selected;
+    
+    document.querySelectorAll('.radio-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    const radio = element.querySelector('input[type="radio"]');
+    radio.checked = true;
+}
+
+// Pokračování na finální dokončení
+function proceedToZasilkovnaFinal() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZasilkovnaStep5();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Zásilkovna scénář - krok 5 (finální - sleva a dokončení)
+function renderZasilkovnaStep5() {
+    currentWizardStep = 5;
     
     // Spočítej co se prodalo
     const soldItems = [];
     if (selectedItems.obaly.length > 0) soldItems.push(selectedItems.obaly[0] + ' obal');
     if (selectedItems.sklicka.length > 0) soldItems.push(selectedItems.sklicka[0] + ' sklíčko');
     if (selectedItems.prislusenstvi.length > 0) soldItems.push(selectedItems.prislusenstvi[0]);
+    if (selectedItems.cisteni.length > 0) soldItems.push('čištění ' + selectedItems.cisteni[0]);
+    soldItems.push(...selectedItems.sluzby);
+    if (selectedItems.hadrik) soldItems.push('hadřík na čištění');
     
     const nothingSold = soldItems.length === 0;
     
@@ -1077,10 +1312,10 @@ function renderZasilkovnaStep4() {
     }
     
     return `
-        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep3();">← Zpět na příslušenství</button>
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZasilkovnaStep4Hadrik();">← Zpět na hadřík</button>
         
         <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
-            📦 ZÁSILKOVNA - Krok 4/4
+            📦 ZÁSILKOVNA - Krok 5/5
         </h3>
         
         <div style="text-align: center; margin-bottom: 2rem;">
@@ -1476,6 +1711,15 @@ async function completeWizardSale() {
     }
     if (selectedItems.prislusenstvi.length > 0) {
         soldItems.push(selectedItems.prislusenstvi[0]);
+    }
+    if (selectedItems.cisteni && selectedItems.cisteni.length > 0) {
+        soldItems.push('čištění ' + selectedItems.cisteni[0]);
+    }
+    if (selectedItems.sluzby && selectedItems.sluzby.length > 0) {
+        soldItems.push(...selectedItems.sluzby);
+    }
+    if (selectedItems.hadrik) {
+        soldItems.push('hadřík na čištění');
     }
     
     // Přidat data do session
@@ -2178,5 +2422,12 @@ function closeSalesAssistant() {
     currentSalesSession = null;
     currentScenario = null;
     currentWizardStep = 1;
-    selectedItems = { obaly: [], sklicka: [], prislusenstvi: [] };
+    selectedItems = { 
+        obaly: [], 
+        sklicka: [], 
+        prislusenstvi: [],
+        cisteni: [],
+        sluzby: [],
+        hadrik: false
+    };
 } 
