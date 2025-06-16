@@ -901,6 +901,10 @@ function renderZasilkovnaStep1() {
                     <span class="scenario-emoji">📖</span>
                     <h4 class="scenario-title">KNÍŽKOVÝ<br>OBAL</h4>
                 </div>
+                <div class="scenario-tile" onclick="selectObal('jine')">
+                    <span class="scenario-emoji">📦</span>
+                    <h4 class="scenario-title">JINÉ</h4>
+                </div>
                 <div class="scenario-tile" onclick="selectObal('zadny')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
                     <span class="scenario-emoji" style="color: #ff4757;">❌</span>
                     <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÝ OBAL<br>NEPRODÁN</h4>
