@@ -1,10 +1,14 @@
 // Minimalistické menu systém
+console.log('🧭 Navigation.js se načítá...');
+
 function updateNavigation() {
+    console.log('🔧 updateNavigation() spuštěna');
     const nav = document.querySelector('nav ul');
     if (!nav) {
-        console.error('Navigation ul element not found!');
+        console.error('❌ Navigation ul element not found!');
         return;
     }
+    console.log('✅ Nav ul element nalezen:', nav);
     
     // Přidej header-controls container pokud neexistuje
     let headerControls = document.querySelector('.header-controls');
@@ -315,6 +319,7 @@ function markActivePage() {
 
 // Inicializace menu
 function initNavigation() {
+    console.log('🎯 initNavigation() spuštěna');
     updateNavigation();
     
     window.addEventListener('storage', function(e) {
@@ -421,7 +426,9 @@ function openSalesAssistant(event) {
 }
 
 // Inicializace při načtení stránky
+console.log('🚀 Navigation.js načten - registruji DOMContentLoaded');
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎯 DOMContentLoaded fired - spouštím initNavigation()');
     initNavigation();
     
     // Automatické otevření formuláře z URL parametru
