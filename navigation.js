@@ -223,16 +223,40 @@ function setupHamburgerMenu() {
     
     const nav = document.querySelector('nav');
     
-    if (!hamburger || !nav) return;
+    // DEBUG informace
+    console.log('🔍 DEBUG setupHamburgerMenu:');
+    console.log('🍔 Hamburger found:', !!hamburger);
+    console.log('🧭 Nav found:', !!nav);
+    if (nav) {
+        console.log('📝 Nav HTML:', nav.outerHTML.substring(0, 200) + '...');
+        console.log('📍 Nav position:', window.getComputedStyle(nav).position);
+        console.log('👁️ Nav visibility:', window.getComputedStyle(nav).visibility);
+        console.log('🎨 Nav display:', window.getComputedStyle(nav).display);
+    }
+    
+    if (!hamburger || !nav) {
+        console.error('❌ Missing elements - hamburger:', !!hamburger, 'nav:', !!nav);
+        return;
+    }
     
     hamburger.addEventListener('click', function(e) {
         e.stopPropagation();
         console.log('🍔 Hamburger clicked!');
+        
+        // DEBUG: Force inline styles
+        if (nav.classList.contains('active')) {
+            // Skrýt menu
+            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(-100%) !important; z-index: 9999 !important; border: 3px solid red !important;';
+            nav.classList.remove('active');
+        } else {
+            // Zobrazit menu
+            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(0) !important; z-index: 9999 !important; border: 3px solid green !important;';
+            nav.classList.add('active');
+        }
+        
         hamburger.classList.toggle('active');
-        nav.classList.toggle('active');
         console.log('🔄 Nav classes:', nav.classList);
-        console.log('📱 Nav display:', window.getComputedStyle(nav).display);
-        console.log('📍 Nav position:', window.getComputedStyle(nav).position);
+        console.log('📱 Nav styles:', nav.style.cssText);
         document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
     });
     
