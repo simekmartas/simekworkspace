@@ -2425,7 +2425,8 @@ function renderServisScenario() {
         obaly: [],
         sklicka: [],
         prislusenstvi: [],
-        sluzby: []
+        sluzby: [],
+        novyTelefon: false
     };
     
     return `
@@ -2527,11 +2528,18 @@ function renderServisStep2() {
                     <span class="scenario-emoji">🛠️</span>
                     <h4 class="scenario-title">SLUŽBA</h4>
                 </div>
+                <div class="scenario-tile" onclick="selectServisKategorie('novy-telefon')">
+                    <span class="scenario-emoji">📱</span>
+                    <h4 class="scenario-title">NOVÝ<br>TELEFON</h4>
+                </div>
             </div>
             
-            <div style="text-align: center; margin-top: 2rem;">
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
                 <button class="sales-btn" onclick="renderServisFinal()">
                     ➡️ POKRAČOVAT NA DOKONČENÍ
+                </button>
+                <button class="sales-btn danger" onclick="renderServisZakaznikNechce()">
+                    ❌ ZÁKAZNÍK NAKONEC NECHCE
                 </button>
             </div>
         </div>
@@ -2545,9 +2553,13 @@ function selectServisKategorie(kategorie) {
     if (tile.classList.contains('selected')) {
         // Odebrat výběr
         tile.classList.remove('selected');
-        const index = selectedItems[kategorie === 'sklo' ? 'sklicka' : (kategorie === 'sluzba' ? 'sluzby' : (kategorie + 'y'))].indexOf(kategorie);
-        if (index > -1) {
-            selectedItems[kategorie === 'sklo' ? 'sklicka' : (kategorie === 'sluzba' ? 'sluzby' : (kategorie + 'y'))].splice(index, 1);
+        if (kategorie === 'novy-telefon') {
+            selectedItems.novyTelefon = false;
+        } else {
+            const index = selectedItems[kategorie === 'sklo' ? 'sklicka' : (kategorie === 'sluzba' ? 'sluzby' : (kategorie + 'y'))].indexOf(kategorie);
+            if (index > -1) {
+                selectedItems[kategorie === 'sklo' ? 'sklicka' : (kategorie === 'sluzba' ? 'sluzby' : (kategorie + 'y'))].splice(index, 1);
+            }
         }
     } else {
         // Přidat výběr
@@ -2560,12 +2572,23 @@ function selectServisKategorie(kategorie) {
             selectedItems.prislusenstvi.push('příslušenství');
         } else if (kategorie === 'sluzba') {
             selectedItems.sluzby.push('služba');
+        } else if (kategorie === 'novy-telefon') {
+            selectedItems.novyTelefon = true;
         }
     }
 }
 
 // Servis scénář - finální dokončení
 function renderServisFinal() {
+    // Pokud je vybrán nový telefon, přejdi na flow nového telefonu
+    if (selectedItems.novyTelefon) {
+        // Nastav scénář na nový telefon a přejdi na jeho flow
+        currentScenario = 'novy-telefon';
+        const modalBody = document.getElementById('salesModalBody');
+        modalBody.innerHTML = renderNovyTelefonScenario();
+        return;
+    }
+    
     // Spočítej co se prodalo
     const soldItems = [];
     soldItems.push(...selectedItems.obaly);
@@ -2610,6 +2633,71 @@ function renderServisFinal() {
         modalBody.classList.add('scroll-top');
         setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
     }, 50);
+}
+
+// Formulář pro "zákazník nakonec nechce"
+function renderServisZakaznikNechce() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderServisStep2();">← Zpět na výběr</button>
+        
+        <h3 style="text-align: center; color: #ff4757; margin-bottom: 1rem;">
+            🔧 SERVIS TELEFONU - Zákazník nakonec nechce
+        </h3>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff4757; text-align: center;">❌ Proč zákazník nakonec nechce?</h4>
+                <textarea id="servisZakaznikNechceReason" placeholder="Krátké odůvodnění proč zákazník nakonec nechce..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn sales-not-sold-btn" onclick="completeServisZakaznikNechce()" style="width: 100%;">
+                📝 Odeslat a dokončit
+            </button>
+        </div>
+    `;
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Dokončení "zákazník nakonec nechce"
+async function completeServisZakaznikNechce() {
+    const reason = document.getElementById('servisZakaznikNechceReason').value.trim();
+    
+    if (!reason) {
+        alert('Prosím uveďte alespoň krátké odůvodnění.');
+        return;
+    }
+    
+    const sessionData = {
+        ...currentSalesSession,
+        result: 'customer-changed-mind',
+        reason: reason,
+        items: [`Servis: ${selectedItems.typServisu}`],
+        revenue: 0,
+        completed_at: Date.now(),
+        duration: sessionStartTime ? Date.now() - sessionStartTime : 0
+    };
+    
+    try {
+        await saveSalesSession(sessionData);
+        showSuccessMessage('Zákazník si rozmyslel - zaznamenáno!');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } catch (error) {
+        console.error('Chyba při ukládání:', error);
+        alert('Chyba při ukládání dat. Zkuste to znovu.');
+    }
 }
 
 // Formulář pro neprodáno při servisu
