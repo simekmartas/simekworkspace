@@ -2252,10 +2252,15 @@ function renderNovyTelefonStep5() {
     if (selectedItems.prislusenstvi.length > 0) allItems.push(selectedItems.prislusenstvi[0]);
     allItems.push(...selectedItems.sluzby);
     
-    const nothingSold = allItems.length <= 1; // Pouze telefon se nepočítá jako úspěšný prodej
+    // Kontrola jestli je jen telefon (a možná řešení starého telefonu)
+    const onlyPhoneSold = allItems.length <= 2 && 
+                          !selectedItems.obaly.length && 
+                          !selectedItems.sklicka.length && 
+                          !selectedItems.prislusenstvi.length && 
+                          !selectedItems.sluzby.length;
     
-    if (nothingSold) {
-        return renderNovyTelefonNotSoldFinalForm();
+    if (onlyPhoneSold) {
+        return renderNovyTelefonOnlyPhoneForm();
     }
     
     return `
@@ -2277,6 +2282,42 @@ function renderNovyTelefonStep5() {
         <div class="sales-actions">
             <button class="sales-btn success" onclick="completeNovyTelefonSale()">
                 🎉 DOKONČIT PRODEJ
+            </button>
+        </div>
+    `;
+}
+
+// Formulář pro pouze telefon (bez příslušenství)
+function renderNovyTelefonOnlyPhoneForm() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderNovyTelefonStep4();">← Zpět na služby</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
+            📱 NOVÝ TELEFON PRODÁN - Super! 🎉
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Telefon byl úspěšně prodán!</h4>
+                <div style="font-size: 0.9rem;">
+                    ${selectedItems.typTelefonu} telefon
+                    ${selectedItems.staryTelefon !== 'si-necha' && selectedItems.staryTelefon !== 'nema' ? 
+                      `<br>+ řešení starého telefonu: ${selectedItems.staryTelefon}` : ''}
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff9500; text-align: center;">❌ Proč se něco dalšího nedoprodalo?</h4>
+                <textarea id="novyTelefonOnlyPhoneReason" placeholder="Důvod proč se neprodalo příslušenství ani služby k telefonu..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn" onclick="completeNovyTelefonOnlyPhone()" style="width: 100%; background: linear-gradient(135deg, #2ed573, #20bf6b);">
+                📝 Odeslat a dokončit
             </button>
         </div>
     `;
@@ -2362,6 +2403,49 @@ async function completeNovyTelefonSale() {
     
     if (saved) {
         showSuccessMessage('Prodej telefonu byl úspěšně zaznamenán! 🎉');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
+    }
+}
+
+// Dokončení pouze telefon (bez příslušenství)
+async function completeNovyTelefonOnlyPhone() {
+    const reason = document.getElementById('novyTelefonOnlyPhoneReason').value.trim();
+    
+    if (!reason) {
+        alert('Prosím uveďte důvod proč se neprodalo příslušenství ani služby.');
+        return;
+    }
+    
+    // Sestavuj prodané položky
+    const soldItems = [];
+    soldItems.push(`${selectedItems.typTelefonu} telefon`);
+    if (selectedItems.staryTelefon !== 'si-necha' && selectedItems.staryTelefon !== 'nema') {
+        soldItems.push(`řešení starého telefonu: ${selectedItems.staryTelefon}`);
+    }
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'sold'; // Počítá se jako prodáno!
+    currentSalesSession.soldItems = soldItems;
+    currentSalesSession.phoneOnlyWithReason = true; // Speciální flag pro analytiku
+    currentSalesSession.noDoprodejReason = reason; // Důvod proč se nedoprodalo
+    currentSalesSession.novyTelefonData = selectedItems;
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100;
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Telefon prodán, nedoprodáno zaznamenáno! 📱');
         setTimeout(function() {
             closeSalesAssistant();
             location.reload();

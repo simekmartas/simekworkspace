@@ -299,6 +299,30 @@
                 font-size: 0.75rem !important;
                 padding: 0.5rem !important;
             }
+            
+            /* Scenario modal na mobilu */
+            .scenario-modal .modal-content {
+                max-height: 95vh !important;
+                padding: 1rem !important;
+            }
+            
+            .scenario-modal h2 {
+                font-size: 1.3rem !important;
+            }
+            
+            .scenario-modal .stats-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.5rem !important;
+            }
+            
+            .scenario-modal .filter-buttons {
+                flex-direction: column !important;
+                gap: 0.5rem !important;
+            }
+            
+            .scenario-modal .session-card {
+                padding: 1rem !important;
+            }
         }
     </style>
 </head>
@@ -1221,6 +1245,7 @@
                             <th>Prodáno</th>
                             <th>Neprodáno</th>
                             <th>Úspěšnost</th>
+                            <th>Akce</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1235,6 +1260,17 @@
                                     <div class="progress-bar">
                                         <div class="progress-fill" style="width: ${scenario.successRate}%"></div>
                                     </div>
+                                </td>
+                                <td>
+                                    <button onclick="showScenarioDetails('${scenario.name}')" style="
+                                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                        color: white; border: none; padding: 0.4rem 0.8rem; 
+                                        border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+                                        font-weight: 500; transition: all 0.3s ease; white-space: nowrap;
+                                    " onmouseover="this.style.transform='translateY(-1px)'" 
+                                       onmouseout="this.style.transform='translateY(0px)'">
+                                        🔍 Detaily
+                                    </button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -2425,6 +2461,430 @@
                 }
             } catch (error) {
                 console.error('Chyba při kontrole duplicit:', error);
+            }
+        }
+
+        // Zobrazení detailů scénáře
+        function showScenarioDetails(scenarioName) {
+            console.log('🔍 Zobrazuji detaily pro scénář:', scenarioName);
+            
+            try {
+                // Načti všechna sales data (stejná logika jako v loadAnalytics)
+                const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                
+                // Filtruj data podle aktuálních filtrů + scenarioName
+                const filteredData = localSalesData.filter(session => {
+                    // Filtr scénáře
+                    const sessionScenario = session.scenario || 'unknown';
+                    if (sessionScenario !== scenarioName) return false;
+                    
+                    // Časový filtr
+                    if (currentTimeFilter !== 'all') {
+                        const sessionDate = new Date(session.timestamp);
+                        const now = new Date();
+                        
+                        if (!session.timestamp) return false;
+                        
+                        switch(currentTimeFilter) {
+                            case 'today':
+                                if (sessionDate.toDateString() !== now.toDateString()) return false;
+                                break;
+                            case 'week':
+                                const weekAgo = new Date(now);
+                                weekAgo.setDate(weekAgo.getDate() - 7);
+                                if (sessionDate < weekAgo) return false;
+                                break;
+                            case 'month':
+                                const monthAgo = new Date(now);
+                                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                                if (sessionDate < monthAgo) return false;
+                                break;
+                        }
+                    }
+                    
+                    // Filtr prodejny
+                    if (currentStoreFilter !== 'all') {
+                        const sessionStore = session.store || session.prodejna || 'Neznámá prodejna';
+                        if (sessionStore !== currentStoreFilter) return false;
+                    }
+                    
+                    return true;
+                });
+                
+                console.log(`🔍 Nalezeno ${filteredData.length} sessions pro scénář ${scenarioName}`);
+                
+                if (filteredData.length === 0) {
+                    alert(`Žádné sessions pro scénář "${scenarioName}" nebyly nalezeny s aktuálními filtry.`);
+                    return;
+                }
+                
+                // Seřaď sessions podle času (nejnovější první)
+                filteredData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                // Vytvoř modal
+                showScenarioModal(scenarioName, filteredData);
+                
+            } catch (error) {
+                console.error('❌ Chyba při načítání detailů scénáře:', error);
+                alert('Chyba při načítání detailů scénáře!');
+            }
+        }
+
+        // Modal s detaily scénáře  
+        function showScenarioModal(scenarioName, sessions) {
+            const scenarioNames = {
+                'zasilkovna': '📦 Zásilkovna',
+                'prislusenstvi': '🔌 Příslušenství',
+                'novy-telefon': '📱 Nový telefon',
+                'vykup': '💰 Výkup',
+                'jen-se-kouka': '👀 Jen se kouká',
+                'konzultace': '💬 Konzultace',
+                'servis': '🔧 Servis'
+            };
+            
+            const displayName = scenarioNames[scenarioName] || scenarioName;
+            
+            // Statistiky
+            const soldSessions = sessions.filter(s => s.result === 'sold');
+            const notSoldSessions = sessions.filter(s => s.result !== 'sold');
+            const successRate = sessions.length > 0 ? ((soldSessions.length / sessions.length) * 100).toFixed(1) : 0;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.85); z-index: 10000; display: flex; 
+                align-items: flex-start; justify-content: center; padding: 2rem 1rem; 
+                overflow-y: auto; padding-top: 2rem;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-primary, #ffffff); border-radius: 15px; padding: 2rem; 
+                    max-width: 1200px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.7); max-height: 90vh; overflow-y: auto;
+                    position: relative;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2 style="color: var(--text-primary, #333); margin: 0; font-size: 1.8rem;">
+                            ${displayName} - Detailní přehled
+                        </h2>
+                        <button onclick="closeScenarioModal()" style="
+                            background: rgba(255,255,255,0.1); color: var(--text-primary); 
+                            border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px;
+                            border-radius: 50%; cursor: pointer; font-size: 1.2rem; font-weight: bold;
+                            display: flex; align-items: center; justify-content: center;
+                        ">✕</button>
+                    </div>
+                    
+                    <!-- Rychlé statistiky -->
+                    <div style="
+                        display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+                        gap: 1rem; margin-bottom: 2rem; padding: 1.5rem; 
+                        background: rgba(255,255,255,0.03); border-radius: 12px;
+                        border: 1px solid rgba(255,255,255,0.1);
+                    ">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color, #ff1493);">${sessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Celkem sessions</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #2ed573;">${soldSessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Úspěšných</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #ff4757;">${notSoldSessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Neúspěšných</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary, #333);">${successRate}%</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Úspěšnost</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Filtry pro zobrazení -->
+                    <div style="margin-bottom: 2rem; text-align: center;">
+                        <div style="display: inline-flex; gap: 0.5rem; background: rgba(255,255,255,0.05); 
+                                    border-radius: 25px; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <button id="show-all-sessions" onclick="filterSessionView('all')" style="
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; 
+                                border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">📋 Všechny (${sessions.length})</button>
+                            <button id="show-sold-sessions" onclick="filterSessionView('sold')" style="
+                                background: transparent; color: var(--text-primary); border: none; 
+                                padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">✅ Úspěšné (${soldSessions.length})</button>
+                            <button id="show-failed-sessions" onclick="filterSessionView('failed')" style="
+                                background: transparent; color: var(--text-primary); border: none; 
+                                padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">❌ Neúspěšné (${notSoldSessions.length})</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Sessions seznam -->
+                    <div id="sessions-container">
+                        ${renderSessionsList(sessions, 'all')}
+                    </div>
+                </div>
+            `;
+            
+            modal.className = 'scenario-modal';
+            modal.id = 'scenario-detail-modal';
+            document.body.appendChild(modal);
+            
+            // Uložit sessions data pro filtrování
+            window.currentModalSessions = sessions;
+            
+            // Zavření na ESC
+            document.addEventListener('keydown', handleModalKeydown);
+            
+            // Zavření na klik mimo
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeScenarioModal();
+            });
+        }
+
+        // Renderování seznamu sessions
+        function renderSessionsList(sessions, filter) {
+            let filteredSessions = sessions;
+            
+            if (filter === 'sold') {
+                filteredSessions = sessions.filter(s => s.result === 'sold');
+            } else if (filter === 'failed') {
+                filteredSessions = sessions.filter(s => s.result !== 'sold');
+            }
+            
+            if (filteredSessions.length === 0) {
+                return `
+                    <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+                        <h3>Žádné sessions</h3>
+                        <p>Pro aktuální filtr nebyly nalezeny žádné sessions.</p>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div style="display: grid; gap: 1rem;">
+                    ${filteredSessions.map(session => renderSessionCard(session)).join('')}
+                </div>
+            `;
+        }
+
+        // Renderování karty jedné session
+        function renderSessionCard(session) {
+            const isSuccess = session.result === 'sold';
+            const seller = session.seller || session.sellerId || 'Neznámý';
+            const displayName = getSellerDisplayName(seller);
+            const timestamp = new Date(session.timestamp).toLocaleString('cs-CZ');
+            const store = session.store || session.prodejna || 'Neznámá prodejna';
+            
+            // Získej důvod neúspěchu z různých možných fieldů
+            const reason = getSessionReason(session);
+            const lastStep = getSessionLastStep(session);
+            const soldItems = session.soldItems || [];
+            const discountUsed = session.discountUsed;
+            
+            return `
+                <div style="
+                    background: ${isSuccess ? 'rgba(46, 213, 115, 0.1)' : 'rgba(255, 71, 87, 0.1)'}; 
+                    border: 1px solid ${isSuccess ? 'rgba(46, 213, 115, 0.3)' : 'rgba(255, 71, 87, 0.3)'};
+                    border-left: 4px solid ${isSuccess ? '#2ed573' : '#ff4757'};
+                    border-radius: 10px; padding: 1.5rem; position: relative;
+                ">
+                    <!-- Header s výsledkem -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                        <div>
+                            <div style="
+                                display: inline-flex; align-items: center; gap: 0.5rem; 
+                                background: ${isSuccess ? '#2ed573' : '#ff4757'}; 
+                                color: white; padding: 0.3rem 0.8rem; border-radius: 15px; 
+                                font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;
+                            ">
+                                ${isSuccess ? '✅ PRODÁNO' : '❌ NEPRODÁNO'}
+                            </div>
+                            <div style="color: var(--text-primary); font-weight: 600; font-size: 1rem;">
+                                👤 ${displayName}
+                            </div>
+                        </div>
+                        <div style="text-align: right; color: var(--text-secondary); font-size: 0.8rem;">
+                            <div>🕒 ${timestamp}</div>
+                            <div>🏪 ${store}</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Detaily session -->
+                    <div style="display: grid; gap: 1rem;">
+                        ${lastStep ? `
+                            <div style="
+                                background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 8px;
+                                border-left: 3px solid var(--primary-color, #ff1493);
+                            ">
+                                <div style="color: var(--primary-color, #ff1493); font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                    📍 POSLEDNÍ KROK
+                                </div>
+                                <div style="color: var(--text-primary); font-size: 0.95rem;">
+                                    ${lastStep}
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${reason ? `
+                            <div style="
+                                background: rgba(255, 152, 0, 0.1); padding: 1rem; border-radius: 8px;
+                                border-left: 3px solid #ff9800;
+                            ">
+                                <div style="color: #ff9800; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                    💭 DŮVOD / POZNÁMKA
+                                </div>
+                                <div style="color: var(--text-primary); font-style: italic; font-size: 0.95rem;">
+                                    "${reason}"
+                                </div>
+                            </div>
+                        ` : ''}
+                        
+                        ${isSuccess && soldItems.length > 0 ? `
+                            <div style="
+                                background: rgba(46, 213, 115, 0.1); padding: 1rem; border-radius: 8px;
+                                border-left: 3px solid #2ed573;
+                            ">
+                                <div style="color: #2ed573; font-weight: 600; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                    🛍️ PRODANÉ POLOŽKY
+                                </div>
+                                <div style="color: var(--text-primary); font-size: 0.95rem;">
+                                    ${soldItems.map(item => `• ${item}`).join('<br>')}
+                                </div>
+                                ${discountUsed !== undefined ? `
+                                    <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                                        💰 Sleva: ${discountUsed ? '✅ Použita' : '❌ Nepoužita'}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                        
+                        <!-- Debug info (skládací) -->
+                        <div style="margin-top: 0.5rem;">
+                            <button onclick="toggleSessionDebug('${session.timestamp}')" style="
+                                background: rgba(255,255,255,0.05); color: var(--text-secondary); 
+                                border: 1px solid rgba(255,255,255,0.1); padding: 0.3rem 0.6rem; 
+                                border-radius: 15px; cursor: pointer; font-size: 0.75rem;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                               onmouseout="this.style.background='rgba(255,255,255,0.05)'">
+                                🔧 Technical details
+                            </button>
+                            <div id="debug-${session.timestamp}" style="
+                                display: none; margin-top: 0.5rem; padding: 0.75rem; 
+                                background: rgba(0,0,0,0.2); border-radius: 6px; 
+                                font-family: monospace; font-size: 0.7rem; 
+                                color: var(--text-secondary); max-height: 150px; overflow-y: auto;
+                            ">
+                                ${JSON.stringify(session, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Získání důvodu z session (z různých možných fieldů)
+        function getSessionReason(session) {
+            // Zkus různé možné fieldy pro důvod
+            const possibleReasons = [
+                session.reason,
+                session.noDoprodejReason,
+                session.zakaznikNechceReason,
+                session.nevhodnyReason,
+                session.nedostatekCasuReason,
+                session.jizyReason,
+                session.pocitReason,
+                session.cenaReason,
+                session.customReason
+            ].filter(reason => reason && reason.trim() !== '');
+            
+            return possibleReasons.length > 0 ? possibleReasons[0] : null;
+        }
+
+        // Získání posledního kroku session
+        function getSessionLastStep(session) {
+            // Zkus různé možné fieldy pro krok
+            if (session.lastStep) return session.lastStep;
+            if (session.currentStep) return session.currentStep;
+            if (session.step) return session.step;
+            
+            // Dedukuj z dalších fielů
+            if (session.phoneOnlyWithReason) return 'Pouze telefon prodán (bez příslušenství)';
+            if (session.zakaznikNechce) return 'Zákazník nakonec nechce';
+            if (session.scenario) return `Scénář: ${session.scenario}`;
+            
+            return null;
+        }
+
+        // Získání zobrazovacího jména prodejce
+        function getSellerDisplayName(seller) {
+            const customDisplayNames = JSON.parse(localStorage.getItem('seller_display_names') || '{}');
+            if (customDisplayNames[seller]) return customDisplayNames[seller];
+            
+            const defaultDisplayNames = {
+                'tvalenta': 'Tomáš Valenta',
+                'admin': 'Admin Administrátor', 
+                'sgabriel': 'Šimon Gabriel',
+                'malek': 'Pavel Malek',
+            };
+            
+            return defaultDisplayNames[seller] || (seller.charAt(0).toUpperCase() + seller.slice(1));
+        }
+
+        // Toggle debug informace pro session
+        function toggleSessionDebug(timestamp) {
+            const debugDiv = document.getElementById(`debug-${timestamp}`);
+            if (debugDiv) {
+                debugDiv.style.display = debugDiv.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        // Filtrování view v modalu
+        function filterSessionView(filter) {
+            const container = document.getElementById('sessions-container');
+            const sessions = window.currentModalSessions;
+            
+            if (container && sessions) {
+                container.innerHTML = renderSessionsList(sessions, filter);
+                
+                // Aktualizuj aktivní tlačítko
+                document.querySelectorAll('#scenario-detail-modal button[onclick^="filterSessionView"]').forEach(btn => {
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-primary)';
+                });
+                
+                const activeButton = document.getElementById(
+                    filter === 'all' ? 'show-all-sessions' : 
+                    filter === 'sold' ? 'show-sold-sessions' : 'show-failed-sessions'
+                );
+                
+                if (activeButton) {
+                    activeButton.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    activeButton.style.color = 'white';
+                }
+            }
+        }
+
+        // Zavření modal s detaily scénáře
+        function closeScenarioModal() {
+            const modal = document.getElementById('scenario-detail-modal');
+            if (modal) {
+                modal.remove();
+                delete window.currentModalSessions;
+                document.removeEventListener('keydown', handleModalKeydown);
+            }
+        }
+
+        // Obsluha ESC klávesy pro zavření modalu
+        function handleModalKeydown(e) {
+            if (e.key === 'Escape') {
+                closeScenarioModal();
             }
         }
 
