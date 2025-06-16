@@ -409,6 +409,21 @@ function addSalesAssistantStyles() {
             background: linear-gradient(90deg, #ff1493, #2196F3);
         }
         
+        .scenario-tile.selected {
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.2) 0%, rgba(33, 150, 243, 0.2) 100%);
+            border-color: var(--primary-color);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(255, 20, 147, 0.25);
+        }
+        
+        .scenario-tile.selected::before {
+            background: linear-gradient(90deg, #ff1493, #2196F3);
+        }
+        
+        .scenario-tile.selected .scenario-title {
+            color: var(--primary-color);
+        }
+        
         .checkbox-item .item-icon {
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
@@ -2508,7 +2523,7 @@ function renderServisStep2() {
         
         <div class="sales-content">
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
-                🛍️ CO JSI PRODAL? - Vyberte kategorie:
+                🛍️ CO JSI PRODAL/ DOPRODAL? - Vyberte kategorie:
             </h4>
             
             <div class="scenario-grid">
