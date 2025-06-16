@@ -250,11 +250,11 @@ function setupHamburgerMenu() {
         // DEBUG: Force inline styles
         if (nav.classList.contains('active')) {
             // Skrýt menu
-            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(-100%) !important; z-index: 9999 !important; border: 3px solid red !important;';
+            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(-100%) !important; z-index: 9999 !important; border: 3px solid red !important; visibility: hidden !important; opacity: 0 !important;';
             nav.classList.remove('active');
         } else {
             // Zobrazit menu
-            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(0) !important; z-index: 9999 !important; border: 3px solid green !important;';
+            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(0) !important; z-index: 9999 !important; border: 3px solid green !important; visibility: visible !important; opacity: 1 !important;';
             nav.classList.add('active');
         }
         
