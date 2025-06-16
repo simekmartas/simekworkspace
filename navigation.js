@@ -250,37 +250,46 @@ function setupHamburgerMenu() {
         // DEBUG: Force inline styles
         if (nav.classList.contains('active')) {
             // Skrýt menu
-            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(-100%) !important; z-index: 9999 !important; border: 3px solid red !important; visibility: hidden !important; opacity: 0 !important;';
+            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(255,255,255,0.98) !important; transform: translateX(-100%) !important; z-index: 9999 !important; visibility: hidden !important; opacity: 0 !important;';
             nav.classList.remove('active');
         } else {
             // Zobrazit menu
-            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(0) !important; z-index: 9999 !important; border: 3px solid green !important; visibility: visible !important; opacity: 1 !important;';
+            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(255,255,255,0.98) !important; transform: translateX(0) !important; z-index: 9999 !important; visibility: visible !important; opacity: 1 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;';
             
-            // MEGA TEST - přidej obrovský text přímo do nav
-            nav.innerHTML = '<div style="font-size: 30px !important; color: red !important; background: yellow !important; padding: 20px !important; font-weight: bold !important;">🍔 MENU FUNGUJE! 🎉<br>Domů<br>Novinky<br>Žebříček<br>Prodejny</div>';
-            console.log('🚨 MEGA TEST text přidán do nav');
-            
-            // Také nastav styly na ul element
+            // Nastav správné styly na UL a zachovej původní obsah
             const navUl = nav.querySelector('ul');
-            console.log('🔍 Hledám UL element:', navUl);
-            console.log('🔍 Nav innerHTML:', nav.innerHTML);
             if (navUl) {
-                navUl.style.cssText = 'visibility: visible !important; opacity: 1 !important; display: block !important; padding: 20px !important; margin: 0 !important; background: yellow !important; border: 2px solid blue !important; font-size: 20px !important; color: black !important;';
-                console.log('🟡 UL styly nastaveny');
+                // Nastav styly na UL
+                navUl.style.cssText = 'visibility: visible !important; opacity: 1 !important; display: flex !important; flex-direction: column !important; padding: 20px !important; margin: 0 !important; list-style: none !important; background: rgba(255,255,255,0.95) !important; width: 100% !important; height: auto !important;';
                 
-                // Nastav styly na všechny li elementy
+                // Nastav styly na všechny LI elementy
                 const menuItems = navUl.querySelectorAll('li');
                 menuItems.forEach((li, index) => {
-                    li.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; padding: 15px !important; margin: 5px 0 !important; background: orange !important; border: 1px solid red !important; font-size: 18px !important;';
-                    console.log(`🟠 LI element ${index + 1} nastaven`);
+                    li.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; padding: 0 !important; margin: 0 0 10px 0 !important; width: 100% !important;';
                     
                     // Nastav styly na odkazy
                     const link = li.querySelector('a');
                     if (link) {
-                        link.style.cssText = 'color: black !important; font-size: 18px !important; font-weight: bold !important; text-decoration: none !important; display: block !important;';
-                        console.log(`🔗 Link ${index + 1} nastaven: ${link.textContent}`);
+                        link.style.cssText = 'color: #333 !important; font-size: 18px !important; font-weight: 500 !important; text-decoration: none !important; display: block !important; padding: 15px 20px !important; border-radius: 8px !important; background: transparent !important; transition: background 0.2s ease !important;';
+                        
+                        // Přidej hover efekt
+                        link.addEventListener('mouseenter', () => {
+                            link.style.background = 'rgba(255, 20, 147, 0.1) !important';
+                        });
+                        link.addEventListener('mouseleave', () => {
+                            link.style.background = 'transparent !important';
+                        });
+                        
+                        // Přidej click handler pro zavření menu
+                        link.addEventListener('click', () => {
+                            closeHamburgerMenu();
+                        });
                     }
                 });
+                
+                console.log('✅ Menu styly aplikovány na', menuItems.length, 'položek');
+            } else {
+                console.error('❌ Nav UL element nenalezen!');
             }
             
             nav.classList.add('active');
