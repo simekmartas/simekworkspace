@@ -3,6 +3,9 @@ class LeaderboardsDataLoader {
     constructor(containerId) {
         this.container = document.getElementById(containerId);
         
+        // Typ žebříčku - 'points' nebo 'items-per-receipt'
+        this.currentType = 'points';
+        
         // Google Sheets konfigurace - STEJNÁ jako user-profile-data-loader.js
         this.spreadsheetId = '1t3v7I_HwbPkMdmJjNEcDN1dFDoAvood7FVyoK_PBTNE';
         this.monthlyGid = '1829845095'; // list "od 1" pro měsíční data
@@ -37,6 +40,7 @@ class LeaderboardsDataLoader {
 
     async loadLeaderboardData() {
         console.log('=== NAČÍTÁNÍ DAT PRO ŽEBŘÍČEK ===');
+        console.log('Typ žebříčku:', this.currentType);
         console.log('Vybrané historické datum:', this.selectedHistoryDate);
         
         try {
@@ -420,51 +424,99 @@ class LeaderboardsDataLoader {
             console.log(`  📊 Celkem řádků pro ${userData.fullName}: ${userRows.length}`);
             
             if (userRows.length > 0) {
-                // Spočítat body pro tohoto prodejce
-                const points = this.calculateUserPoints(userRows, headers);
-                
-                console.log(`  🏆 Vypočítané body: ${points.totalPoints} (položky: ${points.totalItems})`);
-                
-                this.leaderboardData.push({
-                    sellerId: sellerId,
-                    name: userData.fullName,
-                    username: userData.username,
-                    prodejna: userData.prodejna || 'Nespecifikována',
-                    points: points.totalPoints,
-                    breakdown: points.breakdown,
-                    itemsCount: points.totalItems
-                });
+                if (this.currentType === 'items-per-receipt') {
+                    // Výpočet průměru položek na účtenku
+                    const itemsData = this.calculateUserItemsPerReceipt(userRows, headers);
+                    
+                    console.log(`  🛒 Průměr položek na účtenku: ${itemsData.averageItemsPerReceipt.toFixed(2)} (celkem položek: ${itemsData.totalItems})`);
+                    
+                    this.leaderboardData.push({
+                        sellerId: sellerId,
+                        name: userData.fullName,
+                        username: userData.username,
+                        prodejna: userData.prodejna || 'Nespecifikována',
+                        averageItemsPerReceipt: itemsData.averageItemsPerReceipt,
+                        totalItems: itemsData.totalItems,
+                        totalReceipts: itemsData.totalReceipts,
+                        method: itemsData.method
+                    });
+                } else {
+                    // Standardní výpočet bodů
+                    const points = this.calculateUserPoints(userRows, headers);
+                    
+                    console.log(`  🏆 Vypočítané body: ${points.totalPoints} (položky: ${points.totalItems})`);
+                    
+                    this.leaderboardData.push({
+                        sellerId: sellerId,
+                        name: userData.fullName,
+                        username: userData.username,
+                        prodejna: userData.prodejna || 'Nespecifikována',
+                        points: points.totalPoints,
+                        breakdown: points.breakdown,
+                        itemsCount: points.totalItems
+                    });
+                }
             } else {
-                // Prodejce bez dat - 0 bodů
-                console.log(`  ⚠️ Žádná data pro ${userData.fullName} - přidávám s 0 body`);
+                // Prodejce bez dat
+                console.log(`  ⚠️ Žádná data pro ${userData.fullName} - přidávám s 0 hodnotami`);
                 
-                this.leaderboardData.push({
-                    sellerId: sellerId,
-                    name: userData.fullName,
-                    username: userData.username,
-                    prodejna: userData.prodejna || 'Nespecifikována',
-                    points: 0,
-                    breakdown: {},
-                    itemsCount: 0
-                });
+                if (this.currentType === 'items-per-receipt') {
+                    this.leaderboardData.push({
+                        sellerId: sellerId,
+                        name: userData.fullName,
+                        username: userData.username,
+                        prodejna: userData.prodejna || 'Nespecifikována',
+                        averageItemsPerReceipt: 0,
+                        totalItems: 0,
+                        totalReceipts: 0,
+                        method: 'no_data'
+                    });
+                } else {
+                    this.leaderboardData.push({
+                        sellerId: sellerId,
+                        name: userData.fullName,
+                        username: userData.username,
+                        prodejna: userData.prodejna || 'Nespecifikována',
+                        points: 0,
+                        breakdown: {},
+                        itemsCount: 0
+                    });
+                }
             }
         });
 
-        // Seřadit podle bodů (nejvíc na začátek)
-        this.leaderboardData.sort((a, b) => b.points - a.points);
+        // Seřadit podle typu žebříčku
+        if (this.currentType === 'items-per-receipt') {
+            this.leaderboardData.sort((a, b) => b.averageItemsPerReceipt - a.averageItemsPerReceipt);
+        } else {
+            this.leaderboardData.sort((a, b) => b.points - a.points);
+        }
         
         console.log('\n=== FINÁLNÍ ŽEBŘÍČEK ===');
         console.log(`📊 Celkem prodejců: ${this.leaderboardData.length}`);
-        console.log(`🏆 Prodejců s body: ${this.leaderboardData.filter(s => s.points > 0).length}`);
-        console.log(`💯 Nejvyšší skóre: ${this.leaderboardData.length > 0 ? this.leaderboardData[0].points : 0}`);
         
-        this.leaderboardData.forEach((seller, index) => {
-            console.log(`${index + 1}. ${seller.name}: ${seller.points} bodů (${seller.prodejna})`);
-        });
-        
-        // Ověření integrity dat
-        const totalCalculatedPoints = this.leaderboardData.reduce((sum, seller) => sum + seller.points, 0);
-        console.log(`💰 Celkem bodů všech prodejců: ${totalCalculatedPoints}`);
+        if (this.currentType === 'items-per-receipt') {
+            console.log(`🛒 Prodejců s daty: ${this.leaderboardData.filter(s => s.averageItemsPerReceipt > 0).length}`);
+            console.log(`📈 Nejvyšší průměr: ${this.leaderboardData.length > 0 ? this.leaderboardData[0].averageItemsPerReceipt.toFixed(2) : 0} položek/účtenka`);
+            
+            this.leaderboardData.forEach((seller, index) => {
+                console.log(`${index + 1}. ${seller.name}: ${seller.averageItemsPerReceipt.toFixed(2)} položek/účtenka (${seller.prodejna})`);
+            });
+            
+            const totalItems = this.leaderboardData.reduce((sum, seller) => sum + seller.totalItems, 0);
+            const totalReceipts = this.leaderboardData.reduce((sum, seller) => sum + seller.totalReceipts, 0);
+            console.log(`🛒 Celkem položek všech prodejců: ${totalItems}, celkem účtenek: ${totalReceipts}`);
+        } else {
+            console.log(`🏆 Prodejců s body: ${this.leaderboardData.filter(s => s.points > 0).length}`);
+            console.log(`💯 Nejvyšší skóre: ${this.leaderboardData.length > 0 ? this.leaderboardData[0].points : 0}`);
+            
+            this.leaderboardData.forEach((seller, index) => {
+                console.log(`${index + 1}. ${seller.name}: ${seller.points} bodů (${seller.prodejna})`);
+            });
+            
+            const totalCalculatedPoints = this.leaderboardData.reduce((sum, seller) => sum + seller.points, 0);
+            console.log(`💰 Celkem bodů všech prodejců: ${totalCalculatedPoints}`);
+        }
         
         // Zobrazit žebříček s historical flag
         this.displayLeaderboard(isHistorical);
@@ -532,6 +584,75 @@ class LeaderboardsDataLoader {
         };
     }
 
+    // NOVÁ metoda pro výpočet průměru položek na účtenku
+    calculateUserItemsPerReceipt(rows, headers) {
+        console.log('🛒 Počítám průměr položek na účtenku pro uživatele, řádků:', rows.length);
+        
+        // Najít index sloupce POL_DOK (průměr položek na dokument/účtenku)
+        const polDokIndex = headers.findIndex(h => h.toLowerCase().includes('pol_dok'));
+        
+        if (polDokIndex === -1) {
+            console.warn('⚠️ Sloupec POL_DOK nenalezen, používám fallback výpočet');
+            
+            // Fallback - spočítáme průměr manuálně z celkových položek a počtu účtenek
+            const polozkyIndex = headers.findIndex(h => h.toLowerCase().includes('polozky'));
+            const dokumentyIndex = headers.findIndex(h => h.toLowerCase().includes('doklady') || h.toLowerCase().includes('dokumenty'));
+            
+            let totalItems = 0;
+            let totalReceipts = 0;
+            
+            rows.forEach(row => {
+                if (polozkyIndex >= 0) {
+                    totalItems += parseInt(row[polozkyIndex]) || 0;
+                }
+                if (dokumentyIndex >= 0) {
+                    totalReceipts += parseInt(row[dokumentyIndex]) || 0;
+                } else {
+                    totalReceipts += 1; // Fallback - každý řádek = 1 účtenka
+                }
+            });
+            
+            const averageItems = totalReceipts > 0 ? totalItems / totalReceipts : 0;
+            
+            return {
+                averageItemsPerReceipt: averageItems,
+                totalItems: totalItems,
+                totalReceipts: totalReceipts,
+                method: 'calculated'
+            };
+        }
+        
+        // Použít hodnotu z POL_DOK sloupce
+        let polDokValue = 0;
+        let totalItems = 0;
+        let totalReceipts = 0;
+        
+        rows.forEach(row => {
+            // POL_DOK obsahuje už vypočítaný průměr
+            const rowPolDok = parseFloat(row[polDokIndex]) || 0;
+            if (rowPolDok > 0) {
+                polDokValue = rowPolDok; // Bereme poslední/nejnovější hodnotu
+            }
+            
+            // Pro statistiky - spočítej celkové položky
+            const polozkyIndex = headers.findIndex(h => h.toLowerCase().includes('polozky'));
+            if (polozkyIndex >= 0) {
+                totalItems += parseInt(row[polozkyIndex]) || 0;
+            }
+            
+            totalReceipts += 1; // Každý řádek představuje období
+        });
+        
+        console.log(`📊 POL_DOK hodnota: ${polDokValue}, celkem položek: ${totalItems}`);
+        
+        return {
+            averageItemsPerReceipt: polDokValue,
+            totalItems: totalItems,
+            totalReceipts: totalReceipts,
+            method: 'pol_dok'
+        };
+    }
+
     parseCSVLine(line) {
         const result = [];
         let current = '';
@@ -572,16 +693,30 @@ class LeaderboardsDataLoader {
     }
 
     updateStats() {
-        const activeSellers = this.leaderboardData.filter(seller => seller.points > 0).length;
-        const totalPoints = this.leaderboardData.reduce((sum, seller) => sum + seller.points, 0);
-        const averagePoints = activeSellers > 0 ? Math.round(totalPoints / activeSellers) : 0;
-        const topPoints = this.leaderboardData.length > 0 ? this.leaderboardData[0].points : 0;
+        if (this.currentType === 'items-per-receipt') {
+            const activeSellers = this.leaderboardData.filter(seller => seller.averageItemsPerReceipt > 0).length;
+            const totalItems = this.leaderboardData.reduce((sum, seller) => sum + seller.totalItems, 0);
+            const totalReceipts = this.leaderboardData.reduce((sum, seller) => sum + seller.totalReceipts, 0);
+            const overallAverage = totalReceipts > 0 ? totalItems / totalReceipts : 0;
+            const topAverage = this.leaderboardData.length > 0 ? this.leaderboardData[0].averageItemsPerReceipt : 0;
 
-        // Aktualizovat DOM elementy
-        document.getElementById('totalSellers').textContent = activeSellers;
-        document.getElementById('totalPoints').textContent = totalPoints.toLocaleString();
-        document.getElementById('averagePoints').textContent = averagePoints;
-        document.getElementById('topPoints').textContent = topPoints;
+            // Aktualizovat DOM elementy
+            document.getElementById('totalSellers').textContent = activeSellers;
+            document.getElementById('totalPoints').textContent = totalItems.toLocaleString();
+            document.getElementById('averagePoints').textContent = overallAverage.toFixed(1);
+            document.getElementById('topPoints').textContent = topAverage.toFixed(1);
+        } else {
+            const activeSellers = this.leaderboardData.filter(seller => seller.points > 0).length;
+            const totalPoints = this.leaderboardData.reduce((sum, seller) => sum + seller.points, 0);
+            const averagePoints = activeSellers > 0 ? Math.round(totalPoints / activeSellers) : 0;
+            const topPoints = this.leaderboardData.length > 0 ? this.leaderboardData[0].points : 0;
+
+            // Aktualizovat DOM elementy
+            document.getElementById('totalSellers').textContent = activeSellers;
+            document.getElementById('totalPoints').textContent = totalPoints.toLocaleString();
+            document.getElementById('averagePoints').textContent = averagePoints;
+            document.getElementById('topPoints').textContent = topPoints;
+        }
     }
 
     updateTopThreePodium(isHistorical = false) {
@@ -589,7 +724,9 @@ class LeaderboardsDataLoader {
         const top3 = this.leaderboardData.slice(0, 3);
         
         if (top3.length === 0) {
-            const emptyText = isHistorical ? 'Žádní prodejci v historických datech' : 'Žádní prodejci s body';
+            const emptyText = this.currentType === 'items-per-receipt' ? 
+                (isHistorical ? 'Žádní prodejci v historických datech' : 'Žádní prodejci s daty o položkách') :
+                (isHistorical ? 'Žádní prodejci v historických datech' : 'Žádní prodejci s body');
             podium.innerHTML = `<div class="empty-state"><div class="icon">🏆</div><p>${emptyText}</p></div>`;
             return;
         }
@@ -600,22 +737,33 @@ class LeaderboardsDataLoader {
         const historicalBadge = isHistorical ? 
             `<div class="historical-badge" style="position: absolute; top: -10px; right: -10px; background: #ff9800; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem;">📚</div>` : '';
         
-        podium.innerHTML = top3.map((seller, index) => `
-            <div class="podium-place" style="position: relative;">
-                ${index === 0 ? historicalBadge : ''}
-                <div class="podium-rank">${medals[index]}</div>
-                <div class="podium-name">${this.escapeHtml(seller.name)}</div>
-                <div class="podium-points">${seller.points}</div>
-                <div class="podium-points-label">bodů</div>
-            </div>
-        `).join('');
+        podium.innerHTML = top3.map((seller, index) => {
+            let value, label;
+            if (this.currentType === 'items-per-receipt') {
+                value = seller.averageItemsPerReceipt.toFixed(1);
+                label = 'pol./účtenku';
+            } else {
+                value = seller.points;
+                label = 'bodů';
+            }
+            
+            return `
+                <div class="podium-place" style="position: relative;">
+                    ${index === 0 ? historicalBadge : ''}
+                    <div class="podium-rank">${medals[index]}</div>
+                    <div class="podium-name">${this.escapeHtml(seller.name)}</div>
+                    <div class="podium-points">${value}</div>
+                    <div class="podium-points-label">${label}</div>
+                </div>
+            `;
+        }).join('');
     }
 
     displayLeaderboardTable(isHistorical = false) {
         if (this.leaderboardData.length === 0) {
-            const emptyText = isHistorical ? 
-                'V historických datech nejsou žádní prodejci.' : 
-                'V systému nejsou žádní prodejci s daty pro aktuální měsíc.';
+            const emptyText = this.currentType === 'items-per-receipt' ?
+                (isHistorical ? 'V historických datech nejsou žádní prodejci.' : 'V systému nejsou žádní prodejci s daty o položkách na účtenku.') :
+                (isHistorical ? 'V historických datech nejsou žádní prodejci.' : 'V systému nejsou žádní prodejci s daty pro aktuální měsíc.');
                 
             this.container.innerHTML = `
                 <div class="empty-state">
@@ -645,12 +793,19 @@ class LeaderboardsDataLoader {
                 rankIcon = `${rank}.`;
             }
 
+            let valueCell;
+            if (this.currentType === 'items-per-receipt') {
+                valueCell = `<td class="points-cell">${seller.averageItemsPerReceipt.toFixed(1)} pol./účtenku</td>`;
+            } else {
+                valueCell = `<td class="points-cell">${seller.points} bodů</td>`;
+            }
+
             return `
                 <tr>
                     <td class="rank-cell ${rankClass}">${rankIcon}</td>
                     <td class="name-cell">${this.escapeHtml(seller.name)}</td>
                     <td class="prodejna-cell">${this.escapeHtml(seller.prodejna || '-')}</td>
-                    <td class="points-cell">${seller.points} bodů</td>
+                    ${valueCell}
                 </tr>
             `;
         }).join('');
@@ -662,6 +817,9 @@ class LeaderboardsDataLoader {
             </div>
         ` : '';
 
+        // Definovat hlavičky tabulky podle typu žebříčku
+        const valueHeader = this.currentType === 'items-per-receipt' ? 'Průměr pol./účtenku' : 'Body';
+
         this.container.innerHTML = `
             ${historicalNotice}
             <table class="leaderboard-table">
@@ -670,7 +828,7 @@ class LeaderboardsDataLoader {
                         <th>Pozice</th>
                         <th>Prodejce</th>
                         <th>Prodejna</th>
-                        <th>Body</th>
+                        <th>${valueHeader}</th>
                     </tr>
                 </thead>
                 <tbody>

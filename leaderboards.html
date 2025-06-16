@@ -614,6 +614,9 @@
             // Nastav typ žebříčku
             window.currentLeaderboardType = tabType;
             
+            // Aktualizuj popisky statistik
+            updateStatLabels(tabType);
+            
             // Znovu načti data
             if (window.leaderboardLoader) {
                 window.leaderboardLoader.currentType = tabType;
@@ -621,8 +624,26 @@
             }
         }
 
+        // Funkce pro aktualizaci popisků statistik
+        function updateStatLabels(tabType) {
+            if (tabType === 'items-per-receipt') {
+                // Přepni na popisky pro položky na účtenku
+                document.querySelector('#totalSellers + .stat-label').textContent = 'Aktivní prodejci';
+                document.querySelector('#totalPoints + .stat-label').textContent = 'Celkové položky';
+                document.querySelector('#averagePoints + .stat-label').textContent = 'Průměr pol./účtenku';
+                document.querySelector('#topPoints + .stat-label').textContent = 'Nejvyšší průměr';
+            } else {
+                // Vrať původní popisky pro body
+                document.querySelector('#totalSellers + .stat-label').textContent = 'Aktivní prodejci';
+                document.querySelector('#totalPoints + .stat-label').textContent = 'Celkové body';
+                document.querySelector('#averagePoints + .stat-label').textContent = 'Průměr bodů';
+                document.querySelector('#topPoints + .stat-label').textContent = 'Nejvyšší skóre';
+            }
+        }
+
         // Vyexportuj funkci pro globální použití
         window.switchLeaderboardTab = switchLeaderboardTab;
+        window.updateStatLabels = updateStatLabels;
 
         // Inicializace stránky
         document.addEventListener('DOMContentLoaded', function() {
@@ -662,6 +683,9 @@
                 window.leaderboardLoader = new window.LeaderboardsDataLoader('leaderboardContent');
                 window.leaderboardLoader.currentType = window.currentLeaderboardType || 'points';
                 console.log('✅ LeaderboardsDataLoader inicializován s typem:', window.leaderboardLoader.currentType);
+                
+                // Nastav správné popisky při inicializaci
+                updateStatLabels(window.leaderboardLoader.currentType);
             } else {
                 console.error('❌ LeaderboardsDataLoader není dostupný');
             }
