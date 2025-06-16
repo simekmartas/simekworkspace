@@ -227,8 +227,12 @@ function setupHamburgerMenu() {
     
     hamburger.addEventListener('click', function(e) {
         e.stopPropagation();
+        console.log('🍔 Hamburger clicked!');
         hamburger.classList.toggle('active');
         nav.classList.toggle('active');
+        console.log('🔄 Nav classes:', nav.classList);
+        console.log('📱 Nav display:', window.getComputedStyle(nav).display);
+        console.log('📍 Nav position:', window.getComputedStyle(nav).position);
         document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
     });
     
