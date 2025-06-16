@@ -256,8 +256,14 @@ function setupHamburgerMenu() {
             // Zobrazit menu
             nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(0) !important; z-index: 9999 !important; border: 3px solid green !important; visibility: visible !important; opacity: 1 !important;';
             
+            // MEGA TEST - přidej obrovský text přímo do nav
+            nav.innerHTML = '<div style="font-size: 30px !important; color: red !important; background: yellow !important; padding: 20px !important; font-weight: bold !important;">🍔 MENU FUNGUJE! 🎉<br>Domů<br>Novinky<br>Žebříček<br>Prodejny</div>';
+            console.log('🚨 MEGA TEST text přidán do nav');
+            
             // Také nastav styly na ul element
             const navUl = nav.querySelector('ul');
+            console.log('🔍 Hledám UL element:', navUl);
+            console.log('🔍 Nav innerHTML:', nav.innerHTML);
             if (navUl) {
                 navUl.style.cssText = 'visibility: visible !important; opacity: 1 !important; display: block !important; padding: 20px !important; margin: 0 !important; background: yellow !important; border: 2px solid blue !important; font-size: 20px !important; color: black !important;';
                 console.log('🟡 UL styly nastaveny');
