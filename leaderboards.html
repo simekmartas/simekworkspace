@@ -343,6 +343,91 @@
             margin-bottom: 2rem;
         }
 
+        /* Záložky pro typy žebříčků */
+        .leaderboard-tabs {
+            display: flex;
+            gap: 1rem;
+            margin: 2rem 0;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            background: var(--card-background, #ffffff);
+            border: 2px solid var(--border-color, #e0e0e0);
+            color: var(--text-primary, #333);
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-color, #2196F3);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--primary-color, #2196F3) 0%, #1976D2 100%);
+            color: white;
+            border-color: var(--primary-color, #2196F3);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
+        }
+
+        .tab-button.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(33, 150, 243, 0.4);
+        }
+
+        /* Tooltip pro vysvětlení metriky */
+        .tab-tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .tab-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 250px;
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 1000;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            line-height: 1.3;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-tooltip .tooltip-text::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.9) transparent transparent transparent;
+        }
+
+        .tab-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .leaderboard-title {
@@ -383,6 +468,17 @@
 
             .prodejna-cell {
                 display: none;
+            }
+
+            .leaderboard-tabs {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .tab-button {
+                padding: 0.875rem 1.5rem;
+                font-size: 0.9rem;
+                border-radius: 8px;
             }
         }
     </style>
@@ -440,10 +536,21 @@
                 <!-- Bude naplněno JavaScript -->
             </div>
 
+            <!-- Záložky pro různé typy žebříčků -->
+            <div class="leaderboard-tabs">
+                <button class="tab-button active" data-tab="points" onclick="switchLeaderboardTab('points', this)">
+                    🏆 Body celkem
+                </button>
+                <button class="tab-button tab-tooltip" data-tab="items-per-receipt" onclick="switchLeaderboardTab('items-per-receipt', this)">
+                    🛒 Průměr položek/účtenka
+                    <span class="tooltip-text">Žebříček podle průměrného počtu položek na jednu účtenku. Ukazuje, kdo umí zákazníkům prodat více věcí najednou.</span>
+                </button>
+            </div>
+
             <!-- Hlavní tabulka žebříčku -->
             <div class="retro-leaderboard-container">
                 <div class="retro-leaderboard-header">
-                    <span class="retro-terminal-prompt">leaderboard_monthly.json</span>
+                    <span class="retro-terminal-prompt" id="leaderboardFileName">leaderboard_points.json</span>
                     <div class="retro-window-controls">
                         <span class="control-dot red"></span>
                         <span class="control-dot yellow"></span>
@@ -485,6 +592,38 @@
     <script src="accessibility-enhancements.js"></script>
 
     <script>
+        // Globální proměnné pro typ žebříčku
+        window.currentLeaderboardType = 'points';
+
+        // Funkce pro přepínání záložek žebříčku
+        function switchLeaderboardTab(tabType, buttonElement) {
+            console.log(`🔄 Přepínání záložky žebříčku na: ${tabType}`);
+            
+            // Aktualizuj aktivní záložku
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            buttonElement.classList.add('active');
+            
+            // Aktualizuj název souboru
+            const fileName = document.getElementById('leaderboardFileName');
+            if (fileName) {
+                fileName.textContent = tabType === 'points' ? 'leaderboard_points.json' : 'leaderboard_items_per_receipt.json';
+            }
+            
+            // Nastav typ žebříčku
+            window.currentLeaderboardType = tabType;
+            
+            // Znovu načti data
+            if (window.leaderboardLoader) {
+                window.leaderboardLoader.currentType = tabType;
+                window.leaderboardLoader.loadLeaderboardData();
+            }
+        }
+
+        // Vyexportuj funkci pro globální použití
+        window.switchLeaderboardTab = switchLeaderboardTab;
+
         // Inicializace stránky
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🏆 Leaderboards page inicializována');
@@ -521,7 +660,8 @@
             // Načti žebříček
             if (window.LeaderboardsDataLoader) {
                 window.leaderboardLoader = new window.LeaderboardsDataLoader('leaderboardContent');
-                console.log('✅ LeaderboardsDataLoader inicializován');
+                window.leaderboardLoader.currentType = window.currentLeaderboardType || 'points';
+                console.log('✅ LeaderboardsDataLoader inicializován s typem:', window.leaderboardLoader.currentType);
             } else {
                 console.error('❌ LeaderboardsDataLoader není dostupný');
             }
