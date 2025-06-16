@@ -697,7 +697,13 @@ class LeaderboardsDataLoader {
             const activeSellers = this.leaderboardData.filter(seller => seller.averageItemsPerReceipt > 0).length;
             const totalItems = this.leaderboardData.reduce((sum, seller) => sum + seller.totalItems, 0);
             const totalReceipts = this.leaderboardData.reduce((sum, seller) => sum + seller.totalReceipts, 0);
-            const overallAverage = totalReceipts > 0 ? totalItems / totalReceipts : 0;
+            
+            // OPRAVA: Počítej průměr z průměrů prodejců, ne z celkových čísel
+            const sumOfAverages = this.leaderboardData
+                .filter(seller => seller.averageItemsPerReceipt > 0)
+                .reduce((sum, seller) => sum + seller.averageItemsPerReceipt, 0);
+            const overallAverage = activeSellers > 0 ? sumOfAverages / activeSellers : 0;
+            
             const topAverage = this.leaderboardData.length > 0 ? this.leaderboardData[0].averageItemsPerReceipt : 0;
 
             // Aktualizovat DOM elementy
