@@ -869,68 +869,7 @@ footer {
 }
 
 /* Mobile Responsive */
-@media (max-width: 768px) {
-    .hamburger {
-        display: flex;
-    }
-    
-    nav ul {
-        position: fixed;
-        top: 4rem;
-        left: -100%;
-        width: 100%;
-        height: calc(100vh - 4rem);
-        background: var(--bg-primary);
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0;
-        padding: 2rem 0;
-        transition: left 0.3s ease;
-        border-top: 1px solid var(--border-light);
-    }
-    
-    nav ul.active {
-        left: 0;
-    }
-    
-    nav li {
-        width: 100%;
-        border-bottom: 1px solid var(--border-light);
-    }
-    
-    nav a {
-        display: block;
-        padding: 1rem 1.5rem;
-        width: 100%;
-        border-radius: 0;
-    }
-    
-    .hero h1 {
-        font-size: 2rem;
-    }
-    
-    .container {
-        padding: 0 1rem;
-    }
-    
-    .header-content {
-        padding: 0 1rem;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .filter-row {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .filter-label {
-        min-width: auto;
-    }
-}
+/* Starý mobilní blok odstraněn - použit novější */
 
 /* Protected Page Security */
 body.protected-page {
@@ -2926,30 +2865,7 @@ tr:hover td {
         order: 3;
     }
     
-    /* Mobilní navigace - minimalistické */
-    nav {
-        position: fixed;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100vh;
-        background: rgba(255, 255, 255, 0.98);
-        z-index: 999;
-        transition: left 0.3s ease;
-        overflow-y: auto;
-        padding-top: 5rem;
-        backdrop-filter: blur(10px);
-        border-right: 1px solid #e5e7eb;
-    }
-    
-    .dark-theme nav {
-        background: rgba(15, 23, 42, 0.98);
-        border-right: 1px solid #334155;
-    }
-    
-    nav.active {
-        left: 0;
-    }
+    /* Mobilní navigace - používá transform pro lepší výkon */
     
     nav ul {
         flex-direction: column;
@@ -5916,28 +5832,31 @@ header {
 }
 
 /* 🧭 Navigation - Mobile-First Design */
-nav {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--bg-primary);
-    border-bottom: 1px solid var(--border-light);
-    box-shadow: var(--mobile-shadow);
-    transform: translateY(-100%);
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 999;
-    max-height: calc(100vh - var(--mobile-header-height) - var(--mobile-safe-area-top));
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-}
+@media (max-width: 768px) {
+    nav {
+        position: fixed;
+        top: var(--mobile-header-height);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--bg-primary);
+        transform: translateX(-100%);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 998;
+        border-bottom: none;
+        box-shadow: none;
+        max-height: none;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
 
-nav.active {
-    transform: translateY(0);
-    opacity: 1;
-    visibility: visible;
+    nav.active {
+        transform: translateX(0);
+        opacity: 1;
+        visibility: visible;
+    }
 }
 
 nav ul {
@@ -6436,29 +6355,7 @@ tr:hover td {
         display: flex;
     }
     
-    /* Navigation adjustments */
-    nav {
-        position: fixed;
-        top: var(--mobile-header-height);
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: var(--bg-primary);
-        transform: translateX(-100%);
-        opacity: 0;
-        visibility: hidden;
-        z-index: 998;
-        border-bottom: none;
-        box-shadow: none;
-        max-height: none;
-        overflow-y: auto;
-    }
-    
-    nav.active {
-        transform: translateX(0);
-        opacity: 1;
-        visibility: visible;
-    }
+    /* Navigation adjustments - handled by main nav styles */
     
     nav ul {
         padding: var(--mobile-spacing-lg);
