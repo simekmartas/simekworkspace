@@ -255,6 +255,28 @@ function setupHamburgerMenu() {
         } else {
             // Zobrazit menu
             nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: white !important; transform: translateX(0) !important; z-index: 9999 !important; border: 3px solid green !important; visibility: visible !important; opacity: 1 !important;';
+            
+            // Také nastav styly na ul element
+            const navUl = nav.querySelector('ul');
+            if (navUl) {
+                navUl.style.cssText = 'visibility: visible !important; opacity: 1 !important; display: block !important; padding: 20px !important; margin: 0 !important; background: yellow !important; border: 2px solid blue !important; font-size: 20px !important; color: black !important;';
+                console.log('🟡 UL styly nastaveny');
+                
+                // Nastav styly na všechny li elementy
+                const menuItems = navUl.querySelectorAll('li');
+                menuItems.forEach((li, index) => {
+                    li.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; padding: 15px !important; margin: 5px 0 !important; background: orange !important; border: 1px solid red !important; font-size: 18px !important;';
+                    console.log(`🟠 LI element ${index + 1} nastaven`);
+                    
+                    // Nastav styly na odkazy
+                    const link = li.querySelector('a');
+                    if (link) {
+                        link.style.cssText = 'color: black !important; font-size: 18px !important; font-weight: bold !important; text-decoration: none !important; display: block !important;';
+                        console.log(`🔗 Link ${index + 1} nastaven: ${link.textContent}`);
+                    }
+                });
+            }
+            
             nav.classList.add('active');
         }
         
