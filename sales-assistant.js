@@ -3962,6 +3962,7 @@ function renderVykupScenario() {
 
 // Výběr řešení po výkupu
 function selectVykupReseni(reseni) {
+    console.log('🔥 selectVykupReseni called with:', reseni);
     selectedItems.typReseni = reseni;
     
     const modalBody = document.getElementById('salesModalBody');
