@@ -1934,7 +1934,9 @@ function renderZalozitKarticku(scenarioType) {
         'prislusenstvi': { title: '🔌 PŘÍSLUŠENSTVÍ', continueFunction: 'proceedFromZakaznickaKarticka' },
         'zasilkovna': { title: '📦 ZÁSILKOVNA', continueFunction: 'proceedFromZakaznickaKartickaZasilkovna' },
         'novy-telefon': { title: '📱 NOVÝ TELEFON', continueFunction: 'proceedFromZakaznickaKartickaNovyTelefon' },
-        'servis': { title: '🔧 SERVIS TELEFONU', continueFunction: 'proceedFromZakaznickaKartickaServis' }
+        'servis': { title: '🔧 SERVIS TELEFONU', continueFunction: 'proceedFromZakaznickaKartickaServis' },
+        'vykup-telefon': { title: '💰 VÝKUP + TELEFON', continueFunction: 'proceedFromZakaznickaKartickaVykupTelefon' },
+        'vykup-doprodej': { title: '💰 VÝKUP + DOPRODEJ', continueFunction: 'proceedFromZakaznickaKartickaVykupDoprodej' }
     };
     
     const info = scenarioInfo[scenarioType];
@@ -3887,4 +3889,556 @@ function closeSalesAssistant() {
         sluzby: [],
         hadrik: false
     };
+} 
+
+// === VÝKUP SCÉNÁŘ ===
+
+// Výkup scénář - otevře odkaz a pokračuje
+function renderVykupScenario() {
+    // Otevři výkupní stránku v novém okně
+    window.open('https://www.mp.cz/vykup', '_blank');
+    
+    currentWizardStep = 0;
+    selectedItems = { 
+        typReseni: '',
+        obaly: [], 
+        sklicka: [], 
+        prislusenstvi: [],
+        sluzby: [],
+        hadrik: false,
+        zakaznickaKarticka: null,
+        založitKarticku: null
+    };
+    
+    return `
+        <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP TELEFONU
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Výkupní stránka otevřena!</h4>
+                <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                    Pokračujte ve výkupu na nové kartě a pak se vraťte sem.
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tips-container">
+                <div class="sales-tip">
+                    <h4>💡 PRODEJNÍ ARGUMENT:</h4>
+                    <p><strong>"S naší zákaznickou kartičkou získáte výkupní bonus při koupi nového telefonu u nás!"</strong></p>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0; text-align: center;">
+                Chce zákazník rovnou řešit nový telefon?
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectVykupReseni('novy')">
+                    <span class="scenario-emoji">📱</span>
+                    <h4 class="scenario-title">NOVÝ<br>TELEFON</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupReseni('bazarovy')">
+                    <span class="scenario-emoji">🔄</span>
+                    <h4 class="scenario-title">BAZAROVÝ<br>TELEFON</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupReseni('uz-ma-novy')">
+                    <span class="scenario-emoji">✨</span>
+                    <h4 class="scenario-title">UŽ MÁ<br>NOVÝ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupReseni('nic')" style="border-color: #6c757d; background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(108, 117, 125, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #6c757d;">❌</span>
+                    <h4 class="scenario-title" style="color: #6c757d;">NIC<br>NECHCE</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr řešení po výkupu
+function selectVykupReseni(reseni) {
+    selectedItems.typReseni = reseni;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    
+    if (reseni === 'novy' || reseni === 'bazarovy') {
+        // Pokračuje jako scénář nového telefonu
+        modalBody.innerHTML = renderZakaznickaKarticka('vykup-telefon');
+    } else if (reseni === 'uz-ma-novy') {
+        // Pokračuje jako zásilkovna - doprodej
+        modalBody.innerHTML = renderZakaznickaKarticka('vykup-doprodej');
+    } else if (reseni === 'nic') {
+        // Ukončí s dotazníkem
+        modalBody.innerHTML = renderVykupNicNechceForm();
+    }
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Pokračování z zákaznické kartičky pro výkup + telefon
+function proceedFromZakaznickaKartickaVykupTelefon() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderNovyTelefonStep1(); // Použije stejný flow jako nový telefon
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Pokračování z zákaznické kartičky pro výkup + doprodej
+function proceedFromZakaznickaKartickaVykupDoprodej() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupDoprodejStep1();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výkup doprodej - krok 1 (obaly)
+function renderVykupDoprodejStep1() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupScenario();">← Zpět na výběr</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP + DOPRODEJ - Krok 1/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Zákazník už má nový telefon - nabídněme příslušenství!
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                📱 OBALY - Chce zákazník obal na nový telefon?
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectVykupObal('transparentni')">
+                    <span class="scenario-emoji">🔹</span>
+                    <h4 class="scenario-title">TRANSPARENTNÍ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupObal('barevny')">
+                    <span class="scenario-emoji">🌈</span>
+                    <h4 class="scenario-title">BAREVNÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupObal('knizkovy')">
+                    <span class="scenario-emoji">📖</span>
+                    <h4 class="scenario-title">KNÍŽKOVÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupObal('zadny')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÝ OBAL<br>NECHCE</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr obalu a přechod na krok 2
+function selectVykupObal(typ) {
+    if (typ !== 'zadny') {
+        selectedItems.obaly = [typ];
+    } else {
+        selectedItems.obaly = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupDoprodejStep2();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výkup doprodej - krok 2 (sklíčka)
+function renderVykupDoprodejStep2() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupDoprodejStep1();">← Zpět na obaly</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP + DOPRODEJ - Krok 2/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Obal: ${selectedItems.obaly.length > 0 ? selectedItems.obaly[0] : 'žádný'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔍 SKLÍČKA + SUNSHINE FOLIE:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectVykupSklicko('kvalitnejsi')">
+                    <span class="scenario-emoji">💎</span>
+                    <h4 class="scenario-title">KVALITNĚJŠÍ<br>SKLÍČKO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSklicko('levnejsi')">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">LEVNĚJŠÍ<br>SKLÍČKO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSklicko('sunshine')">
+                    <span class="scenario-emoji">🌟</span>
+                    <h4 class="scenario-title">SUNSHINE<br>FOLIE</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSklicko('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SKLÍČKO<br>NECHCE</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr sklíčka a přechod na krok 3
+function selectVykupSklicko(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sklicka = [typ];
+    } else {
+        selectedItems.sklicka = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupDoprodejStep3();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výkup doprodej - krok 3 (služby)
+function renderVykupDoprodejStep3() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupDoprodejStep2();">← Zpět na sklíčka</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP + DOPRODEJ - Krok 3/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Příslušenství: ${selectedItems.obaly.length + selectedItems.sklicka.length} položek
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🛠️ SLUŽBY - Nabídněte služby:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectVykupSluzba('cisteni')">
+                    <span class="scenario-emoji">🧽</span>
+                    <h4 class="scenario-title">ČIŠTĚNÍ<br>TELEFONU</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSluzba('aktualizace')">
+                    <span class="scenario-emoji">🔄</span>
+                    <h4 class="scenario-title">AKTUALIZACE<br>SYSTÉMU</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSluzba('zalohovani')">
+                    <span class="scenario-emoji">💾</span>
+                    <h4 class="scenario-title">ZÁLOHOVÁNÍ<br>DAT</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSluzba('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SLUŽBY<br>NECHCE</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr služby a přechod na krok 4
+function selectVykupSluzba(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sluzby = [typ];
+    } else {
+        selectedItems.sluzby = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupDoprodejStep4();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výkup doprodej - krok 4 (hadřík)
+function renderVykupDoprodejStep4() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupDoprodejStep3();">← Zpět na služby</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP + DOPRODEJ - Krok 4/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Služby: ${selectedItems.sluzby.length} položek
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🧽 HADŘÍK NA ČIŠTĚNÍ:
+            </h4>
+            
+            <div class="radio-group">
+                <div class="radio-item" onclick="selectVykupHadrik(true, this)">
+                    <input type="radio" id="vykup-hadrik-ano" name="vykup-hadrik" value="ano">
+                    <label for="vykup-hadrik-ano">ANO</label>
+                </div>
+                <div class="radio-item" onclick="selectVykupHadrik(false, this)">
+                    <input type="radio" id="vykup-hadrik-ne" name="vykup-hadrik" value="ne">
+                    <label for="vykup-hadrik-ne">NE</label>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="sales-btn" onclick="proceedToVykupSleva()">
+                    ➡️ POKRAČOVAT NA SLEVU
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr hadříku
+function selectVykupHadrik(selected, element) {
+    selectedItems.hadrik = selected;
+    
+    document.querySelectorAll('.radio-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    const radio = element.querySelector('input[type="radio"]');
+    radio.checked = true;
+}
+
+// Pokračování na slevu
+function proceedToVykupSleva() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupDoprodejSleva();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výkup doprodej - finální sleva
+function renderVykupDoprodejSleva() {
+    // Sestavuj všechny prodané položky
+    const allSoldItems = [];
+    allSoldItems.push('Výkup telefonu');
+    if (selectedItems.obaly.length > 0) allSoldItems.push(selectedItems.obaly[0] + ' obal');
+    if (selectedItems.sklicka.length > 0) allSoldItems.push(selectedItems.sklicka[0] + (selectedItems.sklicka[0] === 'sunshine' ? ' folie' : ' sklíčko'));
+    if (selectedItems.sluzby.length > 0) allSoldItems.push(...selectedItems.sluzby);
+    if (selectedItems.hadrik) allSoldItems.push('hadřík na čištění');
+    
+    selectedItems.allItems = allSoldItems;
+    
+    const nothingSold = allSoldItems.length <= 1; // Pouze výkup
+    
+    if (nothingSold) {
+        return renderVykupNicNechceForm();
+    }
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupDoprodejStep4();">← Zpět na hadřík</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
+            💰 VÝKUP + DOPRODEJ - Sleva a dokončení
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Celkově prodáno:</h4>
+                <div style="font-size: 0.9rem;">
+                    ${allSoldItems.map(item => `• ${item}`).join('<br>')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--text-primary); margin: 1rem 0; text-align: center;">
+                Jaká sleva byla použita?
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectVykupSleva('2+1', this)">
+                    <span class="scenario-emoji">🎁</span>
+                    <h4 class="scenario-title">2+1</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSleva('3+1', this)">
+                    <span class="scenario-emoji">🎁</span>
+                    <h4 class="scenario-title">3+1</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSleva('20%', this)">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">20%</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupSleva('zadna', this)" style="border-color: #6c757d; background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(108, 117, 125, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #6c757d;">❌</span>
+                    <h4 class="scenario-title" style="color: #6c757d;">ŽÁDNÁ<br>SLEVA</h4>
+                </div>
+            </div>
+            
+            <div id="vykup-sleva-pokracovat" style="text-align: center; margin-top: 2rem; display: none;">
+                <button class="sales-btn success" onclick="completeVykupSale()">
+                    🎉 DOKONČIT PRODEJ
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr slevy pro výkup
+function selectVykupSleva(sleva, element) {
+    selectedItems.sleva = sleva;
+    
+    document.querySelectorAll('.scenario-tile').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    // Zobraz tlačítko pokračovat
+    document.getElementById('vykup-sleva-pokracovat').style.display = 'block';
+}
+
+// Formulář pro zákazníka který po výkupu nic nechce
+function renderVykupNicNechceForm() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupScenario();">← Zpět na výběr</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
+            💰 VÝKUP - Úspěšně dokončeno
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Výkup dokončen!</h4>
+                <div style="font-size: 0.9rem;">
+                    Zákazník neměl zájem o další produkty.
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ffc107; text-align: center;">❓ Proč zákazník nic jiného nechtěl?</h4>
+                <textarea id="vykupNicReason" placeholder="Krátké odůvodnění proč zákazník nechtěl žádné další produkty..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn sales-sold-btn" onclick="completeVykupNic()" style="width: 100%;">
+                ✅ Dokončit výkup
+            </button>
+        </div>
+    `;
+}
+
+// Dokončení výkupu bez dalších produktů
+async function completeVykupNic() {
+    const reason = document.getElementById('vykupNicReason').value.trim();
+    
+    if (!reason) {
+        alert('Prosím uveďte alespoň krátké odůvodnění.');
+        return;
+    }
+    
+    const sessionData = {
+        ...currentSalesSession,
+        result: 'sold',
+        reason: reason,
+        soldItems: ['Výkup telefonu'],
+        zakaznickaKarticka: selectedItems.zakaznickaKarticka,
+        založitKarticku: selectedItems.založitKarticku,
+        noUpsellReason: reason,
+        completed_at: Date.now(),
+        duration: sessionStartTime ? Date.now() - sessionStartTime : 0
+    };
+    
+    try {
+        await saveSalesSession(sessionData);
+        showSuccessMessage('Výkup dokončen, nedoprodáno zaznamenáno!');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } catch (error) {
+        console.error('Chyba při ukládání výkup nic:', error);
+        alert('Chyba při ukládání dat. Zkuste to znovu.');
+    }
+}
+
+// Dokončení úspěšného prodeje výkup + doprodej
+async function completeVykupSale() {
+    if (!selectedItems.sleva) {
+        alert('Prosím vyberte slevu.');
+        return;
+    }
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'sold';
+    currentSalesSession.soldItems = selectedItems.allItems;
+    currentSalesSession.discountUsed = selectedItems.sleva;
+    currentSalesSession.zakaznickaKarticka = selectedItems.zakaznickaKarticka;
+    currentSalesSession.založitKarticku = selectedItems.založitKarticku;
+    currentSalesSession.vykupData = selectedItems;
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100;
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Výkup + doprodej byl úspěšně zaznamenán! 🎉');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
+    }
 } 
