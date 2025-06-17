@@ -428,42 +428,44 @@
             opacity: 1;
         }
 
-        /* Styly pro zvýraznění prodejců pod průměrem */
-        .below-points-average,
-        .below-items-average {
-            background-color: rgba(255, 71, 87, 0.05) !important;
-            border-left: 4px solid #ff4757;
-            animation: pulse-warning 2s infinite;
+        /* Styly pro zvýraznění prodejců pod průměrem - jemnější */
+        .below-average {
+            background-color: rgba(255, 107, 107, 0.08) !important;
+            border-left: 3px solid rgba(255, 107, 107, 0.6);
         }
 
-        .below-points-average:hover,
-        .below-items-average:hover {
-            background-color: rgba(255, 71, 87, 0.1) !important;
-            transform: scale(1.02);
+        .below-average:hover {
+            background-color: rgba(255, 107, 107, 0.12) !important;
         }
 
-        .below-points-average .name-cell,
-        .below-items-average .name-cell {
-            color: #ff4757;
-            font-weight: bold;
+        .below-average .name-cell {
+            color: #e55656;
+            font-weight: 600;
         }
 
-        .below-points-average .points-cell,
-        .below-items-average .points-cell {
-            color: #ff4757;
-            font-weight: bold;
+        .below-average .points-cell {
+            color: #e55656;
+            font-weight: 600;
         }
 
-        @keyframes pulse-warning {
-            0% { 
-                border-left-color: #ff4757; 
-            }
-            50% { 
-                border-left-color: #ff6b7a; 
-            }
-            100% { 
-                border-left-color: #ff4757; 
-            }
+        /* Styly pro prodejce blízko průměru - oranžová */
+        .near-average {
+            background-color: rgba(255, 165, 0, 0.06) !important;
+            border-left: 3px solid rgba(255, 165, 0, 0.5);
+        }
+
+        .near-average:hover {
+            background-color: rgba(255, 165, 0, 0.1) !important;
+        }
+
+        .near-average .name-cell {
+            color: #cc8400;
+            font-weight: 600;
+        }
+
+        .near-average .points-cell {
+            color: #cc8400;
+            font-weight: 600;
         }
 
         /* Tooltip pro vysvětlení červeného zvýraznění */
@@ -612,15 +614,20 @@
                 </button>
             </div>
 
-            <!-- Vysvětlení červeného zvýraznění -->
+            <!-- Vysvětlení barevného zvýraznění -->
             <div class="leaderboard-explanation">
-                <h4>🔴 Červené zvýraznění prodejců</h4>
-                <p><strong>Prodejci zářící červeně jsou pod průměrem:</strong></p>
+                <h4>🎨 Barevné zvýraznění prodejců</h4>
+                <p><strong>Barevné označení výkonnosti:</strong></p>
                 <ul>
-                    <li><strong>🏆 Body celkem:</strong> Prodejci s méně body než je průměr všech aktivních prodejců</li>
-                    <li><strong>🛒 Průměr položek/účtenka:</strong> Prodejci s méně než 2 položky na účtenku</li>
+                    <li><strong>🔴 Červená:</strong> Prodejci výrazně pod průměrem (potřebují podporu)</li>
+                    <li><strong>🟠 Oranžová:</strong> Prodejci blízko průměru odspodu (mírně pod průměrem)</li>
+                    <li><strong>⚪ Bez barvy:</strong> Prodejci na průměru nebo nad průměrem</li>
                 </ul>
-                <p>Toto zvýraznění pomáhá rychle identifikovat prodejce, kteří potřebují podporu nebo školení.</p>
+                <p><strong>Konkrétní prahy:</strong></p>
+                <ul>
+                    <li><strong>🏆 Body:</strong> Červená = výrazně pod průměrem, Oranžová = blízko průměru</li>
+                    <li><strong>🛒 Položky/účtenka:</strong> Červená = pod 2,0, Oranžová = 2,0-2,2</li>
+                </ul>
             </div>
 
             <!-- Hlavní tabulka žebříčku -->
