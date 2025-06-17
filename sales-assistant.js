@@ -3967,10 +3967,12 @@ function selectVykupReseni(reseni) {
     const modalBody = document.getElementById('salesModalBody');
     
     if (reseni === 'novy' || reseni === 'bazarovy') {
-        // Pokračuje jako scénář nového telefonu
+        // Uložíme typ telefonu pro pozdější použití
+        selectedItems.typTelefonu = reseni;
+        // Pokračuje jako scénář nového telefonu s kartičkou
         modalBody.innerHTML = renderZakaznickaKarticka('vykup-telefon');
     } else if (reseni === 'uz-ma-novy') {
-        // Pokračuje jako zásilkovna - doprodej
+        // Pokračuje jako zásilkovna - doprodej s kartičkou
         modalBody.innerHTML = renderZakaznickaKarticka('vykup-doprodej');
     } else if (reseni === 'nic') {
         // Ukončí s dotazníkem
@@ -3987,6 +3989,9 @@ function selectVykupReseni(reseni) {
 
 // Pokračování z zákaznické kartičky pro výkup + telefon
 function proceedFromZakaznickaKartickaVykupTelefon() {
+    // Nastavíme scénář na nový telefon pro správné fungování
+    currentScenario = 'novy-telefon';
+    
     const modalBody = document.getElementById('salesModalBody');
     modalBody.innerHTML = renderNovyTelefonStep1(); // Použije stejný flow jako nový telefon
     
@@ -4000,6 +4005,9 @@ function proceedFromZakaznickaKartickaVykupTelefon() {
 
 // Pokračování z zákaznické kartičky pro výkup + doprodej
 function proceedFromZakaznickaKartickaVykupDoprodej() {
+    // Zůstáváme ve výkup scénáři
+    currentScenario = 'vykup';
+    
     const modalBody = document.getElementById('salesModalBody');
     modalBody.innerHTML = renderVykupDoprodejStep1();
     
