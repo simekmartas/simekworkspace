@@ -2035,7 +2035,7 @@ function renderPrislusenstviSkloTipy() {
             <div class="sales-tips-container">
                 <div class="sales-tip">
                     <h4>🌟 SUNSHINE FOLIE:</h4>
-                    <p>"K tomuto sklu perfektně pasuje Sunshine folie - ochrana proti modrému světlu, méně únavy očí!"</p>
+                    <p>"Alternativně můžu nabídnout Sunshine folii - má doživotní záruku a když se poškodí, vyměním ji za novou jen za 299 Kč!"</p>
                 </div>
                 
                 <div class="sales-tip">
@@ -2079,7 +2079,7 @@ function renderPrislusenstviObalTipy() {
                 
                 <div class="sales-tip">
                     <h4>🌟 SUNSHINE FOLIE:</h4>
-                    <p>"K tomuto obalu doporučuji Sunshine folii - ochrana očí před modrým světlem!"</p>
+                    <p>"Místo skla můžu nabídnout Sunshine folii - má doživotní záruku a když se poškodí, vyměním ji za novou jen za 299 Kč!"</p>
                 </div>
                 
                 <div class="sales-tip">
@@ -2123,7 +2123,7 @@ function renderPrislusenstviNabijekaTipy() {
                 
                 <div class="sales-tip">
                     <h4>🌟 SUNSHINE FOLIE:</h4>
-                    <p>"K tomu doporučuji Sunshine folii - ochrana očí při nabíjení a používání!"</p>
+                    <p>"K tomu doporučuji Sunshine folii - má doživotní záruku a když se poškodí, vyměním ji za novou jen za 299 Kč!"</p>
                 </div>
                 
                 <div class="sales-tip">
@@ -2162,7 +2162,7 @@ function renderPrislusenstviJineTipy() {
                 
                 <div class="sales-tip">
                     <h4>🌟 SUNSHINE FOLIE:</h4>
-                    <p>"K tomu doporučuji Sunshine folii - ochrana očí před modrým světlem!"</p>
+                    <p>"Můžu nabídnout Sunshine folii - má doživotní záruku a když se poškodí, vyměním ji za novou jen za 299 Kč!"</p>
                 </div>
                 
                 <div class="sales-tip">
@@ -2183,10 +2183,10 @@ function renderPrislusenstviJineTipy() {
     `;
 }
 
-// Pokračování na produkty
+// Pokračování na produkty - krok 1 (obaly)
 function proceedToPrislusenstviProducts() {
     const modalBody = document.getElementById('salesModalBody');
-    modalBody.innerHTML = renderPrislusenstviProductSelection();
+    modalBody.innerHTML = renderPrislusenstviStep1();
     
     // Smooth scroll to top
     setTimeout(function() {
@@ -2196,112 +2196,286 @@ function proceedToPrislusenstviProducts() {
     }, 50);
 }
 
-// Výběr produktů - adaptováno ze zásilkovny
-function renderPrislusenstviProductSelection() {
+// Příslušenství scénář - krok 1 (obaly)
+function renderPrislusenstviStep1() {
     return `
         <button class="scenario-back-btn" onclick="proceedFromZakaznickaKarticka()">← Zpět na tipy</button>
         
         <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
-            🔌 PŘÍSLUŠENSTVÍ - Co jsi prodal?
+            🔌 PŘÍSLUŠENSTVÍ - Krok 1/5
         </h3>
         
         <div class="sales-content">
-            <h4 style="color: var(--primary-color); margin-bottom: 1rem;">📱 OBALY:</h4>
-            <div class="checkbox-grid">
-                <div class="checkbox-item" data-checkbox="transparentni-obal">
-                    <span class="item-icon">🔹</span>
-                    <input type="checkbox" id="transparentni-obal" name="prislusenstvi-items">
-                    <label for="transparentni-obal">TRANSPARENTNÍ<br>OBAL</label>
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                📱 OBALY - Vyberte typ obalu:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectPrislusenstviObal('transparentni')">
+                    <span class="scenario-emoji">🔹</span>
+                    <h4 class="scenario-title">TRANSPARENTNÍ<br>OBAL</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="barevny-obal">
-                    <span class="item-icon">🌈</span>
-                    <input type="checkbox" id="barevny-obal" name="prislusenstvi-items">
-                    <label for="barevny-obal">BAREVNÝ<br>OBAL</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviObal('barevny')">
+                    <span class="scenario-emoji">🌈</span>
+                    <h4 class="scenario-title">BAREVNÝ<br>OBAL</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="knizkovy-obal">
-                    <span class="item-icon">📖</span>
-                    <input type="checkbox" id="knizkovy-obal" name="prislusenstvi-items">
-                    <label for="knizkovy-obal">KNÍŽKOVÝ<br>OBAL</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviObal('knizkovy')">
+                    <span class="scenario-emoji">📖</span>
+                    <h4 class="scenario-title">KNÍŽKOVÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviObal('zadny')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÝ OBAL<br>NEPRODÁN</h4>
                 </div>
             </div>
+        </div>
+    `;
+}
+
+// Výběr obalu a přechod na krok 2
+function selectPrislusenstviObal(typ) {
+    if (typ !== 'zadny') {
+        selectedItems.obaly = [typ];
+    } else {
+        selectedItems.obaly = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderPrislusenstviStep2();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Příslušenství scénář - krok 2 (sklíčka + sunshine folie)
+function renderPrislusenstviStep2() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviStep1();">← Zpět na obaly</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Krok 2/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Obal: ${selectedItems.obaly.length > 0 ? selectedItems.obaly[0] : 'žádný'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔍 SKLÍČKA + SUNSHINE FOLIE:
+            </h4>
             
-            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔍 SKLÍČKA:</h4>
-            <div class="checkbox-grid">
-                <div class="checkbox-item" data-checkbox="kvalitnejsi-sklicko">
-                    <span class="item-icon">💎</span>
-                    <input type="checkbox" id="kvalitnejsi-sklicko" name="prislusenstvi-items">
-                    <label for="kvalitnejsi-sklicko">KVALITNĚJŠÍ<br>SKLÍČKO</label>
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectPrislusenstviSklicko('kvalitnejsi')">
+                    <span class="scenario-emoji">💎</span>
+                    <h4 class="scenario-title">KVALITNĚJŠÍ<br>SKLÍČKO</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="levnejsi-sklicko">
-                    <span class="item-icon">💰</span>
-                    <input type="checkbox" id="levnejsi-sklicko" name="prislusenstvi-items">
-                    <label for="levnejsi-sklicko">LEVNĚJŠÍ<br>SKLÍČKO</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviSklicko('levnejsi')">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">LEVNĚJŠÍ<br>SKLÍČKO</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="sunshine-folie">
-                    <span class="item-icon">🌟</span>
-                    <input type="checkbox" id="sunshine-folie" name="prislusenstvi-items">
-                    <label for="sunshine-folie">SUNSHINE<br>FOLIE</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviSklicko('sunshine')">
+                    <span class="scenario-emoji">🌟</span>
+                    <h4 class="scenario-title">SUNSHINE<br>FOLIE</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviSklicko('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SKLÍČKO<br>NEPRODÁNO</h4>
                 </div>
             </div>
+        </div>
+    `;
+}
+
+// Výběr sklíčka a přechod na krok 3
+function selectPrislusenstviSklicko(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sklicka = [typ];
+    } else {
+        selectedItems.sklicka = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderPrislusenstviStep3();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Příslušenství scénář - krok 3 (ostatní příslušenství)
+function renderPrislusenstviStep3() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviStep2();">← Zpět na sklíčka</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Krok 3/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Obal: ${selectedItems.obaly.length > 0 ? selectedItems.obaly[0] : 'žádný'} | 
+                Sklíčko: ${selectedItems.sklicka.length > 0 ? selectedItems.sklicka[0] : 'žádné'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔌 OSTATNÍ PŘÍSLUŠENSTVÍ - Vyberte co se prodalo:
+            </h4>
             
-            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔌 OSTATNÍ PŘÍSLUŠENSTVÍ:</h4>
-            <div class="checkbox-grid">
-                <div class="checkbox-item" data-checkbox="kabel">
-                    <span class="item-icon">🔌</span>
-                    <input type="checkbox" id="kabel" name="prislusenstvi-items">
-                    <label for="kabel">KABEL</label>
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectPrislusenstviOstatni('kabel')">
+                    <span class="scenario-emoji">🔌</span>
+                    <h4 class="scenario-title">KABEL</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="adapter">
-                    <span class="item-icon">🔌</span>
-                    <input type="checkbox" id="adapter" name="prislusenstvi-items">
-                    <label for="adapter">ADAPTER</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviOstatni('adapter')">
+                    <span class="scenario-emoji">🔌</span>
+                    <h4 class="scenario-title">ADAPTER</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="nabijeka">
-                    <span class="item-icon">🔋</span>
-                    <input type="checkbox" id="nabijeka" name="prislusenstvi-items">
-                    <label for="nabijeka">NABÍJEČKA</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviOstatni('nabijeka')">
+                    <span class="scenario-emoji">🔋</span>
+                    <h4 class="scenario-title">NABÍJEČKA</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="drzak-do-auta">
-                    <span class="item-icon">🚗</span>
-                    <input type="checkbox" id="drzak-do-auta" name="prislusenstvi-items">
-                    <label for="drzak-do-auta">DRŽÁK<br>DO AUTA</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviOstatni('drzak')">
+                    <span class="scenario-emoji">🚗</span>
+                    <h4 class="scenario-title">DRŽÁK<br>DO AUTA</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="ostatni">
-                    <span class="item-icon">📦</span>
-                    <input type="checkbox" id="ostatni" name="prislusenstvi-items">
-                    <label for="ostatni">OSTATNÍ</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviOstatni('ostatni')">
+                    <span class="scenario-emoji">📦</span>
+                    <h4 class="scenario-title">OSTATNÍ</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviOstatni('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ PŘÍSLUŠENSTVÍ<br>NEPRODÁNO</h4>
                 </div>
             </div>
+        </div>
+    `;
+}
+
+// Výběr ostatního příslušenství a přechod na krok 4
+function selectPrislusenstviOstatni(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.prislusenstvi = [typ];
+    } else {
+        selectedItems.prislusenstvi = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderPrislusenstviStep4();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Příslušenství scénář - krok 4 (služby)
+function renderPrislusenstviStep4() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviStep3();">← Zpět na příslušenství</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Krok 4/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Příslušenství: ${selectedItems.obaly.length + selectedItems.sklicka.length + selectedItems.prislusenstvi.length} položek
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🛠️ SLUŽBY - Vyberte prodané služby:
+            </h4>
             
-            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🛠️ SLUŽBY:</h4>
-            <div class="checkbox-grid">
-                <div class="checkbox-item service-tooltip" data-checkbox="cisteni">
-                    <span class="item-icon">🧽</span>
-                    <input type="checkbox" id="cisteni" name="prislusenstvi-items">
-                    <label for="cisteni">ČIŠTĚNÍ<br>TELEFONU</label>
-                    <span class="tooltip-text">"Telefon bude vyčištěn zevnitř i zvenčí."</span>
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectPrislusenstviSluzba('cisteni')">
+                    <span class="scenario-emoji">🧽</span>
+                    <h4 class="scenario-title">ČIŠTĚNÍ<br>TELEFONU</h4>
                 </div>
-                <div class="checkbox-item service-tooltip" data-checkbox="aktualizace">
-                    <span class="item-icon">🔄</span>
-                    <input type="checkbox" id="aktualizace" name="prislusenstvi-items">
-                    <label for="aktualizace">AKTUALIZACE<br>SYSTÉMU</label>
-                    <span class="tooltip-text">"Telefon bude mít nejnovější verzi systému."</span>
+                <div class="scenario-tile" onclick="selectPrislusenstviSluzba('aktualizace')">
+                    <span class="scenario-emoji">🔄</span>
+                    <h4 class="scenario-title">AKTUALIZACE<br>SYSTÉMU</h4>
                 </div>
-                <div class="checkbox-item service-tooltip" data-checkbox="zalohovani">
-                    <span class="item-icon">💾</span>
-                    <input type="checkbox" id="zalohovani" name="prislusenstvi-items">
-                    <label for="zalohovani">ZÁLOHOVÁNÍ<br>DAT</label>
-                    <span class="tooltip-text">"Zazálohuju všechna důležitá data."</span>
+                <div class="scenario-tile" onclick="selectPrislusenstviSluzba('zalohovani')">
+                    <span class="scenario-emoji">💾</span>
+                    <h4 class="scenario-title">ZÁLOHOVÁNÍ<br>DAT</h4>
                 </div>
-                <div class="checkbox-item" data-checkbox="hadrik">
-                    <span class="item-icon">🧽</span>
-                    <input type="checkbox" id="hadrik" name="prislusenstvi-items">
-                    <label for="hadrik">HADŘÍK<br>NA ČIŠTĚNÍ</label>
+                <div class="scenario-tile" onclick="selectPrislusenstviSluzba('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SLUŽBY<br>NEPRODÁNY</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr služby a přechod na krok 5
+function selectPrislusenstviSluzba(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sluzby = [typ];
+    } else {
+        selectedItems.sluzby = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderPrislusenstviStep5();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Příslušenství scénář - krok 5 (hadřík)
+function renderPrislusenstviStep5() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviStep4();">← Zpět na služby</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Krok 5/5
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Služby: ${selectedItems.sluzby.length} položek
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🧽 HADŘÍK NA ČIŠTĚNÍ:
+            </h4>
+            
+            <div class="radio-group">
+                <div class="radio-item" onclick="selectPrislusenstviHadrik(true, this)">
+                    <input type="radio" id="hadrik-ano" name="hadrik" value="ano">
+                    <label for="hadrik-ano">ANO</label>
+                </div>
+                <div class="radio-item" onclick="selectPrislusenstviHadrik(false, this)">
+                    <input type="radio" id="hadrik-ne" name="hadrik" value="ne">
+                    <label for="hadrik-ne">NE</label>
                 </div>
             </div>
             
             <div style="text-align: center; margin-top: 2rem;">
-                <button class="sales-btn" onclick="proceedToPrislusenstviSleva()">
+                <button class="sales-btn" onclick="proceedToPrislusenstviSlevaFinal()">
                     ➡️ POKRAČOVAT NA SLEVU
                 </button>
             </div>
@@ -2309,22 +2483,23 @@ function renderPrislusenstviProductSelection() {
     `;
 }
 
-// Pokračování na slevu
-function proceedToPrislusenstviSleva() {
-    // Uložení vybraných položek
-    const selectedPrislusenstviItems = [];
-    document.querySelectorAll('input[name="prislusenstvi-items"]:checked').forEach(item => {
-        const label = document.querySelector(`label[for="${item.id}"]`);
-        const itemName = label ? label.textContent.replace(/\s+/g, ' ').trim() : item.id;
-        selectedPrislusenstviItems.push(itemName);
+// Výběr hadříku
+function selectPrislusenstviHadrik(selected, element) {
+    selectedItems.hadrik = selected;
+    
+    document.querySelectorAll('.radio-item').forEach(item => {
+        item.classList.remove('selected');
     });
+    element.classList.add('selected');
     
-    // Přidej originální položku za kterou přišel
-    selectedPrislusenstviItems.unshift(`Původní položka: ${selectedItems.typPrislusenstvi}`);
-    selectedItems.allItems = selectedPrislusenstviItems;
-    
+    const radio = element.querySelector('input[type="radio"]');
+    radio.checked = true;
+}
+
+// Pokračování na finální slevu
+function proceedToPrislusenstviSlevaFinal() {
     const modalBody = document.getElementById('salesModalBody');
-    modalBody.innerHTML = renderPrislusenstviSleva();
+    modalBody.innerHTML = renderPrislusenstviSlevaFinal();
     
     // Smooth scroll to top
     setTimeout(function() {
@@ -2334,26 +2509,37 @@ function proceedToPrislusenstviSleva() {
     }, 50);
 }
 
-// Výběr slevy
-function renderPrislusenstviSleva() {
-    const nothingSold = selectedItems.allItems.length <= 1; // Pouze původní položka
+// Finální výběr slevy
+function renderPrislusenstviSlevaFinal() {
+    // Sestavuj všechny prodané položky
+    const allSoldItems = [];
+    allSoldItems.push(`Původní položka: ${selectedItems.typPrislusenstvi}`);
+    if (selectedItems.obaly.length > 0) allSoldItems.push(selectedItems.obaly[0] + ' obal');
+    if (selectedItems.sklicka.length > 0) allSoldItems.push(selectedItems.sklicka[0] + (selectedItems.sklicka[0] === 'sunshine' ? ' folie' : ' sklíčko'));
+    if (selectedItems.prislusenstvi.length > 0) allSoldItems.push(selectedItems.prislusenstvi[0]);
+    if (selectedItems.sluzby.length > 0) allSoldItems.push(...selectedItems.sluzby);
+    if (selectedItems.hadrik) allSoldItems.push('hadřík na čištění');
+    
+    selectedItems.allItems = allSoldItems;
+    
+    const nothingSold = allSoldItems.length <= 1; // Pouze původní položka
     
     if (nothingSold) {
-        return renderPrislusenstviNotSoldForm();
+        return renderPrislusenstviNotSoldFormFinal();
     }
     
     return `
-        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviProductSelection();">← Zpět na produkty</button>
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviStep5();">← Zpět na hadřík</button>
         
         <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
-            🔌 PŘÍSLUŠENSTVÍ - Sleva
+            🔌 PŘÍSLUŠENSTVÍ - Sleva a dokončení
         </h3>
         
         <div style="text-align: center; margin-bottom: 2rem;">
             <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
-                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Prodáno:</h4>
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Celkově prodáno:</h4>
                 <div style="font-size: 0.9rem;">
-                    ${selectedItems.allItems.map(item => `• ${item}`).join('<br>')}
+                    ${allSoldItems.map(item => `• ${item}`).join('<br>')}
                 </div>
             </div>
         </div>
@@ -2383,7 +2569,7 @@ function renderPrislusenstviSleva() {
             </div>
             
             <div id="sleva-pokracovat" style="text-align: center; margin-top: 2rem; display: none;">
-                <button class="sales-btn success" onclick="completePrislusenstviSale()">
+                <button class="sales-btn success" onclick="completePrislusenstviSaleFinal()">
                     🎉 DOKONČIT PRODEJ
                 </button>
             </div>
@@ -2496,6 +2682,41 @@ async function completePrislusenstviNotSold() {
         console.error('Chyba při ukládání neprodáno:', error);
         alert('Chyba při ukládání dat. Zkuste to znovu.');
     }
+}
+
+// Finální dokončovací funkce
+function completePrislusenstviSaleFinal() {
+    return completePrislusenstviSale();
+}
+
+// Finální formulář pro neprodáno
+function renderPrislusenstviNotSoldFormFinal() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviStep5();">← Zpět na hadřík</button>
+        
+        <h3 style="text-align: center; color: #ff4757; margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Neprodáno
+        </h3>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff4757; text-align: center;">❌ Proč se nic dalšího neprodalo?</h4>
+                <textarea id="prislusenstviNotSoldReason" placeholder="Krátké odůvodnění proč se nic dalšího neprodalo..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn sales-not-sold-btn" onclick="completePrislusenstviNotSoldFinal()" style="width: 100%;">
+                📝 Odeslat a dokončit
+            </button>
+        </div>
+    `;
+}
+
+// Dokončení neprodání při příslušenství - finální
+function completePrislusenstviNotSoldFinal() {
+    return completePrislusenstviNotSold();
 }
 
 // === NOVÝ TELEFON SCÉNÁŘ ===
