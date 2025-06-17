@@ -719,7 +719,7 @@ function selectScenario(scenario) {
             modalBody.innerHTML = renderZasilkovnaScenario();
             break;
         case 'prislusenstvi':
-            modalBody.innerHTML = renderComingSoon('PŘÍSLUŠENSTVÍ', '🔌');
+            modalBody.innerHTML = renderPrislusenstviScenario();
             break;
         case 'novy-telefon':
             modalBody.innerHTML = renderNovyTelefonScenario();
@@ -750,7 +750,9 @@ function renderZasilkovnaScenario() {
         prislusenstvi: [],
         cisteni: [],
         sluzby: [],
-        hadrik: false
+        hadrik: false,
+        zakaznickaKarticka: null,
+        založitKarticku: null
     };
     
     return `
@@ -803,6 +805,19 @@ function renderZasilkovnaScenario() {
 
 // Pokračování na produkty po úspěšném prodeji
 function proceedToProducts() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZakaznickaKarticka('zasilkovna');
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Pokračování z zákaznické kartičky pro zásilkovnu
+function proceedFromZakaznickaKartickaZasilkovna() {
     const modalBody = document.getElementById('salesModalBody');
     modalBody.innerHTML = renderZasilkovnaStep1();
     
@@ -1764,6 +1779,725 @@ async function completeWizardSale() {
     }
 }
 
+// === PŘÍSLUŠENSTVÍ SCÉNÁŘ ===
+
+// Příslušenství scénář - krok 0 (výběr typu příslušenství)
+function renderPrislusenstviScenario() {
+    currentWizardStep = 0;
+    selectedItems = { 
+        typPrislusenstvi: '',
+        zakaznickaKarticka: null,
+        založitKarticku: null,
+        obaly: [],
+        sklicka: [],
+        prislusenstvi: [],
+        sluzby: [],
+        sunshinefolie: false,
+        hadrik: false
+    };
+    
+    return `
+        <button class="scenario-back-btn" onclick="goBackToScenarios()">← Zpět na výběr</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ
+        </h3>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔌 S ČÍM ZÁKAZNÍK PŘIŠEL?
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectPrislusenstviTyp('obal')">
+                    <span class="scenario-emoji">📱</span>
+                    <h4 class="scenario-title">OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviTyp('sklo')">
+                    <span class="scenario-emoji">🔍</span>
+                    <h4 class="scenario-title">SKLO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviTyp('nabijeka')">
+                    <span class="scenario-emoji">🔋</span>
+                    <h4 class="scenario-title">NABÍJEČKA</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviTyp('jine')">
+                    <span class="scenario-emoji">📦</span>
+                    <h4 class="scenario-title">JINÉ</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr typu příslušenství
+function selectPrislusenstviTyp(typ) {
+    selectedItems.typPrislusenstvi = typ;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZakaznickaKarticka('prislusenstvi');
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Funkce pro zákaznickou kartičku (použitelná ve všech scénářích)
+function renderZakaznickaKarticka(scenarioType) {
+    const scenarioInfo = {
+        'prislusenstvi': {
+            title: '🔌 PŘÍSLUŠENSTVÍ',
+            backFunction: 'renderPrislusenstviScenario',
+            continueFunction: 'proceedFromZakaznickaKarticka'
+        },
+        'zasilkovna': {
+            title: '📦 ZÁSILKOVNA',
+            backFunction: 'renderZasilkovnaScenario',
+            continueFunction: 'proceedFromZakaznickaKartickaZasilkovna'
+        },
+        'novy-telefon': {
+            title: '📱 NOVÝ TELEFON',
+            backFunction: 'renderNovyTelefonScenario',
+            continueFunction: 'proceedFromZakaznickaKartickaNovyTelefon'
+        },
+        'servis': {
+            title: '🔧 SERVIS TELEFONU',
+            backFunction: 'renderServisScenario',
+            continueFunction: 'proceedFromZakaznickaKartickaServis'
+        }
+    };
+    
+    const info = scenarioInfo[scenarioType];
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = ${info.backFunction}();">← Zpět</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            ${info.title} - Zákaznická kartička
+        </h3>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                💳 MÁ ZÁKAZNÍK ZÁKAZNICKOU KARTIČKU?
+            </h4>
+            
+            <div class="radio-group">
+                <div class="radio-item" onclick="selectZakaznickaKarticka(true, this, '${scenarioType}')">
+                    <input type="radio" id="karticka-ano" name="zakaznicka-karticka" value="ano">
+                    <label for="karticka-ano">ANO</label>
+                </div>
+                <div class="radio-item" onclick="selectZakaznickaKarticka(false, this, '${scenarioType}')">
+                    <input type="radio" id="karticka-ne" name="zakaznicka-karticka" value="ne">
+                    <label for="karticka-ne">NE</label>
+                </div>
+            </div>
+            
+            <div id="karticka-pokracovat" style="text-align: center; margin-top: 2rem; display: none;">
+                <button class="sales-btn" onclick="${info.continueFunction}()">
+                    ➡️ POKRAČOVAT
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr zákaznické kartičky
+function selectZakaznickaKarticka(maKarticku, element, scenarioType) {
+    selectedItems.zakaznickaKarticka = maKarticku;
+    
+    document.querySelectorAll('.radio-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    const radio = element.querySelector('input[type="radio"]');
+    radio.checked = true;
+    
+    // Pokud nemá kartičku, zobraz otázku na založení
+    if (!maKarticku) {
+        setTimeout(() => {
+            const modalBody = document.getElementById('salesModalBody');
+            modalBody.innerHTML = renderZalozitKarticku(scenarioType);
+        }, 500);
+    } else {
+        // Pokud má kartičku, zobraz tlačítko pokračovat
+        document.getElementById('karticka-pokracovat').style.display = 'block';
+    }
+}
+
+// Formulář pro založení kartičky
+function renderZalozitKarticku(scenarioType) {
+    const scenarioInfo = {
+        'prislusenstvi': { title: '🔌 PŘÍSLUŠENSTVÍ', continueFunction: 'proceedFromZakaznickaKarticka' },
+        'zasilkovna': { title: '📦 ZÁSILKOVNA', continueFunction: 'proceedFromZakaznickaKartickaZasilkovna' },
+        'novy-telefon': { title: '📱 NOVÝ TELEFON', continueFunction: 'proceedFromZakaznickaKartickaNovyTelefon' },
+        'servis': { title: '🔧 SERVIS TELEFONU', continueFunction: 'proceedFromZakaznickaKartickaServis' }
+    };
+    
+    const info = scenarioInfo[scenarioType];
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZakaznickaKarticka('${scenarioType}');">← Zpět</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            ${info.title} - Založit kartičku?
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>💳 NABÍDNI ZALOŽENÍ KARTIČKY:</h4>
+                <p>"Můžu vám založit zákaznickou kartičku! Budete mít slevy, body za nákupy a speciální nabídky jen pro vás."</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                💳 BUDEME ZAKLÁDAT ZÁKAZNICKOU KARTIČKU?
+            </h4>
+            
+            <div class="radio-group">
+                <div class="radio-item" onclick="selectZalozitKarticku(true, this, '${scenarioType}')">
+                    <input type="radio" id="zalozit-ano" name="zalozit-karticku" value="ano">
+                    <label for="zalozit-ano">ANO</label>
+                </div>
+                <div class="radio-item" onclick="selectZalozitKarticku(false, this, '${scenarioType}')">
+                    <input type="radio" id="zalozit-ne" name="zalozit-karticku" value="ne">
+                    <label for="zalozit-ne">NE</label>
+                </div>
+            </div>
+            
+            <div id="zalozit-pokracovat" style="text-align: center; margin-top: 2rem; display: none;">
+                <button class="sales-btn" onclick="${info.continueFunction}()">
+                    ➡️ POKRAČOVAT
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr založení kartičky
+function selectZalozitKarticku(zalozit, element, scenarioType) {
+    selectedItems.založitKarticku = zalozit;
+    
+    document.querySelectorAll('.radio-item').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    const radio = element.querySelector('input[type="radio"]');
+    radio.checked = true;
+    
+    // Zobraz tlačítko pokračovat
+    document.getElementById('zalozit-pokracovat').style.display = 'block';
+}
+
+// Pokračování z zákaznické kartičky pro příslušenství
+function proceedFromZakaznickaKarticka() {
+    const modalBody = document.getElementById('salesModalBody');
+    
+    // Podle typu příslušenství ukažeme různé tipy
+    switch(selectedItems.typPrislusenstvi) {
+        case 'sklo':
+            modalBody.innerHTML = renderPrislusenstviSkloTipy();
+            break;
+        case 'obal':
+            modalBody.innerHTML = renderPrislusenstviObalTipy();
+            break;
+        case 'nabijeka':
+            modalBody.innerHTML = renderPrislusenstviNabijekaTipy();
+            break;
+        case 'jine':
+            modalBody.innerHTML = renderPrislusenstviJineTipy();
+            break;
+        default:
+            modalBody.innerHTML = renderPrislusenstviSkloTipy();
+    }
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Tipy pro SKLO
+function renderPrislusenstviSkloTipy() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZakaznickaKarticka('prislusenstvi');">← Zpět na kartičku</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔍 SKLO - Tipy pro upsell
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-tips-container">
+                <div class="sales-tip">
+                    <h4>🌟 SUNSHINE FOLIE:</h4>
+                    <p>"K tomuto sklu perfektně pasuje Sunshine folie - ochrana proti modrému světlu, méně únavy očí!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>📱 OBAL:</h4>
+                    <p>"Když už chráníte displej, pojďme chránit i zbytek telefonu kvalitním obalem!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🛠️ SLUŽBY:</h4>
+                    <p>"Když už jste tu, můžu vám telefon vyčistit, aktualizovat nebo zazálohovat!"</p>
+                </div>
+            </div>
+            
+            <div class="sales-result-buttons">
+                <button class="sales-result-btn sales-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ✅ Uspěl jsem s upsell
+                </button>
+                <button class="sales-result-btn sales-not-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ❌ Neuspěl jsem s upsell
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Tipy pro OBAL
+function renderPrislusenstviObalTipy() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZakaznickaKarticka('prislusenstvi');">← Zpět na kartičku</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📱 OBAL - Tipy pro upsell
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-tips-container">
+                <div class="sales-tip">
+                    <h4>🔍 SKLO:</h4>
+                    <p>"Když už chráníte telefon obalem, pojďme chránit i displej kvalitním sklem!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🌟 SUNSHINE FOLIE:</h4>
+                    <p>"K tomuto obalu doporučuji Sunshine folii - ochrana očí před modrým světlem!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🛠️ SLUŽBY:</h4>
+                    <p>"Když už jste tu, můžu vám telefon vyčistit, aktualizovat nebo zazálohovat!"</p>
+                </div>
+            </div>
+            
+            <div class="sales-result-buttons">
+                <button class="sales-result-btn sales-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ✅ Uspěl jsem s upsell
+                </button>
+                <button class="sales-result-btn sales-not-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ❌ Neuspěl jsem s upsell
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Tipy pro NABÍJEČKA
+function renderPrislusenstviNabijekaTipy() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZakaznickaKarticka('prislusenstvi');">← Zpět na kartičku</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔋 NABÍJEČKA - Tipy pro upsell
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-tips-container">
+                <div class="sales-tip">
+                    <h4>🔌 ADAPTER vs KABEL:</h4>
+                    <p>"Potřebujete adapter nebo kabel? Pokud máte jen jedno, druhé se vám určitě bude hodit!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>📱 OCHRANA TELEFONU:</h4>
+                    <p>"Když už investujete do nabíjení, pojďme chránit i telefon - obal a sklo!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🌟 SUNSHINE FOLIE:</h4>
+                    <p>"K tomu doporučuji Sunshine folii - ochrana očí při nabíjení a používání!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🛠️ SLUŽBY:</h4>
+                    <p>"Když už jste tu, můžu vám telefon vyčistit, aktualizovat nebo zazálohovat!"</p>
+                </div>
+            </div>
+            
+            <div class="sales-result-buttons">
+                <button class="sales-result-btn sales-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ✅ Uspěl jsem s upsell
+                </button>
+                <button class="sales-result-btn sales-not-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ❌ Neuspěl jsem s upsell
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Tipy pro JINÉ
+function renderPrislusenstviJineTipy() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZakaznickaKarticka('prislusenstvi');">← Zpět na kartičku</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            📦 JINÉ PŘÍSLUŠENSTVÍ - Tipy pro upsell
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-tips-container">
+                <div class="sales-tip">
+                    <h4>🔍 OCHRANA TELEFONU:</h4>
+                    <p>"Když už investujete do příslušenství, pojďme chránit i telefon - sklo a obal!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🌟 SUNSHINE FOLIE:</h4>
+                    <p>"K tomu doporučuji Sunshine folii - ochrana očí před modrým světlem!"</p>
+                </div>
+                
+                <div class="sales-tip">
+                    <h4>🛠️ SLUŽBY:</h4>
+                    <p>"Když už jste tu, můžu vám telefon vyčistit, aktualizovat nebo zazálohovat!"</p>
+                </div>
+            </div>
+            
+            <div class="sales-result-buttons">
+                <button class="sales-result-btn sales-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ✅ Uspěl jsem s upsell
+                </button>
+                <button class="sales-result-btn sales-not-sold-btn" onclick="proceedToPrislusenstviProducts()">
+                    ❌ Neuspěl jsem s upsell
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Pokračování na produkty
+function proceedToPrislusenstviProducts() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderPrislusenstviProductSelection();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výběr produktů - adaptováno ze zásilkovny
+function renderPrislusenstviProductSelection() {
+    return `
+        <button class="scenario-back-btn" onclick="proceedFromZakaznickaKarticka()">← Zpět na tipy</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Co jsi prodal?
+        </h3>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem;">📱 OBALY:</h4>
+            <div class="checkbox-grid">
+                <div class="checkbox-item" data-checkbox="transparentni-obal">
+                    <span class="item-icon">🔹</span>
+                    <input type="checkbox" id="transparentni-obal" name="prislusenstvi-items">
+                    <label for="transparentni-obal">TRANSPARENTNÍ<br>OBAL</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="barevny-obal">
+                    <span class="item-icon">🌈</span>
+                    <input type="checkbox" id="barevny-obal" name="prislusenstvi-items">
+                    <label for="barevny-obal">BAREVNÝ<br>OBAL</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="knizkovy-obal">
+                    <span class="item-icon">📖</span>
+                    <input type="checkbox" id="knizkovy-obal" name="prislusenstvi-items">
+                    <label for="knizkovy-obal">KNÍŽKOVÝ<br>OBAL</label>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔍 SKLÍČKA:</h4>
+            <div class="checkbox-grid">
+                <div class="checkbox-item" data-checkbox="kvalitnejsi-sklicko">
+                    <span class="item-icon">💎</span>
+                    <input type="checkbox" id="kvalitnejsi-sklicko" name="prislusenstvi-items">
+                    <label for="kvalitnejsi-sklicko">KVALITNĚJŠÍ<br>SKLÍČKO</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="levnejsi-sklicko">
+                    <span class="item-icon">💰</span>
+                    <input type="checkbox" id="levnejsi-sklicko" name="prislusenstvi-items">
+                    <label for="levnejsi-sklicko">LEVNĚJŠÍ<br>SKLÍČKO</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="sunshine-folie">
+                    <span class="item-icon">🌟</span>
+                    <input type="checkbox" id="sunshine-folie" name="prislusenstvi-items">
+                    <label for="sunshine-folie">SUNSHINE<br>FOLIE</label>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🔌 OSTATNÍ PŘÍSLUŠENSTVÍ:</h4>
+            <div class="checkbox-grid">
+                <div class="checkbox-item" data-checkbox="kabel">
+                    <span class="item-icon">🔌</span>
+                    <input type="checkbox" id="kabel" name="prislusenstvi-items">
+                    <label for="kabel">KABEL</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="adapter">
+                    <span class="item-icon">🔌</span>
+                    <input type="checkbox" id="adapter" name="prislusenstvi-items">
+                    <label for="adapter">ADAPTER</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="nabijeka">
+                    <span class="item-icon">🔋</span>
+                    <input type="checkbox" id="nabijeka" name="prislusenstvi-items">
+                    <label for="nabijeka">NABÍJEČKA</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="drzak-do-auta">
+                    <span class="item-icon">🚗</span>
+                    <input type="checkbox" id="drzak-do-auta" name="prislusenstvi-items">
+                    <label for="drzak-do-auta">DRŽÁK<br>DO AUTA</label>
+                </div>
+                <div class="checkbox-item" data-checkbox="ostatni">
+                    <span class="item-icon">📦</span>
+                    <input type="checkbox" id="ostatni" name="prislusenstvi-items">
+                    <label for="ostatni">OSTATNÍ</label>
+                </div>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin: 2rem 0 1rem 0;">🛠️ SLUŽBY:</h4>
+            <div class="checkbox-grid">
+                <div class="checkbox-item service-tooltip" data-checkbox="cisteni">
+                    <span class="item-icon">🧽</span>
+                    <input type="checkbox" id="cisteni" name="prislusenstvi-items">
+                    <label for="cisteni">ČIŠTĚNÍ<br>TELEFONU</label>
+                    <span class="tooltip-text">"Telefon bude vyčištěn zevnitř i zvenčí."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="aktualizace">
+                    <span class="item-icon">🔄</span>
+                    <input type="checkbox" id="aktualizace" name="prislusenstvi-items">
+                    <label for="aktualizace">AKTUALIZACE<br>SYSTÉMU</label>
+                    <span class="tooltip-text">"Telefon bude mít nejnovější verzi systému."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="zalohovani">
+                    <span class="item-icon">💾</span>
+                    <input type="checkbox" id="zalohovani" name="prislusenstvi-items">
+                    <label for="zalohovani">ZÁLOHOVÁNÍ<br>DAT</label>
+                    <span class="tooltip-text">"Zazálohuju všechna důležitá data."</span>
+                </div>
+                <div class="checkbox-item" data-checkbox="hadrik">
+                    <span class="item-icon">🧽</span>
+                    <input type="checkbox" id="hadrik" name="prislusenstvi-items">
+                    <label for="hadrik">HADŘÍK<br>NA ČIŠTĚNÍ</label>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="sales-btn" onclick="proceedToPrislusenstviSleva()">
+                    ➡️ POKRAČOVAT NA SLEVU
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Pokračování na slevu
+function proceedToPrislusenstviSleva() {
+    // Uložení vybraných položek
+    const selectedPrislusenstviItems = [];
+    document.querySelectorAll('input[name="prislusenstvi-items"]:checked').forEach(item => {
+        const label = document.querySelector(`label[for="${item.id}"]`);
+        const itemName = label ? label.textContent.replace(/\s+/g, ' ').trim() : item.id;
+        selectedPrislusenstviItems.push(itemName);
+    });
+    
+    // Přidej originální položku za kterou přišel
+    selectedPrislusenstviItems.unshift(`Původní položka: ${selectedItems.typPrislusenstvi}`);
+    selectedItems.allItems = selectedPrislusenstviItems;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderPrislusenstviSleva();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výběr slevy
+function renderPrislusenstviSleva() {
+    const nothingSold = selectedItems.allItems.length <= 1; // Pouze původní položka
+    
+    if (nothingSold) {
+        return renderPrislusenstviNotSoldForm();
+    }
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviProductSelection();">← Zpět na produkty</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Sleva
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Prodáno:</h4>
+                <div style="font-size: 0.9rem;">
+                    ${selectedItems.allItems.map(item => `• ${item}`).join('<br>')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--text-primary); margin: 1rem 0; text-align: center;">
+                Jaká sleva byla použita?
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectPrislusenstviSleva('2+1', this)">
+                    <span class="scenario-emoji">🎁</span>
+                    <h4 class="scenario-title">2+1</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviSleva('3+1', this)">
+                    <span class="scenario-emoji">🎁</span>
+                    <h4 class="scenario-title">3+1</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviSleva('20%', this)">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">20%</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectPrislusenstviSleva('zadna', this)" style="border-color: #6c757d; background: linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(108, 117, 125, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #6c757d;">❌</span>
+                    <h4 class="scenario-title" style="color: #6c757d;">ŽÁDNÁ<br>SLEVA</h4>
+                </div>
+            </div>
+            
+            <div id="sleva-pokracovat" style="text-align: center; margin-top: 2rem; display: none;">
+                <button class="sales-btn success" onclick="completePrislusenstviSale()">
+                    🎉 DOKONČIT PRODEJ
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr slevy pro příslušenství
+function selectPrislusenstviSleva(sleva, element) {
+    selectedItems.sleva = sleva;
+    
+    document.querySelectorAll('.scenario-tile').forEach(item => {
+        item.classList.remove('selected');
+    });
+    element.classList.add('selected');
+    
+    // Zobraz tlačítko pokračovat
+    document.getElementById('sleva-pokracovat').style.display = 'block';
+}
+
+// Formulář pro neprodáno při příslušenství
+function renderPrislusenstviNotSoldForm() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderPrislusenstviProductSelection();">← Zpět na produkty</button>
+        
+        <h3 style="text-align: center; color: #ff4757; margin-bottom: 1rem;">
+            🔌 PŘÍSLUŠENSTVÍ - Neprodáno
+        </h3>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff4757; text-align: center;">❌ Proč se nic dalšího neprodalo?</h4>
+                <textarea id="prislusenstviNotSoldReason" placeholder="Krátké odůvodnění proč se nic dalšího neprodalo..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <button class="sales-result-btn sales-not-sold-btn" onclick="completePrislusenstviNotSold()" style="width: 100%;">
+                📝 Odeslat a dokončit
+            </button>
+        </div>
+    `;
+}
+
+// Dokončení úspěšného prodeje příslušenství
+async function completePrislusenstviSale() {
+    if (!selectedItems.sleva) {
+        alert('Prosím vyberte slevu.');
+        return;
+    }
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'sold';
+    currentSalesSession.soldItems = selectedItems.allItems;
+    currentSalesSession.discountUsed = selectedItems.sleva;
+    currentSalesSession.zakaznickaKarticka = selectedItems.zakaznickaKarticka;
+    currentSalesSession.založitKarticku = selectedItems.založitKarticku;
+    currentSalesSession.prislusenstviData = selectedItems;
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100;
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Prodej příslušenství byl úspěšně zaznamenán! 🎉');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
+    }
+}
+
+// Dokončení neprodání při příslušenství
+async function completePrislusenstviNotSold() {
+    const reason = document.getElementById('prislusenstviNotSoldReason').value.trim();
+    
+    if (!reason) {
+        alert('Prosím uveďte alespoň krátké odůvodnění.');
+        return;
+    }
+    
+    const sessionData = {
+        ...currentSalesSession,
+        result: 'sold', // Původní položka byla prodána
+        reason: reason,
+        soldItems: [`Pouze: ${selectedItems.typPrislusenstvi}`],
+        zakaznickaKarticka: selectedItems.zakaznickaKarticka,
+        založitKarticku: selectedItems.založitKarticku,
+        noUpsellReason: reason,
+        completed_at: Date.now(),
+        duration: sessionStartTime ? Date.now() - sessionStartTime : 0
+    };
+    
+    try {
+        await saveSalesSession(sessionData);
+        showSuccessMessage('Příslušenství prodáno, nedoprodáno zaznamenáno!');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } catch (error) {
+        console.error('Chyba při ukládání neprodáno:', error);
+        alert('Chyba při ukládání dat. Zkuste to znovu.');
+    }
+}
+
 // === NOVÝ TELEFON SCÉNÁŘ ===
 
 // Nový telefon scénář - krok 0 (tipy pro získání informací)
@@ -1779,7 +2513,9 @@ function renderNovyTelefonScenario() {
         obaly: [], 
         sklicka: [], 
         prislusenstvi: [],
-        sluzby: []
+        sluzby: [],
+        zakaznickaKarticka: null,
+        založitKarticku: null
     };
     
     return `
@@ -1817,6 +2553,19 @@ function renderNovyTelefonScenario() {
 
 // Pokračování na krok 1 po získání informací
 function proceedToNovyTelefonStep1() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZakaznickaKarticka('novy-telefon');
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Pokračování z zákaznické kartičky pro nový telefon
+function proceedFromZakaznickaKartickaNovyTelefon() {
     const modalBody = document.getElementById('salesModalBody');
     modalBody.innerHTML = renderNovyTelefonStep1();
     
@@ -2525,7 +3274,9 @@ function renderServisScenario() {
         sklicka: [],
         prislusenstvi: [],
         sluzby: [],
-        novyTelefon: false
+        novyTelefon: false,
+        zakaznickaKarticka: null,
+        založitKarticku: null
     };
     
     return `
@@ -2573,7 +3324,20 @@ function selectServisTyp(typ) {
     // Otevři odkaz na servis v nové záložce
     window.open('https://servismajak.cz/zarizeni/mobilni-telefony', '_blank');
     
-    // Přejdi na další krok - co se prodalo
+    // Přejdi na zákaznickou kartičku
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderZakaznickaKarticka('servis');
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Pokračování z zákaznické kartičky pro servis
+function proceedFromZakaznickaKartickaServis() {
     const modalBody = document.getElementById('salesModalBody');
     modalBody.innerHTML = renderServisStep2();
     
