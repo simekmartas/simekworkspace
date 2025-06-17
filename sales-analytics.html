@@ -1152,6 +1152,14 @@
                 </div>
                 ` : ''}
 
+                <!-- Statistiky prodejen -->
+                ${stats.storeStats && Object.keys(stats.storeStats).length > 0 ? `
+                <h2 class="section-title">🏪 Výkonnost prodejen</h2>
+                <div class="chart-container">
+                    ${renderStoresTable(stats.storeStats)}
+                </div>
+                ` : ''}
+
                 <!-- Používání slevy -->
                 ${stats.discountUsage.used > 0 || stats.discountUsage.notUsed > 0 ? `
                 <h2 class="section-title">💰 Používání slev</h2>
@@ -1189,6 +1197,7 @@
                             <th>Neprodáno</th>
                             <th>Úspěšnost</th>
                             <th>Ø Čas</th>
+                            <th>Akce</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1205,6 +1214,74 @@
                                     </div>
                                 </td>
                                 <td style="color: var(--text-secondary);">${seller.avgTime || '0'} min</td>
+                                <td>
+                                    <button onclick="showSellerDetails('${seller.username}')" style="
+                                        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+                                        color: white; border: none; padding: 0.4rem 0.8rem; 
+                                        border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+                                        font-weight: 500; transition: all 0.3s ease; white-space: nowrap;
+                                    " onmouseover="this.style.transform='translateY(-1px)'" 
+                                       onmouseout="this.style.transform='translateY(0px)'">
+                                        👤 Detaily
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Tabulka prodejen
+        function renderStoresTable(storeStats) {
+            if (!storeStats || Object.keys(storeStats).length === 0) {
+                return '<p style="text-align: center; color: var(--text-secondary);">Žádné prodejny zatím nezaznamenaly data.</p>';
+            }
+            
+            const stores = Object.entries(storeStats)
+                .map(([name, stats]) => ({
+                    name,
+                    ...stats,
+                    successRate: stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(1) : 0
+                }))
+                .sort((a, b) => b.total - a.total);
+            
+            return `
+                <table class="scenario-table">
+                    <thead>
+                        <tr>
+                            <th>Prodejna</th>
+                            <th>Celkem</th>
+                            <th>Prodáno</th>
+                            <th>Neprodáno</th>
+                            <th>Úspěšnost</th>
+                            <th>Akce</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${stores.map(store => `
+                            <tr>
+                                <td><strong>🏪 ${store.name}</strong></td>
+                                <td>${store.total}</td>
+                                <td style="color: #2ed573;">${store.sold}</td>
+                                <td style="color: #ff4757;">${store.notSold}</td>
+                                <td>
+                                    ${store.successRate}%
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${store.successRate}%"></div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button onclick="showStoreDetails('${store.name}')" style="
+                                        background: linear-gradient(135deg, #2ed573 0%, #20bf6b 100%);
+                                        color: white; border: none; padding: 0.4rem 0.8rem; 
+                                        border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+                                        font-weight: 500; transition: all 0.3s ease; white-space: nowrap;
+                                    " onmouseover="this.style.transform='translateY(-1px)'" 
+                                       onmouseout="this.style.transform='translateY(0px)'">
+                                        🏪 Detaily
+                                    </button>
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -2885,6 +2962,573 @@
         function handleModalKeydown(e) {
             if (e.key === 'Escape') {
                 closeScenarioModal();
+                closeSellerModal();
+                closeStoreModal();
+            }
+        }
+
+        // Zobrazení detailů prodejce
+        function showSellerDetails(sellerUsername) {
+            console.log('👤 Zobrazuji detaily pro prodejce:', sellerUsername);
+            
+            try {
+                const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                
+                // Filtruj data podle aktuálních filtrů + prodejce
+                const filteredData = localSalesData.filter(session => {
+                    // Filtr prodejce
+                    const sessionSeller = session.seller || session.sellerId || 'Unknown';
+                    if (sessionSeller !== sellerUsername) return false;
+                    
+                    // Časový filtr
+                    if (currentTimeFilter !== 'all') {
+                        const sessionDate = new Date(session.timestamp);
+                        const now = new Date();
+                        
+                        if (!session.timestamp) return false;
+                        
+                        switch(currentTimeFilter) {
+                            case 'today':
+                                if (sessionDate.toDateString() !== now.toDateString()) return false;
+                                break;
+                            case 'week':
+                                const weekAgo = new Date(now);
+                                weekAgo.setDate(weekAgo.getDate() - 7);
+                                if (sessionDate < weekAgo) return false;
+                                break;
+                            case 'month':
+                                const monthAgo = new Date(now);
+                                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                                if (sessionDate < monthAgo) return false;
+                                break;
+                        }
+                    }
+                    
+                    // Filtr prodejny
+                    if (currentStoreFilter !== 'all') {
+                        const sessionStore = session.store || session.prodejna || 'Neznámá prodejna';
+                        if (sessionStore !== currentStoreFilter) return false;
+                    }
+                    
+                    return true;
+                });
+                
+                console.log(`👤 Nalezeno ${filteredData.length} sessions pro prodejce ${sellerUsername}`);
+                
+                if (filteredData.length === 0) {
+                    alert(`Žádné sessions pro prodejce "${sellerUsername}" nebyly nalezeny s aktuálními filtry.`);
+                    return;
+                }
+                
+                // Seřaď sessions podle času (nejnovější první)
+                filteredData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                // Vytvoř modal
+                showSellerModal(sellerUsername, filteredData);
+                
+            } catch (error) {
+                console.error('❌ Chyba při načítání detailů prodejce:', error);
+                alert('Chyba při načítání detailů prodejce!');
+            }
+        }
+
+        // Modal s detaily prodejce
+        function showSellerModal(sellerUsername, sessions) {
+            const displayName = getSellerDisplayName(sellerUsername);
+            
+            // Statistiky
+            const soldSessions = sessions.filter(s => s.result === 'sold');
+            const notSoldSessions = sessions.filter(s => s.result !== 'sold');
+            const successRate = sessions.length > 0 ? ((soldSessions.length / sessions.length) * 100).toFixed(1) : 0;
+            
+            // Statistiky podle scénářů
+            const scenarioStats = {};
+            sessions.forEach(session => {
+                const scenario = session.scenario || 'unknown';
+                if (!scenarioStats[scenario]) {
+                    scenarioStats[scenario] = { total: 0, sold: 0, notSold: 0 };
+                }
+                scenarioStats[scenario].total++;
+                if (session.result === 'sold') {
+                    scenarioStats[scenario].sold++;
+                } else {
+                    scenarioStats[scenario].notSold++;
+                }
+            });
+            
+            // Statistiky podle prodejen
+            const storeStats = {};
+            sessions.forEach(session => {
+                const store = session.store || session.prodejna || 'Neznámá prodejna';
+                if (!storeStats[store]) {
+                    storeStats[store] = { total: 0, sold: 0, notSold: 0 };
+                }
+                storeStats[store].total++;
+                if (session.result === 'sold') {
+                    storeStats[store].sold++;
+                } else {
+                    storeStats[store].notSold++;
+                }
+            });
+            
+            // Průměrný čas session
+            const sessionsWithTime = sessions.filter(s => s.sessionDurationMinutes && s.sessionDurationMinutes > 0);
+            const avgTime = sessionsWithTime.length > 0 
+                ? (sessionsWithTime.reduce((sum, s) => sum + s.sessionDurationMinutes, 0) / sessionsWithTime.length).toFixed(1)
+                : 0;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.85); z-index: 10000; display: flex; 
+                align-items: flex-start; justify-content: center; padding: 2rem 1rem; 
+                overflow-y: auto; padding-top: 2rem;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-primary, #ffffff); border-radius: 15px; padding: 2rem; 
+                    max-width: 1200px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.7); max-height: 90vh; overflow-y: auto;
+                    position: relative;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2 style="color: var(--text-primary, #333); margin: 0; font-size: 1.8rem;">
+                            👤 ${displayName} - Detailní přehled
+                        </h2>
+                        <button onclick="closeSellerModal()" style="
+                            background: rgba(255,255,255,0.1); color: var(--text-primary); 
+                            border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px;
+                            border-radius: 50%; cursor: pointer; font-size: 1.2rem; font-weight: bold;
+                            display: flex; align-items: center; justify-content: center;
+                        ">✕</button>
+                    </div>
+                    
+                    <!-- Rychlé statistiky -->
+                    <div style="
+                        display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+                        gap: 1rem; margin-bottom: 2rem; padding: 1.5rem; 
+                        background: rgba(255,255,255,0.03); border-radius: 12px;
+                        border: 1px solid rgba(255,255,255,0.1);
+                    ">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color, #ff1493);">${sessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Celkem sessions</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #2ed573;">${soldSessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Úspěšných</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #ff4757;">${notSoldSessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Neúspěšných</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary, #333);">${successRate}%</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Úspěšnost</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #ff9500;">${avgTime}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Ø Čas (min)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistiky podle scénářů a prodejen -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: var(--primary-color, #ff1493); margin: 0 0 1rem 0;">📱 Podle scénářů</h4>
+                            ${Object.entries(scenarioStats).map(([scenario, stats]) => {
+                                const scenarioNames = {
+                                    'zasilkovna': '📦 Zásilkovna',
+                                    'prislusenstvi': '🔌 Příslušenství',
+                                    'novy-telefon': '📱 Nový telefon',
+                                    'vykup': '💰 Výkup',
+                                    'jen-se-kouka': '👀 Jen se kouká',
+                                    'konzultace': '💬 Konzultace',
+                                    'servis': '🔧 Servis'
+                                };
+                                const displayName = scenarioNames[scenario] || scenario;
+                                const rate = stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(0) : 0;
+                                return `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                        <span style="color: var(--text-primary); font-size: 0.9rem;">${displayName}</span>
+                                        <span style="color: var(--text-secondary); font-size: 0.8rem;">${stats.sold}/${stats.total} (${rate}%)</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: var(--primary-color, #ff1493); margin: 0 0 1rem 0;">🏪 Podle prodejen</h4>
+                            ${Object.entries(storeStats).map(([store, stats]) => {
+                                const rate = stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(0) : 0;
+                                return `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                        <span style="color: var(--text-primary); font-size: 0.9rem;">🏪 ${store}</span>
+                                        <span style="color: var(--text-secondary); font-size: 0.8rem;">${stats.sold}/${stats.total} (${rate}%)</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Filtry pro zobrazení -->
+                    <div style="margin-bottom: 2rem; text-align: center;">
+                        <div style="display: inline-flex; gap: 0.5rem; background: rgba(255,255,255,0.05); 
+                                    border-radius: 25px; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <button id="show-all-seller-sessions" onclick="filterSellerSessionView('all')" style="
+                                background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; 
+                                border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">📋 Všechny (${sessions.length})</button>
+                            <button id="show-sold-seller-sessions" onclick="filterSellerSessionView('sold')" style="
+                                background: transparent; color: var(--text-primary); border: none; 
+                                padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">✅ Úspěšné (${soldSessions.length})</button>
+                            <button id="show-failed-seller-sessions" onclick="filterSellerSessionView('failed')" style="
+                                background: transparent; color: var(--text-primary); border: none; 
+                                padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">❌ Neúspěšné (${notSoldSessions.length})</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Sessions seznam -->
+                    <div id="seller-sessions-container">
+                        ${renderSessionsList(sessions, 'all')}
+                    </div>
+                </div>
+            `;
+            
+            modal.className = 'seller-modal';
+            modal.id = 'seller-detail-modal';
+            document.body.appendChild(modal);
+            
+            // Uložit sessions data pro filtrování
+            window.currentSellerModalSessions = sessions;
+            
+            // Zavření na ESC
+            document.addEventListener('keydown', handleModalKeydown);
+            
+            // Zavření na klik mimo
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeSellerModal();
+            });
+        }
+
+        // Filtrování view v seller modalu
+        function filterSellerSessionView(filter) {
+            const container = document.getElementById('seller-sessions-container');
+            const sessions = window.currentSellerModalSessions;
+            
+            if (container && sessions) {
+                container.innerHTML = renderSessionsList(sessions, filter);
+                
+                // Aktualizuj aktivní tlačítko
+                document.querySelectorAll('#seller-detail-modal button[onclick^="filterSellerSessionView"]').forEach(btn => {
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-primary)';
+                });
+                
+                const activeButton = document.getElementById(
+                    filter === 'all' ? 'show-all-seller-sessions' : 
+                    filter === 'sold' ? 'show-sold-seller-sessions' : 'show-failed-seller-sessions'
+                );
+                
+                if (activeButton) {
+                    activeButton.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+                    activeButton.style.color = 'white';
+                }
+            }
+        }
+
+        // Zavření modal s detaily prodejce
+        function closeSellerModal() {
+            const modal = document.getElementById('seller-detail-modal');
+            if (modal) {
+                modal.remove();
+                delete window.currentSellerModalSessions;
+                document.removeEventListener('keydown', handleModalKeydown);
+            }
+        }
+
+        // Zobrazení detailů prodejny
+        function showStoreDetails(storeName) {
+            console.log('🏪 Zobrazuji detaily pro prodejnu:', storeName);
+            
+            try {
+                const localSalesData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                
+                // Filtruj data podle aktuálních filtrů + prodejny
+                const filteredData = localSalesData.filter(session => {
+                    // Filtr prodejny
+                    const sessionStore = session.store || session.prodejna || 'Neznámá prodejna';
+                    if (sessionStore !== storeName) return false;
+                    
+                    // Časový filtr
+                    if (currentTimeFilter !== 'all') {
+                        const sessionDate = new Date(session.timestamp);
+                        const now = new Date();
+                        
+                        if (!session.timestamp) return false;
+                        
+                        switch(currentTimeFilter) {
+                            case 'today':
+                                if (sessionDate.toDateString() !== now.toDateString()) return false;
+                                break;
+                            case 'week':
+                                const weekAgo = new Date(now);
+                                weekAgo.setDate(weekAgo.getDate() - 7);
+                                if (sessionDate < weekAgo) return false;
+                                break;
+                            case 'month':
+                                const monthAgo = new Date(now);
+                                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                                if (sessionDate < monthAgo) return false;
+                                break;
+                        }
+                    }
+                    
+                    return true;
+                });
+                
+                console.log(`🏪 Nalezeno ${filteredData.length} sessions pro prodejnu ${storeName}`);
+                
+                if (filteredData.length === 0) {
+                    alert(`Žádné sessions pro prodejnu "${storeName}" nebyly nalezeny s aktuálními filtry.`);
+                    return;
+                }
+                
+                // Seřaď sessions podle času (nejnovější první)
+                filteredData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                
+                // Vytvoř modal
+                showStoreModal(storeName, filteredData);
+                
+            } catch (error) {
+                console.error('❌ Chyba při načítání detailů prodejny:', error);
+                alert('Chyba při načítání detailů prodejny!');
+            }
+        }
+
+        // Modal s detaily prodejny
+        function showStoreModal(storeName, sessions) {
+            // Statistiky
+            const soldSessions = sessions.filter(s => s.result === 'sold');
+            const notSoldSessions = sessions.filter(s => s.result !== 'sold');
+            const successRate = sessions.length > 0 ? ((soldSessions.length / sessions.length) * 100).toFixed(1) : 0;
+            
+            // Statistiky podle prodejců
+            const sellerStats = {};
+            sessions.forEach(session => {
+                const seller = session.seller || session.sellerId || 'Unknown';
+                if (!sellerStats[seller]) {
+                    sellerStats[seller] = { total: 0, sold: 0, notSold: 0 };
+                }
+                sellerStats[seller].total++;
+                if (session.result === 'sold') {
+                    sellerStats[seller].sold++;
+                } else {
+                    sellerStats[seller].notSold++;
+                }
+            });
+            
+            // Statistiky podle scénářů
+            const scenarioStats = {};
+            sessions.forEach(session => {
+                const scenario = session.scenario || 'unknown';
+                if (!scenarioStats[scenario]) {
+                    scenarioStats[scenario] = { total: 0, sold: 0, notSold: 0 };
+                }
+                scenarioStats[scenario].total++;
+                if (session.result === 'sold') {
+                    scenarioStats[scenario].sold++;
+                } else {
+                    scenarioStats[scenario].notSold++;
+                }
+            });
+            
+            // Průměrný čas session
+            const sessionsWithTime = sessions.filter(s => s.sessionDurationMinutes && s.sessionDurationMinutes > 0);
+            const avgTime = sessionsWithTime.length > 0 
+                ? (sessionsWithTime.reduce((sum, s) => sum + s.sessionDurationMinutes, 0) / sessionsWithTime.length).toFixed(1)
+                : 0;
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.85); z-index: 10000; display: flex; 
+                align-items: flex-start; justify-content: center; padding: 2rem 1rem; 
+                overflow-y: auto; padding-top: 2rem;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-primary, #ffffff); border-radius: 15px; padding: 2rem; 
+                    max-width: 1200px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+                    box-shadow: 0 20px 60px rgba(0,0,0,0.7); max-height: 90vh; overflow-y: auto;
+                    position: relative;
+                ">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2 style="color: var(--text-primary, #333); margin: 0; font-size: 1.8rem;">
+                            🏪 ${storeName} - Detailní přehled
+                        </h2>
+                        <button onclick="closeStoreModal()" style="
+                            background: rgba(255,255,255,0.1); color: var(--text-primary); 
+                            border: 1px solid rgba(255,255,255,0.2); width: 40px; height: 40px;
+                            border-radius: 50%; cursor: pointer; font-size: 1.2rem; font-weight: bold;
+                            display: flex; align-items: center; justify-content: center;
+                        ">✕</button>
+                    </div>
+                    
+                    <!-- Rychlé statistiky -->
+                    <div style="
+                        display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+                        gap: 1rem; margin-bottom: 2rem; padding: 1.5rem; 
+                        background: rgba(255,255,255,0.03); border-radius: 12px;
+                        border: 1px solid rgba(255,255,255,0.1);
+                    ">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color, #ff1493);">${sessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Celkem sessions</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #2ed573;">${soldSessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Úspěšných</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #ff4757;">${notSoldSessions.length}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Neúspěšných</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: var(--text-primary, #333);">${successRate}%</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Úspěšnost</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: 700; color: #ff9500;">${avgTime}</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Ø Čas (min)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Statistiky podle prodejců a scénářů -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: var(--primary-color, #ff1493); margin: 0 0 1rem 0;">👤 Podle prodejců</h4>
+                            ${Object.entries(sellerStats).map(([seller, stats]) => {
+                                const displayName = getSellerDisplayName(seller);
+                                const rate = stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(0) : 0;
+                                return `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                        <span style="color: var(--text-primary); font-size: 0.9rem;">${displayName}</span>
+                                        <span style="color: var(--text-secondary); font-size: 0.8rem;">${stats.sold}/${stats.total} (${rate}%)</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <h4 style="color: var(--primary-color, #ff1493); margin: 0 0 1rem 0;">📱 Podle scénářů</h4>
+                            ${Object.entries(scenarioStats).map(([scenario, stats]) => {
+                                const scenarioNames = {
+                                    'zasilkovna': '📦 Zásilkovna',
+                                    'prislusenstvi': '🔌 Příslušenství',
+                                    'novy-telefon': '📱 Nový telefon',
+                                    'vykup': '💰 Výkup',
+                                    'jen-se-kouka': '👀 Jen se kouká',
+                                    'konzultace': '💬 Konzultace',
+                                    'servis': '🔧 Servis'
+                                };
+                                const displayName = scenarioNames[scenario] || scenario;
+                                const rate = stats.total > 0 ? ((stats.sold / stats.total) * 100).toFixed(0) : 0;
+                                return `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                        <span style="color: var(--text-primary); font-size: 0.9rem;">${displayName}</span>
+                                        <span style="color: var(--text-secondary); font-size: 0.8rem;">${stats.sold}/${stats.total} (${rate}%)</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Filtry pro zobrazení -->
+                    <div style="margin-bottom: 2rem; text-align: center;">
+                        <div style="display: inline-flex; gap: 0.5rem; background: rgba(255,255,255,0.05); 
+                                    border-radius: 25px; padding: 0.3rem; border: 1px solid rgba(255,255,255,0.1);">
+                            <button id="show-all-store-sessions" onclick="filterStoreSessionView('all')" style="
+                                background: linear-gradient(135deg, #2ed573 0%, #20bf6b 100%); color: white; 
+                                border: none; padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">📋 Všechny (${sessions.length})</button>
+                            <button id="show-sold-store-sessions" onclick="filterStoreSessionView('sold')" style="
+                                background: transparent; color: var(--text-primary); border: none; 
+                                padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">✅ Úspěšné (${soldSessions.length})</button>
+                            <button id="show-failed-store-sessions" onclick="filterStoreSessionView('failed')" style="
+                                background: transparent; color: var(--text-primary); border: none; 
+                                padding: 0.5rem 1rem; border-radius: 20px; cursor: pointer; 
+                                font-size: 0.85rem; font-weight: 500; transition: all 0.3s ease;
+                            ">❌ Neúspěšné (${notSoldSessions.length})</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Sessions seznam -->
+                    <div id="store-sessions-container">
+                        ${renderSessionsList(sessions, 'all')}
+                    </div>
+                </div>
+            `;
+            
+            modal.className = 'store-modal';
+            modal.id = 'store-detail-modal';
+            document.body.appendChild(modal);
+            
+            // Uložit sessions data pro filtrování
+            window.currentStoreModalSessions = sessions;
+            
+            // Zavření na ESC
+            document.addEventListener('keydown', handleModalKeydown);
+            
+            // Zavření na klik mimo
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeStoreModal();
+            });
+        }
+
+        // Filtrování view v store modalu
+        function filterStoreSessionView(filter) {
+            const container = document.getElementById('store-sessions-container');
+            const sessions = window.currentStoreModalSessions;
+            
+            if (container && sessions) {
+                container.innerHTML = renderSessionsList(sessions, filter);
+                
+                // Aktualizuj aktivní tlačítko
+                document.querySelectorAll('#store-detail-modal button[onclick^="filterStoreSessionView"]').forEach(btn => {
+                    btn.style.background = 'transparent';
+                    btn.style.color = 'var(--text-primary)';
+                });
+                
+                const activeButton = document.getElementById(
+                    filter === 'all' ? 'show-all-store-sessions' : 
+                    filter === 'sold' ? 'show-sold-store-sessions' : 'show-failed-store-sessions'
+                );
+                
+                if (activeButton) {
+                    activeButton.style.background = 'linear-gradient(135deg, #2ed573 0%, #20bf6b 100%)';
+                    activeButton.style.color = 'white';
+                }
+            }
+        }
+
+        // Zavření modal s detaily prodejny
+        function closeStoreModal() {
+            const modal = document.getElementById('store-detail-modal');
+            if (modal) {
+                modal.remove();
+                delete window.currentStoreModalSessions;
+                document.removeEventListener('keydown', handleModalKeydown);
             }
         }
 

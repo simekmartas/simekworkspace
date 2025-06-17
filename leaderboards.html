@@ -428,6 +428,71 @@
             opacity: 1;
         }
 
+        /* Styly pro zvýraznění prodejců pod průměrem */
+        .below-points-average,
+        .below-items-average {
+            background-color: rgba(255, 71, 87, 0.05) !important;
+            border-left: 4px solid #ff4757;
+            animation: pulse-warning 2s infinite;
+        }
+
+        .below-points-average:hover,
+        .below-items-average:hover {
+            background-color: rgba(255, 71, 87, 0.1) !important;
+            transform: scale(1.02);
+        }
+
+        .below-points-average .name-cell,
+        .below-items-average .name-cell {
+            color: #ff4757;
+            font-weight: bold;
+        }
+
+        .below-points-average .points-cell,
+        .below-items-average .points-cell {
+            color: #ff4757;
+            font-weight: bold;
+        }
+
+        @keyframes pulse-warning {
+            0% { 
+                border-left-color: #ff4757; 
+            }
+            50% { 
+                border-left-color: #ff6b7a; 
+            }
+            100% { 
+                border-left-color: #ff4757; 
+            }
+        }
+
+        /* Tooltip pro vysvětlení červeného zvýraznění */
+        .leaderboard-explanation {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #fdcb6e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            color: #6c5ce7;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .leaderboard-explanation h4 {
+            margin: 0 0 1rem 0;
+            color: #e17055;
+            font-size: 1.1rem;
+        }
+
+        .leaderboard-explanation ul {
+            margin: 0.5rem 0 0 1rem;
+            padding: 0;
+        }
+
+        .leaderboard-explanation li {
+            margin: 0.25rem 0;
+        }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .leaderboard-title {
@@ -545,6 +610,17 @@
                     🛒 Průměr položek/účtenka
                     <span class="tooltip-text">Žebříček podle průměrného počtu položek na jednu účtenku. Ukazuje, kdo umí zákazníkům prodat více věcí najednou.</span>
                 </button>
+            </div>
+
+            <!-- Vysvětlení červeného zvýraznění -->
+            <div class="leaderboard-explanation">
+                <h4>🔴 Červené zvýraznění prodejců</h4>
+                <p><strong>Prodejci zářící červeně jsou pod průměrem:</strong></p>
+                <ul>
+                    <li><strong>🏆 Body celkem:</strong> Prodejci s méně body než je průměr všech aktivních prodejců</li>
+                    <li><strong>🛒 Průměr položek/účtenka:</strong> Prodejci s méně než 2 položky na účtenku</li>
+                </ul>
+                <p>Toto zvýraznění pomáhá rychle identifikovat prodejce, kteří potřebují podporu nebo školení.</p>
             </div>
 
             <!-- Hlavní tabulka žebříčku -->

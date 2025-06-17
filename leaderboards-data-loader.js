@@ -737,6 +737,21 @@ class LeaderboardsDataLoader {
             return;
         }
 
+        // Vypočítej průměry pro zvýraznění (stejná logika jako v tabulce)
+        let averageThreshold = 0;
+        
+        if (this.currentType === 'items-per-receipt') {
+            // Pro položky na účtenku - červeně pod 2.0 položky
+            averageThreshold = 2.0;
+        } else {
+            // Pro body - vypočítej průměr bodů
+            const activeSellers = this.leaderboardData.filter(seller => seller.points > 0);
+            if (activeSellers.length > 0) {
+                const totalPoints = activeSellers.reduce((sum, seller) => sum + seller.points, 0);
+                averageThreshold = totalPoints / activeSellers.length;
+            }
+        }
+
         const medals = ['🥇', '🥈', '🥉'];
         
         // Přidat historický indikátor
@@ -745,20 +760,39 @@ class LeaderboardsDataLoader {
         
         podium.innerHTML = top3.map((seller, index) => {
             let value, label;
+            let isBelowAverage = false;
+            
             if (this.currentType === 'items-per-receipt') {
                 value = seller.averageItemsPerReceipt.toFixed(1);
                 label = 'pol./účtenku';
+                isBelowAverage = seller.averageItemsPerReceipt < averageThreshold;
             } else {
                 value = seller.points;
                 label = 'bodů';
+                isBelowAverage = seller.points < averageThreshold;
             }
+
+            // Přidej červené zvýraznění pro prodejce pod průměrem
+            const belowAverageStyle = isBelowAverage ? `
+                border: 3px solid #ff4757 !important;
+                background: linear-gradient(145deg, rgba(255, 71, 87, 0.2) 0%, rgba(255, 71, 87, 0.1) 100%) !important;
+                box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3) !important;
+            ` : '';
+            
+            const nameStyle = isBelowAverage ? 'color: #ff4757; font-weight: 800;' : '';
+            const pointsStyle = isBelowAverage ? 'color: #ff4757; text-shadow: 0 1px 3px rgba(255, 71, 87, 0.3);' : '';
+            
+            // Přidej varování pro podprůměrné výkony
+            const warningBadge = isBelowAverage ? 
+                `<div style="position: absolute; top: -8px; left: -8px; background: #ff4757; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold;">⚠️</div>` : '';
             
             return `
-                <div class="podium-place" style="position: relative;">
+                <div class="podium-place" style="position: relative; ${belowAverageStyle}">
                     ${index === 0 ? historicalBadge : ''}
+                    ${warningBadge}
                     <div class="podium-rank">${medals[index]}</div>
-                    <div class="podium-name">${this.escapeHtml(seller.name)}</div>
-                    <div class="podium-points">${value}</div>
+                    <div class="podium-name" style="${nameStyle}">${this.escapeHtml(seller.name)}</div>
+                    <div class="podium-points" style="${pointsStyle}">${value}</div>
                     <div class="podium-points-label">${label}</div>
                 </div>
             `;
@@ -781,6 +815,26 @@ class LeaderboardsDataLoader {
             return;
         }
 
+        // Vypočítej průměry pro zvýraznění
+        let averageThreshold = 0;
+        let belowAverageClass = '';
+        
+        if (this.currentType === 'items-per-receipt') {
+            // Pro položky na účtenku - červeně pod 2.0 položky
+            averageThreshold = 2.0;
+            belowAverageClass = 'below-items-average';
+        } else {
+            // Pro body - vypočítej průměr bodů
+            const activeSellers = this.leaderboardData.filter(seller => seller.points > 0);
+            if (activeSellers.length > 0) {
+                const totalPoints = activeSellers.reduce((sum, seller) => sum + seller.points, 0);
+                averageThreshold = totalPoints / activeSellers.length;
+            }
+            belowAverageClass = 'below-points-average';
+        }
+
+        console.log(`🎯 Průměrný práh pro ${this.currentType}:`, averageThreshold);
+
         const tableRows = this.leaderboardData.map((seller, index) => {
             const rank = index + 1;
             let rankClass = '';
@@ -799,17 +853,37 @@ class LeaderboardsDataLoader {
                 rankIcon = `${rank}.`;
             }
 
-            let valueCell;
+            // Zjisti, zda je prodejce pod průměrem
+            let isBelowAverage = false;
+            let currentValue = 0;
+            
             if (this.currentType === 'items-per-receipt') {
-                valueCell = `<td class="points-cell">${seller.averageItemsPerReceipt.toFixed(1)} pol./účtenku</td>`;
+                currentValue = seller.averageItemsPerReceipt;
+                isBelowAverage = currentValue < averageThreshold;
             } else {
-                valueCell = `<td class="points-cell">${seller.points} bodů</td>`;
+                currentValue = seller.points;
+                isBelowAverage = currentValue < averageThreshold;
             }
 
+            // Přidej červené zvýraznění pro prodejce pod průměrem
+            const rowClass = isBelowAverage ? belowAverageClass : '';
+            const rowStyle = isBelowAverage ? 'style="background-color: rgba(255, 71, 87, 0.1) !important; border-left: 4px solid #ff4757;"' : '';
+
+            let valueCell;
+            if (this.currentType === 'items-per-receipt') {
+                const valueStyle = isBelowAverage ? 'style="color: #ff4757; font-weight: bold;"' : '';
+                valueCell = `<td class="points-cell" ${valueStyle}>${seller.averageItemsPerReceipt.toFixed(1)} pol./účtenku</td>`;
+            } else {
+                const valueStyle = isBelowAverage ? 'style="color: #ff4757; font-weight: bold;"' : '';
+                valueCell = `<td class="points-cell" ${valueStyle}>${seller.points} bodů</td>`;
+            }
+
+            const nameStyle = isBelowAverage ? 'style="color: #ff4757; font-weight: bold;"' : '';
+
             return `
-                <tr>
+                <tr class="${rowClass}" ${rowStyle}>
                     <td class="rank-cell ${rankClass}">${rankIcon}</td>
-                    <td class="name-cell">${this.escapeHtml(seller.name)}</td>
+                    <td class="name-cell" ${nameStyle}>${this.escapeHtml(seller.name)}</td>
                     <td class="prodejna-cell">${this.escapeHtml(seller.prodejna || '-')}</td>
                     ${valueCell}
                 </tr>
