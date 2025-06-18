@@ -292,6 +292,26 @@
             box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4);
         }
 
+        .btn-add-shifts {
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3);
+        }
+
+        .btn-add-shifts:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(156, 39, 176, 0.4);
+        }
+
         .btn-export {
             background: linear-gradient(135deg, #2196F3, #1976D2);
             color: white;
@@ -310,6 +330,48 @@
         .btn-export:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
+        .btn-apple-calendar {
+            background: linear-gradient(135deg, #000000, #1c1c1e);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-apple-calendar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            background: linear-gradient(135deg, #1c1c1e, #2c2c2e);
+        }
+
+        .btn-google-calendar {
+            background: linear-gradient(135deg, #4285f4, #34a853);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+        }
+
+        .btn-google-calendar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(66, 133, 244, 0.4);
+            background: linear-gradient(135deg, #3367d6, #0f9d58);
         }
 
         /* Kalendářová mřížka */
@@ -588,6 +650,12 @@
 
             .calendar-actions {
                 justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .btn-apple-calendar, .btn-google-calendar {
+                padding: 0.6rem 1rem;
+                font-size: 0.875rem;
             }
 
             .calendar-day {
@@ -688,6 +756,133 @@
         .dark-theme .modal-content {
             background: var(--bg-secondary);
         }
+
+        /* Styly pro hromadné přidávání směn */
+        .multiple-shifts-modal .modal-content {
+            max-width: 650px;
+        }
+
+        .mini-calendar {
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            background: var(--bg-primary);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .mini-calendar-header {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .mini-nav-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .mini-nav-btn:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .mini-calendar-month {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .mini-calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+        }
+
+        .mini-day-header {
+            background: var(--bg-secondary);
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .mini-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            font-size: 0.875rem;
+            position: relative;
+        }
+
+        .mini-day:hover {
+            background: rgba(33, 150, 243, 0.1);
+        }
+
+        .mini-day.other-month {
+            color: var(--text-tertiary);
+            background: var(--bg-secondary);
+        }
+
+        .mini-day.today {
+            background: rgba(255, 20, 147, 0.1);
+            color: var(--accent-pink);
+            font-weight: 600;
+        }
+
+        .mini-day.selected {
+            background: var(--accent-blue);
+            color: white;
+            font-weight: 600;
+        }
+
+        .mini-day.selected:hover {
+            background: var(--accent-blue-hover);
+        }
+
+        .selected-dates-info {
+            background: rgba(33, 150, 243, 0.1);
+            border: 1px solid rgba(33, 150, 243, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .selected-dates-info h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--accent-blue);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .selected-dates-list {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .dark-theme .mini-calendar {
+            background: var(--bg-secondary);
+        }
+
+        .dark-theme .mini-calendar-header {
+            background: var(--bg-tertiary);
+        }
+
+        .dark-theme .mini-day.other-month {
+            background: var(--bg-tertiary);
+        }
     </style>
 </head>
 <body>
@@ -784,7 +979,6 @@
                             <option value="Přerov">Přerov</option>
                             <option value="Vsetín">Vsetín</option>
                             <option value="Šternberk">Šternberk</option>
-                            <option value="all">Všechny prodejny</option>
                         </select>
                     </div>
                     
@@ -792,8 +986,17 @@
                         <button class="btn-add-shift" id="addShiftBtn">
                             ➕ Přidat směnu
                         </button>
+                        <button class="btn-add-shifts" id="addMultipleShiftsBtn">
+                            📅 Přidat směny
+                        </button>
                         <button class="btn-export" id="exportBtn">
                             📁 Exportovat
+                        </button>
+                        <button class="btn-apple-calendar" id="appleCalendarBtn">
+                            🍎 APPLE
+                        </button>
+                        <button class="btn-google-calendar" id="googleCalendarBtn">
+                            📱 ANDROID
                         </button>
                         <button class="btn-export" id="syncBtn" style="background: linear-gradient(135deg, #10b981, #059669);">
                             🔄 Synchronizovat
@@ -878,6 +1081,89 @@
                 <button type="button" class="btn-cancel" id="cancelBtn">Zrušit</button>
                 <button type="button" class="btn-delete" id="deleteBtn" style="display: none;">Smazat</button>
                 <button type="submit" class="btn-save" id="saveBtn">Uložit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro hromadné přidání směn -->
+    <div class="shift-modal multiple-shifts-modal" id="multipleShiftsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Přidat směny hromadně</h2>
+                <button class="modal-close" id="closeMultipleModal">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="multipleShiftsForm">
+                    <!-- Minikalendář pro výběr dnů -->
+                    <div class="form-group">
+                        <label class="form-label">Vyberte dny pro směny</label>
+                        <div class="mini-calendar">
+                            <div class="mini-calendar-header">
+                                <button type="button" class="mini-nav-btn" id="miniPrevMonth">‹</button>
+                                <div class="mini-calendar-month" id="miniCurrentMonth">Leden 2025</div>
+                                <button type="button" class="mini-nav-btn" id="miniNextMonth">›</button>
+                            </div>
+                            <div class="mini-calendar-grid" id="miniCalendarGrid">
+                                <!-- Kalendář bude generován JavaScriptem -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Informace o vybraných dnech -->
+                    <div class="selected-dates-info" id="selectedDatesInfo" style="display: none;">
+                        <h4>Vybrané dny:</h4>
+                        <div class="selected-dates-list" id="selectedDatesList"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="multiShiftType">Typ směny</label>
+                        <select class="form-select" id="multiShiftType" required>
+                            <option value="">Vyberte typ směny</option>
+                            <option value="morning">Ranní směna</option>
+                            <option value="afternoon">Odpolední směna</option>
+                            <option value="evening">Večerní směna</option>
+                            <option value="full">Celý den</option>
+                            <option value="vacation">Dovolená</option>
+                            <option value="off">Volno</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="multiShiftStore">Prodejna</label>
+                        <select class="form-select" id="multiShiftStore" required>
+                            <option value="">Vyberte prodejnu</option>
+                            <option value="Globus">Globus</option>
+                            <option value="Senimo">Senimo</option>
+                            <option value="Čepkov">Čepkov</option>
+                            <option value="Přerov">Přerov</option>
+                            <option value="Vsetín">Vsetín</option>
+                            <option value="Šternberk">Šternberk</option>
+                        </select>
+                    </div>
+                    
+                    <div class="time-row">
+                        <div class="form-group">
+                            <label class="form-label" for="multiTimeFrom">Čas od</label>
+                            <input type="time" class="form-input" id="multiTimeFrom">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="multiTimeTo">Čas do</label>
+                            <input type="time" class="form-input" id="multiTimeTo">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="multiShiftNote">Poznámka</label>
+                        <input type="text" class="form-input" id="multiShiftNote" placeholder="Volitelná poznámka...">
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="cancelMultipleBtn">Zrušit</button>
+                <button type="submit" class="btn-save" id="saveMultipleBtn">Uložit směny</button>
             </div>
         </div>
     </div>

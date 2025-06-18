@@ -11,6 +11,10 @@ class ShiftsManager {
         this.isLoading = false;
         this.currentStoreFilter = 'my'; // Defaultní filtr na "Moje směny"
         
+        // Pro hromadné přidávání směn
+        this.miniCalendarDate = new Date();
+        this.selectedDates = new Set(); // Set pro vybrané datumy
+        
         // Získat ID uživatele pro filtrování směn
         this.userId = localStorage.getItem('sellerId') || localStorage.getItem('userId') || localStorage.getItem('username');
         this.userProdejna = localStorage.getItem('userProdejna') || 'Globus';
@@ -118,11 +122,6 @@ class ShiftsManager {
                     shift.sellerId === this.userId ||
                     shift.username === this.userId
                 );
-                break;
-                
-            case 'all':
-                // Všechny směny
-                this.shifts = [...this.allShifts];
                 break;
                 
             default:
@@ -255,9 +254,24 @@ class ShiftsManager {
             this.openShiftModal();
         });
         
+        // Hromadné přidání směn
+        document.getElementById('addMultipleShiftsBtn').addEventListener('click', () => {
+            this.openMultipleShiftsModal();
+        });
+        
         // Export
         document.getElementById('exportBtn').addEventListener('click', () => {
             this.exportShifts();
+        });
+        
+        // Apple kalendář export
+        document.getElementById('appleCalendarBtn').addEventListener('click', () => {
+            this.exportToAppleCalendar();
+        });
+        
+        // Google kalendář export
+        document.getElementById('googleCalendarBtn').addEventListener('click', () => {
+            this.exportToGoogleCalendar();
         });
         
         // Synchronizace
@@ -306,6 +320,42 @@ class ShiftsManager {
         document.getElementById('shiftModal').addEventListener('click', (e) => {
             if (e.target.id === 'shiftModal') {
                 this.closeShiftModal();
+            }
+        });
+        
+        // Multiple shifts modal události
+        document.getElementById('closeMultipleModal').addEventListener('click', () => {
+            this.closeMultipleShiftsModal();
+        });
+        
+        document.getElementById('cancelMultipleBtn').addEventListener('click', () => {
+            this.closeMultipleShiftsModal();
+        });
+        
+        document.getElementById('saveMultipleBtn').addEventListener('click', () => {
+            this.saveMultipleShifts();
+        });
+        
+        // Navigace v minikalendáři
+        document.getElementById('miniPrevMonth').addEventListener('click', () => {
+            this.miniCalendarDate.setMonth(this.miniCalendarDate.getMonth() - 1);
+            this.renderMiniCalendar();
+        });
+        
+        document.getElementById('miniNextMonth').addEventListener('click', () => {
+            this.miniCalendarDate.setMonth(this.miniCalendarDate.getMonth() + 1);
+            this.renderMiniCalendar();
+        });
+        
+        // Typ směny změna - automatické vyplnění času v multiple modal
+        document.getElementById('multiShiftType').addEventListener('change', (e) => {
+            this.autoFillMultipleTimes(e.target.value);
+        });
+        
+        // Zavření multiple modal při kliknutí mimo
+        document.getElementById('multipleShiftsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'multipleShiftsModal') {
+                this.closeMultipleShiftsModal();
             }
         });
     }
@@ -851,6 +901,196 @@ class ShiftsManager {
         }
     }
 
+    // Export do Apple kalendáře
+    exportToAppleCalendar() {
+        try {
+            const month = this.currentDate.getMonth();
+            const year = this.currentDate.getFullYear();
+            const monthNames = [
+                'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+                'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
+            ];
+            
+            // Filtruj směny pro aktuální měsíc
+            const monthShifts = this.shifts.filter(shift => {
+                const shiftDate = new Date(shift.date + 'T00:00:00');
+                return shiftDate.getMonth() === month && 
+                       shiftDate.getFullYear() === year &&
+                       shift.type !== 'off';
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            if (monthShifts.length === 0) {
+                this.showError('Žádné směny k exportu v tomto měsíci');
+                return;
+            }
+            
+            const icsContent = this.generateICS(monthShifts, 'Apple');
+            
+            // Stáhni soubor
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `smeny-${monthNames[month]}-${year}-apple.ics`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showSuccess(`Export do Apple kalendáře dokončen (${monthShifts.length} směn)`);
+            
+        } catch (error) {
+            console.error('❌ Chyba při exportu do Apple kalendáře:', error);
+            this.showError('Chyba při exportu: ' + error.message);
+        }
+    }
+    
+    // Export do Google kalendáře
+    exportToGoogleCalendar() {
+        try {
+            const month = this.currentDate.getMonth();
+            const year = this.currentDate.getFullYear();
+            const monthNames = [
+                'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+                'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
+            ];
+            
+            // Filtruj směny pro aktuální měsíc
+            const monthShifts = this.shifts.filter(shift => {
+                const shiftDate = new Date(shift.date + 'T00:00:00');
+                return shiftDate.getMonth() === month && 
+                       shiftDate.getFullYear() === year &&
+                       shift.type !== 'off';
+            }).sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            if (monthShifts.length === 0) {
+                this.showError('Žádné směny k exportu v tomto měsíci');
+                return;
+            }
+            
+            const icsContent = this.generateICS(monthShifts, 'Google');
+            
+            // Stáhni soubor
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `smeny-${monthNames[month]}-${year}-google.ics`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            this.showSuccess(`Export do Google kalendáře dokončen (${monthShifts.length} směn)`);
+            
+        } catch (error) {
+            console.error('❌ Chyba při exportu do Google kalendáře:', error);
+            this.showError('Chyba při exportu: ' + error.message);
+        }
+    }
+    
+    // Generování ICS (iCalendar) souboru
+    generateICS(shifts, platform = 'Generic') {
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        
+        let icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            `PRODID:-//Mobil Maják//Směny Export ${platform}//CS`,
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH'
+        ];
+        
+        shifts.forEach((shift, index) => {
+            const shiftDate = new Date(shift.date + 'T00:00:00');
+            const dateStr = shiftDate.toISOString().split('T')[0].replace(/-/g, '');
+            
+            // Určení času události
+            let startTime, endTime;
+            if (shift.timeFrom && shift.timeTo) {
+                startTime = dateStr + 'T' + shift.timeFrom.replace(':', '') + '00';
+                endTime = dateStr + 'T' + shift.timeTo.replace(':', '') + '00';
+            } else {
+                // Celý den
+                startTime = dateStr;
+                endTime = dateStr;
+            }
+            
+            // Název události
+            let eventTitle = '';
+            const storeName = shift.prodejna || shift.store || 'Neznámá prodejna';
+            
+            switch (shift.type) {
+                case 'morning':
+                    eventTitle = `🌅 Ranní směna - ${storeName}`;
+                    break;
+                case 'afternoon':
+                    eventTitle = `☀️ Odpolední směna - ${storeName}`;
+                    break;
+                case 'evening':
+                    eventTitle = `🌙 Večerní směna - ${storeName}`;
+                    break;
+                case 'full':
+                    eventTitle = `💼 Celý den - ${storeName}`;
+                    break;
+                case 'vacation':
+                    eventTitle = `🏖️ Dovolená`;
+                    break;
+                default:
+                    eventTitle = `📝 Směna - ${storeName}`;
+                    break;
+            }
+            
+            if (shift.timeFrom && shift.timeTo) {
+                eventTitle += ` (${shift.timeFrom}-${shift.timeTo})`;
+            }
+            
+            // Popis události
+            let description = `Pracovní směna v prodejně ${storeName}`;
+            if (shift.note) {
+                description += `\\nPoznámka: ${shift.note}`;
+            }
+            description += `\\nTyp směny: ${this.getShiftTypeName(shift.type)}`;
+            description += `\\nExportováno z Mobil Maják systému`;
+            
+            // Lokace
+            const location = shift.type === 'vacation' ? 'Dovolená' : `Prodejna ${storeName}`;
+            
+            icsContent.push(
+                'BEGIN:VEVENT',
+                `UID:${timestamp}-${index}@mobilmajak.cz`,
+                `DTSTAMP:${timestamp}`,
+                `DTSTART${shift.timeFrom && shift.timeTo ? '' : ';VALUE=DATE'}:${startTime}`,
+                `DTEND${shift.timeFrom && shift.timeTo ? '' : ';VALUE=DATE'}:${endTime}`,
+                `SUMMARY:${eventTitle}`,
+                `DESCRIPTION:${description}`,
+                `LOCATION:${location}`,
+                'STATUS:CONFIRMED',
+                'TRANSP:OPAQUE',
+                `CATEGORIES:Práce,Směny,${shift.type === 'vacation' ? 'Dovolená' : 'Mobil Maják'}`,
+                'END:VEVENT'
+            );
+        });
+        
+        icsContent.push('END:VCALENDAR');
+        
+        return icsContent.join('\r\n');
+    }
+    
+    // Pomocná funkce pro názvy typů směn
+    getShiftTypeName(type) {
+        const typeNames = {
+            'morning': 'Ranní směna',
+            'afternoon': 'Odpolední směna',
+            'evening': 'Večerní směna',
+            'full': 'Celý den',
+            'vacation': 'Dovolená',
+            'off': 'Volno'
+        };
+        return typeNames[type] || 'Neznámá směna';
+    }
+
     // Hromadná synchronizace se serverem
     async syncAllShiftsToServer() {
         try {
@@ -896,12 +1136,269 @@ class ShiftsManager {
         }
     }
 
+    // ===== HROMADNÉ PŘIDÁVÁNÍ SMĚN =====
+    
+    // Otevření modalu pro hromadné přidání směn
+    openMultipleShiftsModal() {
+        // Vyčisti předchozí výběr
+        this.selectedDates.clear();
+        
+        // Reset formuláře
+        document.getElementById('multipleShiftsForm').reset();
+        
+        // Nastav výchozí hodnoty
+        document.getElementById('multiShiftType').value = 'full';
+        document.getElementById('multiTimeFrom').value = '08:00';
+        document.getElementById('multiTimeTo').value = '20:00';
+        document.getElementById('multiShiftStore').value = this.userProdejna;
+        
+        // Nastav minikalendář na aktuální měsíc
+        this.miniCalendarDate = new Date();
+        this.renderMiniCalendar();
+        this.updateSelectedDatesDisplay();
+        
+        // Zobraz modal
+        document.getElementById('multipleShiftsModal').classList.add('show');
+    }
+    
+    // Zavření modalu pro hromadné přidání směn
+    closeMultipleShiftsModal() {
+        document.getElementById('multipleShiftsModal').classList.remove('show');
+        this.selectedDates.clear();
+    }
+    
+    // Vykreslení minikalendáře
+    renderMiniCalendar() {
+        const year = this.miniCalendarDate.getFullYear();
+        const month = this.miniCalendarDate.getMonth();
+        
+        // Aktualizuj nadpis měsíce
+        const monthNames = [
+            'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+            'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
+        ];
+        document.getElementById('miniCurrentMonth').textContent = `${monthNames[month]} ${year}`;
+        
+        // Vyčisti kalendář
+        const grid = document.getElementById('miniCalendarGrid');
+        grid.innerHTML = '';
+        
+        // Přidej hlavičky dnů
+        const dayHeaders = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+        dayHeaders.forEach(day => {
+            const header = document.createElement('div');
+            header.className = 'mini-day-header';
+            header.textContent = day;
+            grid.appendChild(header);
+        });
+        
+        // Prvý den měsíce a počet dní
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        
+        // Začni od pondělí (1) místo neděle (0)
+        let startDay = firstDay.getDay();
+        startDay = startDay === 0 ? 6 : startDay - 1;
+        
+        // Předchozí měsíc
+        const prevMonth = new Date(year, month - 1, 0);
+        for (let i = startDay - 1; i >= 0; i--) {
+            const day = prevMonth.getDate() - i;
+            this.createMiniDayElement(day, month - 1, year, true);
+        }
+        
+        // Aktuální měsíc
+        for (let day = 1; day <= daysInMonth; day++) {
+            this.createMiniDayElement(day, month, year, false);
+        }
+        
+        // Následující měsíc
+        const totalCells = 42 - 7; // 42 - 7 headers
+        const usedCells = startDay + daysInMonth;
+        const remainingCells = totalCells - usedCells;
+        
+        for (let day = 1; day <= remainingCells; day++) {
+            this.createMiniDayElement(day, month + 1, year, true);
+        }
+    }
+    
+    // Vytvoření elementu dne v minikalendáři
+    createMiniDayElement(day, month, year, isOtherMonth) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'mini-day';
+        dayElement.textContent = day;
+        
+        if (isOtherMonth) {
+            dayElement.classList.add('other-month');
+        }
+        
+        // Zkontroluj jestli je to dnešek
+        const today = new Date();
+        const cellDate = new Date(year, month, day);
+        if (cellDate.toDateString() === today.toDateString()) {
+            dayElement.classList.add('today');
+        }
+        
+        // Zkontroluj jestli je datum vybrané
+        const dateString = this.formatDateString(cellDate);
+        if (this.selectedDates.has(dateString)) {
+            dayElement.classList.add('selected');
+        }
+        
+        // Přidej kliknutí pouze pro dny aktuálního měsíce
+        if (!isOtherMonth) {
+            dayElement.addEventListener('click', () => {
+                this.toggleDateSelection(cellDate);
+            });
+        }
+        
+        document.getElementById('miniCalendarGrid').appendChild(dayElement);
+    }
+    
+    // Přepínání výběru datumu
+    toggleDateSelection(date) {
+        const dateString = this.formatDateString(date);
+        
+        if (this.selectedDates.has(dateString)) {
+            this.selectedDates.delete(dateString);
+        } else {
+            this.selectedDates.add(dateString);
+        }
+        
+        // Aktualizuj zobrazení
+        this.renderMiniCalendar();
+        this.updateSelectedDatesDisplay();
+    }
+    
+    // Aktualizace zobrazení vybraných datumů
+    updateSelectedDatesDisplay() {
+        const infoDiv = document.getElementById('selectedDatesInfo');
+        const listDiv = document.getElementById('selectedDatesList');
+        
+        if (this.selectedDates.size === 0) {
+            infoDiv.style.display = 'none';
+            return;
+        }
+        
+        // Seřaď data a zobraz
+        const sortedDates = Array.from(this.selectedDates).sort();
+        const formattedDates = sortedDates.map(dateStr => {
+            const date = new Date(dateStr + 'T00:00:00');
+            const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+            return `${dayNames[date.getDay()]} ${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+        });
+        
+        listDiv.textContent = `${formattedDates.join(', ')} (${this.selectedDates.size} dnů)`;
+        infoDiv.style.display = 'block';
+    }
+    
+    // Automatické vyplnění časů pro hromadný modal
+    autoFillMultipleTimes(type) {
+        const timeFrom = document.getElementById('multiTimeFrom');
+        const timeTo = document.getElementById('multiTimeTo');
+        
+        switch (type) {
+            case 'morning':
+                timeFrom.value = '06:00';
+                timeTo.value = '14:00';
+                break;
+            case 'afternoon':
+                timeFrom.value = '14:00';
+                timeTo.value = '22:00';
+                break;
+            case 'evening':
+                timeFrom.value = '18:00';
+                timeTo.value = '22:00';
+                break;
+            case 'full':
+                timeFrom.value = '08:00';
+                timeTo.value = '20:00';
+                break;
+            case 'vacation':
+                timeFrom.value = '08:00';
+                timeTo.value = '16:00';
+                break;
+            case 'off':
+                timeFrom.value = '';
+                timeTo.value = '';
+                break;
+        }
+    }
+    
+    // Uložení hromadných směn
+    async saveMultipleShifts() {
+        try {
+            // Validace
+            if (this.selectedDates.size === 0) {
+                this.showError('Vyberte alespoň jeden den');
+                return;
+            }
+            
+            const type = document.getElementById('multiShiftType').value;
+            const store = document.getElementById('multiShiftStore').value;
+            
+            if (!type || !store) {
+                this.showError('Vyplňte prosím všechna povinná pole');
+                return;
+            }
+            
+            const timeFrom = document.getElementById('multiTimeFrom').value || null;
+            const timeTo = document.getElementById('multiTimeTo').value || null;
+            const note = document.getElementById('multiShiftNote').value || null;
+            
+            // Vytvoř objekty směn pro všechny vybrané dny
+            const shiftsToSave = [];
+            for (const dateString of this.selectedDates) {
+                const shiftData = {
+                    id: null,
+                    date: dateString,
+                    type: type,
+                    timeFrom: timeFrom,
+                    timeTo: timeTo,
+                    note: note,
+                    userId: this.userId,
+                    sellerId: this.userId,
+                    username: localStorage.getItem('username') || this.userId,
+                    displayName: localStorage.getItem('displayName') || localStorage.getItem('username') || this.userId,
+                    prodejna: store,
+                    store: store,
+                    created: new Date().toISOString(),
+                    modified: new Date().toISOString()
+                };
+                shiftsToSave.push(shiftData);
+            }
+            
+            console.log(`💾 Ukládám ${shiftsToSave.length} směn hromadně...`);
+            
+            // Uložit všechny směny
+            for (const shift of shiftsToSave) {
+                await this.saveShift(shift);
+            }
+            
+            // Aktualizuj lokální data
+            this.applyStoreFilter();
+            
+            // Zavři modal a aktualizuj zobrazení
+            this.closeMultipleShiftsModal();
+            this.renderCalendar();
+            this.updateStats();
+            this.updateTodayTomorrowInfo();
+            
+            this.showSuccess(`Úspěšně uloženo ${shiftsToSave.length} směn`);
+            
+        } catch (error) {
+            console.error('❌ Chyba při ukládání hromadných směn:', error);
+            this.showError('Chyba při ukládání směn: ' + error.message);
+        }
+    }
+
     // Aktualizace informací o dnešních a zítřejších směnách
     updateTodayTomorrowInfo() {
         const todayTomorrowInfo = document.getElementById('todayTomorrowInfo');
         
-        // Zobraz jen u konkrétních prodejen (ne "Moje směny" nebo "Všechny prodejny")
-        if (this.currentStoreFilter === 'my' || this.currentStoreFilter === 'all') {
+        // Zobraz jen u konkrétních prodejen (ne "Moje směny")
+        if (this.currentStoreFilter === 'my') {
             todayTomorrowInfo.style.display = 'none';
             return;
         }
