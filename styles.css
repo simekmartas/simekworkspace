@@ -7046,3 +7046,271 @@ tr:hover td {
     z-index: 9999 !important;
     position: relative !important;
 }
+
+/* ================================ */
+/* SIDEBAR NAVIGATION - KOMPLETNÍ ŘEŠENÍ */
+/* ================================ */
+
+/* Sidebar layout pro stránky */
+body.sidebar-layout {
+    margin: 0;
+    padding: 0;
+}
+
+/* Čistý minimální header */
+.sidebar-layout header {
+    position: fixed;
+    top: 0;
+    left: 280px; /* Začíná vedle sidebaru */
+    right: 0;
+    height: 60px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-light);
+    z-index: 1001;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Ovládání vpravo */
+    padding: 0 20px;
+}
+
+.sidebar-layout .logo {
+    /* Logo skryto - je už v sidebaru */
+    display: none;
+}
+
+.sidebar-layout .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Theme toggle - větší a hezčí */
+.sidebar-layout .theme-toggle {
+    background: none;
+    border: 2px solid var(--border-light);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+    color: var(--text-secondary);
+}
+
+.sidebar-layout .theme-toggle:hover {
+    border-color: var(--accent-pink);
+    color: var(--accent-pink);
+    transform: scale(1.05);
+}
+
+/* Mobile header - celou šířku */
+@media (max-width: 768px) {
+    .sidebar-layout header {
+        left: 0;
+        justify-content: space-between;
+    }
+    
+    .sidebar-layout .logo {
+        display: block;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--accent-pink);
+    }
+}
+
+/* Skrýt původní nav v header */
+.sidebar-layout header nav {
+    display: none;
+}
+
+/* Sidebar navigation */
+.sidebar-nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-light);
+    z-index: 1000;
+    overflow-y: auto;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+}
+
+.sidebar-nav ul {
+    list-style: none;
+    padding: 10px 0 20px 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-nav ul li {
+    margin: 0;
+}
+
+.sidebar-nav ul li a {
+    display: block;
+    padding: 12px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.sidebar-nav ul li a:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border-left-color: var(--accent-pink);
+}
+
+.sidebar-nav ul li a.active {
+    color: var(--accent-pink);
+    background: rgba(255, 20, 147, 0.1);
+    border-left-color: var(--accent-pink);
+    font-weight: 600;
+}
+
+/* Růžové tlačítko Nový zákazník v sidebaru */
+.sidebar-nav ul li a[onclick*="openSalesAssistant"] {
+    color: #ff1493 !important;
+    font-weight: 600;
+}
+
+.sidebar-nav ul li a[onclick*="openSalesAssistant"]:hover {
+    color: #e91e63 !important;
+    background: rgba(255, 20, 147, 0.1);
+}
+
+/* Červené logout tlačítko v sidebaru */
+.sidebar-nav ul li a.logout-btn {
+    color: #ef4444 !important;
+    font-weight: 600;
+    margin-top: auto;
+    border-top: 2px solid var(--border-light);
+}
+
+.sidebar-nav ul li a.logout-btn:hover {
+    color: #dc2626 !important;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Dropdown v sidebaru */
+.sidebar-nav .dropdown {
+    position: relative;
+}
+
+.sidebar-nav .dropdown-toggle::after {
+    content: '▼';
+    float: right;
+    font-size: 0.8rem;
+    transition: transform 0.2s ease;
+}
+
+.sidebar-nav .dropdown.active .dropdown-toggle::after {
+    transform: rotate(180deg);
+}
+
+.sidebar-nav .dropdown-menu {
+    display: none;
+    background: var(--bg-secondary);
+    margin: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    position: static;
+    width: auto;
+}
+
+.sidebar-nav .dropdown.active .dropdown-menu {
+    display: block;
+}
+
+.sidebar-nav .dropdown-menu li a {
+    padding: 8px 40px;
+    font-size: 0.85rem;
+    color: var(--text-tertiary);
+}
+
+.sidebar-nav .dropdown-menu li a:hover {
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+}
+
+/* Main content posunutý doprava */
+.sidebar-layout main {
+    margin-left: 280px;
+    margin-top: 60px;
+    min-height: calc(100vh - 60px);
+    padding: 20px;
+}
+
+/* Dark theme pro sidebar */
+[data-theme="dark"] .sidebar-nav {
+    background: var(--bg-primary);
+    border-right-color: var(--border-light);
+}
+
+[data-theme="dark"] .sidebar-nav ul li a:hover {
+    background: var(--bg-secondary);
+}
+
+/* Mobile responsivita */
+@media (max-width: 768px) {
+    .sidebar-nav {
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+    }
+    
+    .sidebar-nav.mobile-open {
+        transform: translateX(0);
+    }
+    
+    .sidebar-layout main {
+        margin-left: 0;
+    }
+    
+    .sidebar-layout .mobile-toggle {
+        display: block;
+        background: none;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 0.5rem;
+    }
+}
+
+.mobile-toggle {
+    display: none;
+}
+
+/* Logo v sidebaru - vylepšené */
+.sidebar-logo {
+    padding: 25px 20px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+    font-weight: 800;
+    color: var(--accent-pink);
+    font-size: 1.2rem;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, rgba(255, 20, 147, 0.05), rgba(255, 20, 147, 0.02));
+    margin-bottom: 10px;
+}
+
+/* Lepší vzhled pro hlavní navigaci */
+.sidebar-nav ul li:not(:last-child) {
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+/* Speciální styling pro logout tlačítko */
+.sidebar-nav ul li:last-child {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 2px solid var(--border-light);
+}

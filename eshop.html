@@ -10,18 +10,27 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#ff1493">
 </head>
-<body class="protected-page">
+<body class="protected-page sidebar-layout">
     <header>
-        <div class="header-content">
-            <a href="index.html" class="logo">Mobil Maják</a>
-            <nav>
-                <ul>
-                    <!-- Navigace bude vložena JavaScriptem -->
-                </ul>
-            </nav>
-            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
+        <!-- Logo pouze na mobilu, jinak skryto -->
+        <a href="index.html" class="logo">MOBIL MAJÁK</a>
+        <div class="header-controls">
+            <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+            <!-- Theme toggle bude přidán navigation.js -->
         </div>
+        <!-- Skrytá původní nav -->
+        <nav style="display: none;">
+            <ul></ul>
+        </nav>
     </header>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar-nav" id="sidebarNav">
+        <div class="sidebar-logo">MOBIL MAJÁK</div>
+        <ul id="sidebarMenu">
+            <!-- Menu bude načteno JavaScriptem -->
+        </ul>
+    </nav>
 
     <main>
         <section class="hero">
@@ -83,7 +92,7 @@
     <script src="access-control.js"></script>
     <script src="theme-toggle.js"></script>
     <script src="sales-assistant.js"></script>
-    <script src="navigation.js?v=1.0.1"></script>
+    <script src="navigation.js?v=1.0.7-sidebar"></script>
     <!-- AI chatbot skrytý -->
     <!-- <script src="ai-chatbot.js"></script> -->
     <script>

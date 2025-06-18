@@ -341,21 +341,30 @@
         }
     </style>
 </head>
-<body>
+<body class="protected-page sidebar-layout">
     <!-- Animované emoji pozadí -->
     <div class="emoji-background" id="emojiBackground"></div>
 
     <header>
-        <div class="header-content">
-            <a href="index.html" class="logo">Mobil Maják</a>
-            <nav>
-                <ul>
-                    <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
-                </ul>
-            </nav>
-            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
+        <!-- Logo pouze na mobilu, jinak skryto -->
+        <a href="index.html" class="logo">MOBIL MAJÁK</a>
+        <div class="header-controls">
+            <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+            <!-- Theme toggle bude přidán navigation.js -->
         </div>
+        <!-- Skrytá původní nav -->
+        <nav style="display: none;">
+            <ul></ul>
+        </nav>
     </header>
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar-nav" id="sidebarNav">
+        <div class="sidebar-logo">MOBIL MAJÁK</div>
+        <ul id="sidebarMenu">
+            <!-- Menu bude načteno JavaScriptem -->
+        </ul>
+    </nav>
 
     <main>
         <!-- Hlavní uvítací sekce -->
@@ -473,7 +482,6 @@
     <script src="navigation.js?v=1.0.4"></script>
     <script src="performance-monitor.js"></script>
     <script src="enhanced-comments.js"></script>
-    <script src="accessibility-enhancements.js"></script>
     <script src="realtime-updates.js"></script>
     <script src="image-upload.js"></script>
 

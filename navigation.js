@@ -7,10 +7,10 @@ console.log('🧭 Navigation.js se načítá...');
 function updateNavigation() {
     console.log('🔧 updateNavigation() spuštěna');
     
-    // SIDEBAR TEST: Detekce sidebar verze
-    const isSidebarTest = document.body.classList.contains('sidebar-test');
-    if (isSidebarTest) {
-        console.log('🎯 SIDEBAR TEST DETEKOVÁN - používám sidebar logiku');
+    // SIDEBAR LAYOUT: Detekce sidebar verze (nyní defaultní)
+    const isSidebarLayout = document.body.classList.contains('sidebar-layout') || document.querySelector('.sidebar-nav');
+    if (isSidebarLayout) {
+        console.log('🎯 SIDEBAR LAYOUT DETEKOVÁN - používám sidebar logiku');
         return updateSidebarNavigation();
     }
     
@@ -964,4 +964,4 @@ function toggleSidebar() {
     }
 }
 
-console.log('🏁 Navigation.js načten kompletně - v1.0.4 + SIDEBAR TEST FUNKCE'); 
+console.log('🏁 Navigation.js načten kompletně - v1.0.7 - SIDEBAR LAYOUT AKTIVNÍ'); 
