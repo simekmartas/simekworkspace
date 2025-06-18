@@ -5959,19 +5959,21 @@ nav ul li a.logout-btn:hover {
     background: rgba(239, 68, 68, 0.1);
 }
 
-/* Tlačítko Nový zákazník - růžové ve stylu webu */
+/* Tlačítko Nový zákazník - normální menu styly + růžový text */
 nav ul li a[onclick*="openSalesAssistant"] {
-    color: #ff1493;
-    background: transparent;
+    color: #ff1493 !important;
 }
 
 nav ul li a[onclick*="openSalesAssistant"]:hover {
-    color: #e91e63;
-    background: rgba(255, 20, 147, 0.1);
+    color: #e91e63 !important;
+}
+
+.dark-theme nav ul li a[onclick*="openSalesAssistant"] {
+    color: #ff1493 !important;
 }
 
 .dark-theme nav ul li a[onclick*="openSalesAssistant"]:hover {
-    background: rgba(255, 20, 147, 0.1);
+    color: #e91e63 !important;
 }
 
 /* Login tlačítko - minimalistické */
@@ -6928,73 +6930,8 @@ tr:hover td {
         will-change: transform;
     }
     
-    /* Enhanced fix pro plus tlačítko v Chrome - všechny selektory */
-    nav ul li a[onclick*="openSalesAssistant"],
-    .sales-assistant-button,
-    a[data-role="sales-assistant"] {
-        -webkit-appearance: none !important;
-        appearance: none !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 40px !important;
-        height: 40px !important;
-        border-radius: 50% !important;
-        background: linear-gradient(135deg, #ff1493, #e91e63) !important;
-        color: white !important;
-        text-decoration: none !important;
-        font-weight: 600 !important;
-        font-size: 1.2rem !important;
-        box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3) !important;
-        transition: all 0.3s ease !important;
-        -webkit-user-select: none !important;
-        user-select: none !important;
-        cursor: pointer !important;
-        position: relative !important;
-        z-index: 1000 !important;
-        will-change: transform !important;
-        -webkit-transform: translateZ(0) !important;
-        transform: translateZ(0) !important;
-        /* Chrome rendering optimizations */
-        -webkit-font-smoothing: antialiased !important;
-        -moz-osx-font-smoothing: grayscale !important;
-        backface-visibility: hidden !important;
-        -webkit-backface-visibility: hidden !important;
-        /* Force visibility */
-        visibility: visible !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        /* Anti-extension blocking */
-        content: '' !important;
-        --sales-assistant-marker: 'visible' !important;
-    }
-    
-    /* Enhanced hover states pro všechny verze tlačítka */
-    nav ul li a[onclick*="openSalesAssistant"]:hover,
-    .sales-assistant-button:hover,
-    a[data-role="sales-assistant"]:hover {
-        -webkit-transform: scale(1.1) translateZ(0) !important;
-        transform: scale(1.1) translateZ(0) !important;
-        box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4) !important;
-        background: linear-gradient(135deg, #e91e63, #c2185b) !important;
-    }
-    
-    /* Focus states for accessibility */
-    nav ul li a[onclick*="openSalesAssistant"]:focus,
-    .sales-assistant-button:focus,
-    a[data-role="sales-assistant"]:focus {
-        outline: 3px solid rgba(255, 20, 147, 0.5) !important;
-        outline-offset: 2px !important;
-    }
-    
-    /* Active states */
-    nav ul li a[onclick*="openSalesAssistant"]:active,
-    .sales-assistant-button:active,
-    a[data-role="sales-assistant"]:active {
-        -webkit-transform: scale(0.95) translateZ(0) !important;
-        transform: scale(0.95) translateZ(0) !important;
-        transition: transform 0.1s ease !important;
-    }
+    /* ODSTRANĚNY všechny speciální styly pro sales assistant tlačítko */
+    /* Nyní vypadá stejně jako ostatní menu tlačítka */
     
     /* Chrome input fixes */
     input[type="text"],

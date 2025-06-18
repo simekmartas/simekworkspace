@@ -1,5 +1,5 @@
-// Navigation.js - Cache Buster Version 1.0.1
-console.log('🔄 Navigation.js načten - verze 1.0.1 - ' + new Date().toISOString());
+// Navigation.js - Cache Buster Version 1.0.2 - FIXED BUTTON STYLING
+console.log('🔄 Navigation.js načten - verze 1.0.2 - OPRAVENO MENU TLAČÍTKO - ' + new Date().toISOString());
 
 // Minimalistické menu systém
 console.log('🧭 Navigation.js se načítá...');
