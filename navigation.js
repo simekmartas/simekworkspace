@@ -248,10 +248,50 @@ function setupDropdownMenus() {
     }
 }
 
-// Menu setup - pouze dropdown funkcionality
+// Hamburger menu pro malé obrazovky
 function setupHamburgerMenu() {
-    // Menu je nyní vždy horizontální s automatickým scrollem
-    console.log('✅ Menu nastaveno jako vždy horizontální - žádné hamburger menu');
+    // Přidej hamburger tlačítko, pokud neexistuje
+    let hamburger = document.querySelector('.hamburger');
+    if (!hamburger) {
+        const headerControls = document.querySelector('.header-controls');
+        if (headerControls) {
+            hamburger = document.createElement('button');
+            hamburger.className = 'hamburger';
+            hamburger.innerHTML = '<span></span><span></span><span></span>';
+            headerControls.appendChild(hamburger);
+        }
+    }
+    
+    const nav = document.querySelector('nav');
+    
+    if (!hamburger || !nav) {
+        return;
+    }
+    
+    hamburger.addEventListener('click', function(e) {
+        e.stopPropagation();
+        nav.classList.toggle('active');
+        hamburger.classList.toggle('active');
+        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
+            closeHamburgerMenu();
+        }
+    });
+    
+    nav.addEventListener('click', function(e) {
+        if (e.target.tagName === 'A' && !e.target.classList.contains('dropdown-toggle')) {
+            closeHamburgerMenu();
+        }
+    });
+    
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 700) {
+            closeHamburgerMenu();
+        }
+    });
 }
 
 // Zavření hamburger menu
