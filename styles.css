@@ -5959,21 +5959,47 @@ nav ul li a.logout-btn:hover {
     background: rgba(239, 68, 68, 0.1);
 }
 
-/* Tlačítko Nový zákazník - normální menu styly + růžový text */
+/* Tlačítko Nový zákazník - čistě jen růžový text, bez jakýchkoli speciálních stylů */
 nav ul li a[onclick*="openSalesAssistant"] {
     color: #ff1493 !important;
+    /* Odstranit všechny Chrome focus/active styly */
+    outline: none !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    -webkit-tap-highlight-color: transparent !important;
 }
 
 nav ul li a[onclick*="openSalesAssistant"]:hover {
     color: #e91e63 !important;
+    background: rgba(100, 116, 139, 0.1) !important; /* Stejné hover jako ostatní menu */
+}
+
+nav ul li a[onclick*="openSalesAssistant"]:focus {
+    color: #ff1493 !important;
+    outline: none !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+nav ul li a[onclick*="openSalesAssistant"]:active {
+    color: #ff1493 !important;
+    outline: none !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 .dark-theme nav ul li a[onclick*="openSalesAssistant"] {
     color: #ff1493 !important;
+    background: transparent !important;
 }
 
 .dark-theme nav ul li a[onclick*="openSalesAssistant"]:hover {
     color: #e91e63 !important;
+    background: rgba(148, 163, 184, 0.1) !important; /* Stejné hover jako ostatní menu v dark mode */
 }
 
 /* Login tlačítko - minimalistické */
