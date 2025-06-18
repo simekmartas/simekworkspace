@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Směny - Mobil Maják</title>
+    <!-- Legacy Browser Support First -->
+    <script src="legacy-browser-support.js"></script>
+    <link rel="stylesheet" href="legacy-browser-styles.css">
+    <link rel="stylesheet" href="css-compatibility-patches.css">
+    <link rel="stylesheet" href="styles.css?v=2.0.4">
+    <link rel="stylesheet" href="progressive-enhancement.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#ff1493">
+    <meta name="description" content="Správa směn - plánování a evidence pracovních směn v systému Mobil Maják">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Směny - Mobil Maják">
+
+    <style>
+        /* Směny specifické styly */
+        .shifts-container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .shifts-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, rgba(255, 20, 147, 0.05) 0%, rgba(33, 150, 243, 0.05) 100%);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .shifts-title {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff1493, #2196F3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .shifts-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        /* Dashboard cards */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-light);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-large);
+            border-color: var(--accent-pink);
+        }
+
+        .stat-card.primary {
+            background: linear-gradient(145deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border-color: #1976D2;
+        }
+
+        .stat-card.secondary {
+            background: linear-gradient(145deg, #4CAF50 0%, #388E3C 100%);
+            color: white;
+            border-color: #388E3C;
+        }
+
+        .stat-emoji {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            opacity: 0.9;
+        }
+
+        /* Kalendář kontejner */
+        .calendar-container {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-medium);
+            border: 1px solid var(--border-light);
+            margin-bottom: 2rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .calendar-nav {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .nav-btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
+            background: var(--accent-blue-hover);
+            transform: scale(1.1);
+        }
+
+        .calendar-month {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .calendar-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-add-shift {
+            background: linear-gradient(135deg, #ff1493, #e91e63);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
+        }
+
+        .btn-add-shift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 20, 147, 0.4);
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+
+        /* Kalendářová mřížka */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--border-light);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .calendar-day-header {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .calendar-day {
+            background: var(--bg-primary);
+            padding: 0.5rem;
+            min-height: 120px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-day:hover {
+            background: rgba(33, 150, 243, 0.05);
+        }
+
+        .calendar-day.other-month {
+            background: var(--bg-tertiary);
+            color: var(--text-tertiary);
+        }
+
+        .calendar-day.today {
+            background: rgba(255, 20, 147, 0.1);
+            border: 2px solid var(--accent-pink);
+        }
+
+        .day-number {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .day-shifts {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .shift-item {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .shift-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .shift-item.morning {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+        }
+
+        .shift-item.afternoon {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+        }
+
+        .shift-item.evening {
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+        }
+
+        .shift-item.off {
+            background: linear-gradient(135deg, #9e9e9e, #616161);
+        }
+
+        /* Modal styly */
+        .shift-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .shift-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-light);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .time-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            padding: 2rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .btn-cancel {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border-light);
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-cancel:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .btn-save {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save:hover {
+            background: var(--accent-blue-hover);
+        }
+
+        .btn-delete {
+            background: var(--error);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-delete:hover {
+            background: #d32f2f;
+        }
+
+        /* Responzivní design */
+        @media (max-width: 768px) {
+            .shifts-title {
+                font-size: 2rem;
+            }
+
+            .calendar-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .calendar-actions {
+                justify-content: center;
+            }
+
+            .calendar-day {
+                min-height: 80px;
+                padding: 0.25rem;
+            }
+
+            .day-number {
+                font-size: 0.75rem;
+            }
+
+            .shift-item {
+                font-size: 0.6rem;
+                padding: 1px 4px;
+            }
+
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .time-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-actions {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .calendar-container {
+                padding: 1rem;
+            }
+
+            .calendar-day {
+                min-height: 60px;
+            }
+        }
+
+        /* Loading a error stavy */
+        .loading-container {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .loading-spinner {
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--error);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            text-align: center;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* Dark mode úpravy */
+        .dark-theme .calendar-container {
+            background: var(--bg-secondary);
+        }
+
+        .dark-theme .calendar-day {
+            background: var(--bg-tertiary);
+        }
+
+        .dark-theme .calendar-day.other-month {
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        .dark-theme .modal-content {
+            background: var(--bg-secondary);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude dynamicky načtena pomocí navigation.js -->
+                </ul>
+            </nav>
+            <!-- Theme toggle a další controls budou přidány navigation.js -->
+        </div>
+    </header>
+
+    <main>
+        <div class="shifts-container">
+            <!-- Hlavní header -->
+            <div class="shifts-header">
+                <h1 class="shifts-title">📅 Správa směn</h1>
+                <p class="shifts-subtitle">Plánování a správa pracovních směn</p>
+            </div>
+
+            <!-- Dashboard statistiky -->
+            <div class="dashboard-stats">
+                <div class="stat-card primary">
+                    <span class="stat-emoji">📊</span>
+                    <div class="stat-value" id="monthlyHours">0</div>
+                    <div class="stat-label">Hodin tento měsíc</div>
+                </div>
+                
+                <div class="stat-card secondary">
+                    <span class="stat-emoji">✅</span>
+                    <div class="stat-value" id="monthlyShifts">0</div>
+                    <div class="stat-label">Směn tento měsíc</div>
+                </div>
+                
+                <div class="stat-card">
+                    <span class="stat-emoji">⏰</span>
+                    <div class="stat-value" id="avgHours">0</div>
+                    <div class="stat-label">Průměr hodin/den</div>
+                </div>
+                
+                <div class="stat-card">
+                    <span class="stat-emoji">🎯</span>
+                    <div class="stat-value" id="nextShift">Žádná</div>
+                    <div class="stat-label">Příští směna</div>
+                </div>
+            </div>
+
+            <!-- Kalendář -->
+            <div class="calendar-container">
+                <div class="calendar-header">
+                    <div class="calendar-nav">
+                        <button class="nav-btn" id="prevMonth">‹</button>
+                        <div class="calendar-month" id="currentMonth">Leden 2025</div>
+                        <button class="nav-btn" id="nextMonth">›</button>
+                    </div>
+                    
+                    <div class="calendar-actions">
+                        <button class="btn-add-shift" id="addShiftBtn">
+                            ➕ Přidat směnu
+                        </button>
+                        <button class="btn-export" id="exportBtn">
+                            📁 Exportovat
+                        </button>
+                    </div>
+                </div>
+
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Kalendář bude generován JavaScriptem -->
+                </div>
+            </div>
+
+            <!-- Loading stav -->
+            <div class="loading-container" id="loadingContainer" style="display: none;">
+                <div class="loading-spinner">⏳</div>
+                <p>Načítám směny...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal pro přidání/úpravu směny -->
+    <div class="shift-modal" id="shiftModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modalTitle">Přidat směnu</h2>
+                <button class="modal-close" id="closeModal">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <form id="shiftForm">
+                    <div class="form-group">
+                        <label class="form-label" for="shiftDate">Datum</label>
+                        <input type="date" class="form-input" id="shiftDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="shiftType">Typ směny</label>
+                        <select class="form-select" id="shiftType" required>
+                            <option value="">Vyberte typ směny</option>
+                            <option value="morning">Ranní směna</option>
+                            <option value="afternoon">Odpolední směna</option>
+                            <option value="evening">Večerní směna</option>
+                            <option value="full">Celý den</option>
+                            <option value="off">Volno</option>
+                        </select>
+                    </div>
+                    
+                    <div class="time-row">
+                        <div class="form-group">
+                            <label class="form-label" for="timeFrom">Čas od</label>
+                            <input type="time" class="form-input" id="timeFrom">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="timeTo">Čas do</label>
+                            <input type="time" class="form-input" id="timeTo">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="shiftNote">Poznámka</label>
+                        <input type="text" class="form-input" id="shiftNote" placeholder="Volitelná poznámka...">
+                    </div>
+                </form>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="cancelBtn">Zrušit</button>
+                <button type="button" class="btn-delete" id="deleteBtn" style="display: none;">Smazat</button>
+                <button type="submit" class="btn-save" id="saveBtn">Uložit</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Mobil Maják. Všechna práva vyhrazena.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="theme-toggle.js"></script>
+    <script src="navigation.js?v=2.0.1"></script>
+    <script src="accessibility-enhancements.js"></script>
+    
+    <script>
+        // Základní JavaScript pro správu směn
+        console.log('🕐 Směny systém se načítá...');
+        
+        // Zkontroluj přihlášení
+        function checkAuth() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            if (isLoggedIn !== 'true') {
+                alert('Musíte se nejdříve přihlásit.');
+                window.location.href = 'login.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // Pokud není přihlášen, přesměruj
+        if (!checkAuth()) {
+            // Redirect už proběhl v checkAuth()
+        } else {
+            console.log('✅ Uživatel je přihlášen, pokračuji v načítání...');
+        }
+    </script>
+    <script src="smeny.js"></script>
+</body>
+</html> 
