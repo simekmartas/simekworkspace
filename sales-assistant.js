@@ -4003,8 +4003,11 @@ function proceedFromZakaznickaKartickaVykupTelefon() {
     // Nastavíme scénář na nový telefon pro správné fungování
     currentScenario = 'novy-telefon';
     
+    // Pro výkup + telefon přeskočíme krok se starým telefonem (už řešíme výkupem)
+    selectedItems.staryTelefon = 'vykup'; // Automaticky nastavíme že se řeší výkupem
+    
     const modalBody = document.getElementById('salesModalBody');
-    modalBody.innerHTML = renderNovyTelefonStep1(); // Použije stejný flow jako nový telefon
+    modalBody.innerHTML = renderVykupTelefonStep3(); // Jdeme rovnou na příslušenství
     
     // Smooth scroll to top
     setTimeout(function() {
@@ -4424,6 +4427,282 @@ async function completeVykupNic() {
     } catch (error) {
         console.error('Chyba při ukládání výkup nic:', error);
         alert('Chyba při ukládání dat. Zkuste to znovu.');
+    }
+}
+
+// Výkup + telefon scénář - krok 3 (příslušenství) - přeskačuje starý telefon
+function renderVykupTelefonStep3() {
+    currentWizardStep = 3;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZakaznickaKarticka('vykup-telefon');">← Zpět na kartičku</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP + ${selectedItems.typTelefonu.toUpperCase()} TELEFON - Krok 1/3
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Výkup starého telefonu + ${selectedItems.typTelefonu} telefon
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                📱 OBALY - Vyberte typ obalu:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectVykupTelefonObal('transparentni')">
+                    <span class="scenario-emoji">🔹</span>
+                    <h4 class="scenario-title">TRANSPARENTNÍ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupTelefonObal('barevny')">
+                    <span class="scenario-emoji">🌈</span>
+                    <h4 class="scenario-title">BAREVNÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupTelefonObal('knizkovy')">
+                    <span class="scenario-emoji">📖</span>
+                    <h4 class="scenario-title">KNÍŽKOVÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupTelefonObal('zadny')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÝ OBAL<br>NEPRODÁN</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr obalu pro výkup + telefon a přechod na sklíčka
+function selectVykupTelefonObal(typ) {
+    if (typ !== 'zadny') {
+        selectedItems.obaly = [typ];
+    } else {
+        selectedItems.obaly = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupTelefonStep3Sklicka();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Podkrok 3 - sklíčka pro výkup + telefon
+function renderVykupTelefonStep3Sklicka() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupTelefonStep3();">← Zpět na obaly</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP + ${selectedItems.typTelefonu.toUpperCase()} TELEFON - Krok 2/3
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Obal: ${selectedItems.obaly.length > 0 ? selectedItems.obaly[0] : 'žádný'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔍 SKLÍČKA - Vyberte typ sklíčka:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectVykupTelefonSklicko('kvalitnejsi')">
+                    <span class="scenario-emoji">💎</span>
+                    <h4 class="scenario-title">KVALITNĚJŠÍ<br>SKLÍČKO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupTelefonSklicko('levnejsi')">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">LEVNĚJŠÍ<br>SKLÍČKO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectVykupTelefonSklicko('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SKLÍČKO<br>NEPRODÁNO</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr sklíčka a přechod na služby
+function selectVykupTelefonSklicko(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sklicka = [typ];
+    } else {
+        selectedItems.sklicka = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupTelefonStep4();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Výkup + telefon scénář - krok 4 (služby)
+function renderVykupTelefonStep4() {
+    currentWizardStep = 4;
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupTelefonStep3Sklicka();">← Zpět na sklíčka</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💰 VÝKUP + ${selectedItems.typTelefonu.toUpperCase()} TELEFON - Krok 3/3
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Příslušenství: ${selectedItems.obaly.length + selectedItems.sklicka.length} položek
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🛠️ PRODEJNÍ TIP - SLUŽBY:</h4>
+                <p>"Nový telefon si zaslouží perfektní nastavení! Nabídnu vám služby které vám ušetří čas a starosti."</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🛠️ SLUŽBY - Vyberte prodané služby:
+            </h4>
+            
+            <div class="checkbox-grid">
+                <div class="checkbox-item service-tooltip" data-checkbox="kopirovani-dat-vykup">
+                    <span class="item-icon">📲</span>
+                    <input type="checkbox" id="kopirovani-dat-vykup" name="sluzby-vykup">
+                    <label for="kopirovani-dat-vykup">KOPÍROVÁNÍ<br>DAT</label>
+                    <span class="tooltip-text">"Data z vykoupeného telefonu přenesu do nového telefonu."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="prodlouzena-zaruka-vykup">
+                    <span class="item-icon">🛡️</span>
+                    <input type="checkbox" id="prodlouzena-zaruka-vykup" name="sluzby-vykup">
+                    <label for="prodlouzena-zaruka-vykup">PRODLOUŽENÁ<br>ZÁRUKA</label>
+                    <span class="tooltip-text">"Klid na další roky! Pokud se cokoliv pokazí, máte krytou opravu i náhradu."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="nastaveni-telefonu-vykup">
+                    <span class="item-icon">⚙️</span>
+                    <input type="checkbox" id="nastaveni-telefonu-vykup" name="sluzby-vykup">
+                    <label for="nastaveni-telefonu-vykup">NASTAVENÍ<br>TELEFONU</label>
+                    <span class="tooltip-text">"Telefon připravím přesně podle vašich potřeb - email, aplikace, všechno nastaveno."</span>
+                </div>
+                <div class="checkbox-item service-tooltip" data-checkbox="aktualizace-sw-vykup">
+                    <span class="item-icon">🔄</span>
+                    <input type="checkbox" id="aktualizace-sw-vykup" name="sluzby-vykup">
+                    <label for="aktualizace-sw-vykup">AKTUALIZACE<br>SOFTWARE</label>
+                    <span class="tooltip-text">"Telefon bude mít nejnovější funkce a bezpečnostní aktualizace hned od začátku."</span>
+                </div>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="sales-btn" onclick="proceedToVykupTelefonFinal()">
+                    🎉 DOKONČIT VÝKUP + TELEFON
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Pokračování na finální dokončení výkup + telefon
+function proceedToVykupTelefonFinal() {
+    // Uložení vybraných služeb
+    const selectedSluzby = [];
+    document.querySelectorAll('input[name="sluzby-vykup"]:checked').forEach(item => {
+        const label = document.querySelector(`label[for="${item.id}"]`);
+        const itemName = label ? label.textContent.replace(/\s+/g, ' ').trim() : item.id;
+        selectedSluzby.push(itemName);
+    });
+    selectedItems.sluzby = selectedSluzby;
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderVykupTelefonFinalStep();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Finální krok pro výkup + telefon
+function renderVykupTelefonFinalStep() {
+    // Spočítej všechno co se prodalo
+    const allItems = [];
+    allItems.push('Výkup starého telefonu');
+    allItems.push(`${selectedItems.typTelefonu} telefon`);
+    if (selectedItems.obaly.length > 0) allItems.push(selectedItems.obaly[0] + ' obal');
+    if (selectedItems.sklicka.length > 0) allItems.push(selectedItems.sklicka[0] + ' sklíčko');
+    allItems.push(...selectedItems.sluzby);
+    
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderVykupTelefonStep4();">← Zpět na služby</button>
+        
+        <h3 style="text-align: center; color: #2ed573; margin-bottom: 1rem;">
+            💰 VÝKUP + TELEFON - Dokončení
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="background: rgba(46, 213, 115, 0.1); border: 1px solid rgba(46, 213, 115, 0.3); border-radius: 8px; padding: 1rem; color: var(--text-primary);">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2ed573;">✅ Celkově prodáno:</h4>
+                <div style="font-size: 0.9rem; line-height: 1.4;">
+                    ${allItems.map(item => `• ${item}`).join('<br>')}
+                </div>
+            </div>
+        </div>
+        
+        <div class="sales-actions">
+            <button class="sales-btn success" onclick="completeVykupTelefonSale()">
+                🎉 DOKONČIT VÝKUP + TELEFON
+            </button>
+        </div>
+    `;
+}
+
+// Dokončení úspěšného prodeje výkup + telefon
+async function completeVykupTelefonSale() {
+    // Sestavuj všechny prodané položky
+    const allSoldItems = [];
+    allSoldItems.push('Výkup starého telefonu');
+    allSoldItems.push(`${selectedItems.typTelefonu} telefon`);
+    if (selectedItems.obaly.length > 0) allSoldItems.push(selectedItems.obaly[0] + ' obal');
+    if (selectedItems.sklicka.length > 0) allSoldItems.push(selectedItems.sklicka[0] + ' sklíčko');
+    allSoldItems.push(...selectedItems.sluzby);
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'sold';
+    currentSalesSession.soldItems = allSoldItems;
+    currentSalesSession.zakaznickaKarticka = selectedItems.zakaznickaKarticka;
+    currentSalesSession.založitKarticku = selectedItems.založitKarticku;
+    currentSalesSession.vykupTelefonData = selectedItems; // Specifická data pro analýzu
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100;
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Výkup + telefon byl úspěšně zaznamenán! 🎉');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
     }
 }
 
