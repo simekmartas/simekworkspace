@@ -131,34 +131,14 @@ window.SalesAssistantDiagnostics = {
         }
         
         if (button) {
-            // Force visibility with max priority
-            const emergencyStyles = `
-                display: inline-flex !important;
-                visibility: visible !important;
-                opacity: 1 !important;
-                position: relative !important;
-                z-index: 999999 !important;
-                width: 40px !important;
-                height: 40px !important;
-                background: linear-gradient(135deg, #ff1493, #e91e63) !important;
-                color: white !important;
-                border-radius: 50% !important;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 1.2rem !important;
-                font-weight: 600 !important;
-                box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3) !important;
-                text-decoration: none !important;
-                cursor: pointer !important;
-                transition: all 0.3s ease !important;
-                margin: 0 0.5rem !important;
-            `;
-            
-            button.style.cssText = emergencyStyles;
+            // Reset to normal menu button style (remove any custom styling)
+            button.style.cssText = '';
+            button.removeAttribute('style');
             button.setAttribute('data-emergency-fix', 'true');
-            button.title = 'Prodejní asistent (Emergency Fix)';
+            button.title = 'Nový zákazník';
+            button.textContent = 'Nový zákazník';
             
-            console.log('✅ Emergency button styles applied');
+            console.log('✅ Emergency button restored to normal menu style');
             return true;
         }
         
@@ -176,15 +156,15 @@ window.SalesAssistantDiagnostics = {
         const button = document.createElement('a');
         
         button.href = '#';
-        button.innerHTML = '➕';
-        button.title = 'Prodejní asistent';
+        button.textContent = 'Nový zákazník';
+        button.title = 'Nový zákazník';
         button.setAttribute('onclick', 'openSalesAssistant(event)');
         button.setAttribute('data-emergency-created', 'true');
         
         li.appendChild(button);
         nav.appendChild(li);
         
-        console.log('✅ Emergency button created');
+        console.log('✅ Emergency menu button created');
         return button;
     },
     

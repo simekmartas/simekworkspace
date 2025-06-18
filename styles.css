@@ -5959,6 +5959,21 @@ nav ul li a.logout-btn:hover {
     background: rgba(239, 68, 68, 0.1);
 }
 
+/* Tlačítko Nový zákazník - růžové ve stylu webu */
+nav ul li a[onclick*="openSalesAssistant"] {
+    color: #ff1493;
+    background: transparent;
+}
+
+nav ul li a[onclick*="openSalesAssistant"]:hover {
+    color: #e91e63;
+    background: rgba(255, 20, 147, 0.1);
+}
+
+.dark-theme nav ul li a[onclick*="openSalesAssistant"]:hover {
+    background: rgba(255, 20, 147, 0.1);
+}
+
 /* Login tlačítko - minimalistické */
 nav ul li a.header-login-btn {
     color: #64748b;

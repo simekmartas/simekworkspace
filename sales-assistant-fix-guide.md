@@ -1,14 +1,14 @@
-# 🔧 Návod pro opravu tlačítka prodejního asistenta
+# 🔧 Návod pro menu tlačítko "Nový zákazník" (prodejní asistent)
 
-## 📋 Problém
-U některých uživatelů na **Windows + nejnovější Google Chrome** se nezobrazuje červené tlačítko s plusem pro prodejní asistent.
+## 📋 Změna
+Červené tlačítko s plusem bylo nahrazeno normálním menu tlačítkem **"Nový zákazník"** ve stejném stylu jako zbytek menu.
 
 ## ✅ Implementované řešení
 
-### 1. **Vytvořené soubory:**
-- ✅ `sales-assistant-diagnostics.js` - diagnostické nástroje
-- ✅ Vylepšený `navigation.js` - robustnější načítání
-- ✅ Vylepšený `styles.css` - Chrome kompatibilní styly
+### 1. **Upravené soubory:**
+- ✅ `navigation.js` - změna z červeného plus tlačítka na normální menu "Nový zákazník"
+- ✅ `sales-assistant-diagnostics.js` - diagnostické nástroje (upraveny pro nové tlačítko)
+- ✅ `styles.css` - základní styly zachovány
 
 ### 2. **Přidání diagnostiky do HTML souborů**
 
@@ -34,16 +34,14 @@ U některých uživatelů na **Windows + nejnovější Google Chrome** se nezobr
 - ✅ `user-profile.html`
 - ✅ Všechny ostatní HTML soubory s navigací
 
-## 🛠️ Jak najít a otestovat tlačítko
+## 🛠️ Jak najít a otestovat menu tlačítko "Nový zákazník"
 
 ### **1. Selektor pro hledání tlačítka:**
 ```javascript
-// Najdi tlačítko v DOM
+// Najdi tlačítko "Nový zákazník" v DOM
 const button = document.querySelector('a[onclick*="openSalesAssistant"]');
-// nebo
-const button = document.querySelector('.sales-assistant-button');
-// nebo  
-const button = document.querySelector('a[data-role="sales-assistant"]');
+// Tlačítko by mělo obsahovat text "Nový zákazník"
+console.log('Button text:', button?.textContent);
 ```
 
 ### **2. Inspekce tlačítka v DevTools:**
@@ -78,18 +76,15 @@ if (button) {
 
 ## 🎯 Zajištění 100% viditelnosti
 
-### **1. CSS Force Rules (již implementovány):**
+### **1. Standardní menu styly:**
 ```css
-/* Tyto pravidla jsou již v styles.css */
-nav ul li a[onclick*="openSalesAssistant"],
-.sales-assistant-button,
-a[data-role="sales-assistant"] {
-    display: inline-flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative !important;
-    z-index: 1000 !important;
-    /* + další optimalizace pro Chrome */
+/* Tlačítko "Nový zákazník" používá stejné styly jako ostatní menu položky */
+nav ul li a {
+    /* Standardní menu styly z styles.css */
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    /* atd... */
 }
 ```
 
@@ -291,13 +286,13 @@ function emergencyCreateButton() {
 
 ## 🎯 Výsledek
 
-Po implementaci by mělo tlačítko:
-1. **Být vždy viditelné** na všech podporovaných prohlížečích
-2. **Auto-opravovat se** při problémech
-3. **Logovat diagnostiku** pro debugging  
-4. **Mít fallback** pro kritické chyby
-5. **Být odolné** vůči extension blocking
+Menu tlačítko "Nový zákazník":
+1. **Vypadá stejně** jako ostatní menu položky
+2. **Spouští prodejní asistent** při kliknutí
+3. **Je kompatibilní** se všemi prohlížeči  
+4. **Má diagnostiku** pro případné problémy
+5. **Nepotřebuje speciální styly** nebo opravy
 
 ---
 
-**⚡ Poznámka:** Řešení zachovává původní design a funkcionalitu - přidává pouze robustnost a diagnostiku. 
+**⚡ Poznámka:** Změna zachovává funkcionalitu prodejního asistenta, ale používá standardní menu styl místo červeného plus tlačítka. 
