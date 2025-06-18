@@ -1,5 +1,5 @@
-// Navigation.js - Cache Buster Version 1.0.3 - CHROME FOCUS FIX
-console.log('🔄 Navigation.js načten - verze 1.0.3 - CHROME FOCUS OPRAVENO - ' + new Date().toISOString());
+// Navigation.js - Cache Buster Version 1.0.4 - LOGOUT MOVED TO HEADER
+console.log('🔄 Navigation.js načten - verze 1.0.4 - LOGOUT PŘESUNUT DO HEADER - ' + new Date().toISOString());
 
 // Minimalistické menu systém
 console.log('🧭 Navigation.js se načítá...');
@@ -50,10 +50,9 @@ function updateNavigation() {
     const prodejceItems = `
         <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
         <li><a href="user-profile.html">${userDisplayName}</a></li>
-        <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
     
-    // Admin menu - minimalistické
+    // Admin menu - optimalizované pro menší obrazovky
     const adminItems = `
         <li class="dropdown">
             <a href="#" class="dropdown-toggle">Mobil Maják</a>
@@ -74,7 +73,6 @@ function updateNavigation() {
         <li><a href="sales-analytics.html">📊 Prodejní analytika</a></li>
         <li><a href="user-profile.html">${userDisplayName}</a></li>
         <li><a href="user-management.html">Správa uživatelů</a></li>
-        <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
     `;
     
     // Sestavení menu podle role uživatele
@@ -87,12 +85,15 @@ function updateNavigation() {
             // Pro ostatní role nebo neznámé role
             nav.innerHTML = baseItems + salesAssistantButton + `
                 <li><a href="user-profile.html">${userDisplayName}</a></li>
-                <li><a href="#" id="logout" class="logout-btn">Odhlásit</a></li>
             `;
         }
-        // Odstranit login tlačítko
+        
+        // Odstranit login tlačítko a přidat logout do header-controls
         const existingLoginBtn = document.querySelector('.header-login-btn');
         if (existingLoginBtn) existingLoginBtn.remove();
+        
+        // Přidat logout tlačítko do header-controls
+        addLogoutButtonToHeader();
     } else {
         // Menu pro nepřihlášené - bez login tlačítka v nav
         nav.innerHTML = baseItems;
@@ -117,26 +118,48 @@ function updateNavigation() {
         }
     }
     
-    // Logout funkcionalita
-    const logoutButton = document.getElementById('logout');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', function(e) {
-            e.preventDefault();
-            
-            if (confirm('Opravdu se chcete odhlásit?')) {
-                const sessionKeys = [
-                    'isLoggedIn', 'username', 'role', 'userId', 'sellerId',
-                    'userEmail', 'userPhone', 'userProdejna', 'userData'
-                ];
-                sessionKeys.forEach(key => localStorage.removeItem(key));
-                window.location.href = 'index.html';
-            }
-        });
-    }
-    
     setupDropdownMenus();
     setupHamburgerMenu();
     markActivePage();
+}
+
+// Funkce pro přidání logout tlačítka do header-controls
+function addLogoutButtonToHeader() {
+    const headerControls = document.querySelector('.header-controls');
+    if (!headerControls) return;
+    
+    // Odstranit existující logout tlačítko pokud existuje
+    const existingLogout = document.querySelector('.logout-btn');
+    if (existingLogout) existingLogout.remove();
+    
+    // Vytvořit nové logout tlačítko
+    const logoutBtn = document.createElement('a');
+    logoutBtn.href = '#';
+    logoutBtn.className = 'logout-btn';
+    logoutBtn.textContent = 'Odhlásit';
+    logoutBtn.id = 'logout';
+    
+    // Přidat před hamburger nebo na konec
+    const hamburger = document.querySelector('.hamburger');
+    if (hamburger) {
+        headerControls.insertBefore(logoutBtn, hamburger);
+    } else {
+        headerControls.appendChild(logoutBtn);
+    }
+    
+    // Přidat event listener
+    logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (confirm('Opravdu se chcete odhlásit?')) {
+            const sessionKeys = [
+                'isLoggedIn', 'username', 'role', 'userId', 'sellerId',
+                'userEmail', 'userPhone', 'userProdejna', 'userData'
+            ];
+            sessionKeys.forEach(key => localStorage.removeItem(key));
+            window.location.href = 'index.html';
+        }
+    });
 }
 
 // Funkce pro získání zobrazovaného jména uživatele
