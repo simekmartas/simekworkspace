@@ -7242,12 +7242,13 @@ body.sidebar-layout {
     background: var(--bg-tertiary);
 }
 
-/* Main content posunutý doprava */
+/* Main content posunutý doprava na desktopu */
 .sidebar-layout main {
     margin-left: 280px;
     margin-top: 60px;
     min-height: calc(100vh - 60px);
     padding: 20px;
+    transition: margin-left 0.3s ease;
 }
 
 /* Dark theme pro sidebar */
@@ -7260,29 +7261,64 @@ body.sidebar-layout {
     background: var(--bg-secondary);
 }
 
-/* Mobile responsivita */
+/* Mobile responsivita - sidebar se skrývá, obsah na celou šířku */
 @media (max-width: 768px) {
     .sidebar-nav {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
+        z-index: 1002; /* Nad headerem */
     }
     
     .sidebar-nav.mobile-open {
         transform: translateX(0);
     }
     
+    /* Obsah na celou šířku na mobilech */
     .sidebar-layout main {
-        margin-left: 0;
+        margin-left: 0 !important;
+        padding: 15px;
     }
     
+    /* Hamburger tlačítko pro sidebar */
     .sidebar-layout .mobile-toggle {
-        display: block;
+        display: block !important;
         background: none;
         border: none;
         color: var(--text-primary);
-        font-size: 1.2rem;
+        font-size: 1.5rem;
         cursor: pointer;
         padding: 0.5rem;
+        z-index: 1003;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .sidebar-layout .mobile-toggle:hover {
+        background: rgba(255, 20, 147, 0.1);
+        color: var(--accent-pink);
+    }
+    
+    /* Overlay když je sidebar otevřený */
+    .sidebar-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-overlay.active {
+        opacity: 1;
+        visibility: visible;
     }
 }
 
@@ -7314,3 +7350,8 @@ body.sidebar-layout {
     padding-top: 20px;
     border-top: 2px solid var(--border-light);
 }
+
+/* ================================ */
+/* STYLES.CSS - Cache Buster v1.0.8 - SIDEBAR MOBILE FIX */
+/* Verze: 1.0.8 - Opraveno překrývání sidebaru na mobilech + přidán login tlačítko */
+/* ================================ */

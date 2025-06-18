@@ -1,5 +1,5 @@
-// Navigation.js - Cache Buster Version 1.0.4 - LOGOUT MOVED TO HEADER
-console.log('🔄 Navigation.js načten - verze 1.0.4 - LOGOUT PŘESUNUT DO HEADER - ' + new Date().toISOString());
+// Navigation.js - Cache Buster Version 1.0.8 - SIDEBAR MOBILE FIX
+console.log('🔄 Navigation.js načten - verze 1.0.8 - SIDEBAR MOBILE FIX - ' + new Date().toISOString());
 
 // Minimalistické menu systém
 console.log('🧭 Navigation.js se načítá...');
@@ -876,6 +876,11 @@ function updateSidebarNavigation() {
         menuContent += `
             <li style="margin-top: auto;"><a href="#" class="logout-btn" onclick="handleSidebarLogout(event)">Odhlásit</a></li>
         `;
+    } else {
+        // Pro nepřihlášené uživatele - přidat login tlačítko
+        menuContent += `
+            <li style="margin-top: auto;"><a href="login.html" class="header-login-btn">Přihlásit</a></li>
+        `;
     }
     
     sidebarMenu.innerHTML = menuContent;
@@ -893,23 +898,31 @@ function setupSidebarThemeToggle() {
     const headerControls = document.querySelector('.header-controls');
     if (!headerControls) return;
     
-    // Odstraň existující theme toggle
+    // Odstraň existující prvky
     const existingToggle = document.querySelector('.theme-toggle');
+    const existingMobileToggle = document.querySelector('.mobile-toggle');
     if (existingToggle) existingToggle.remove();
+    if (existingMobileToggle) existingMobileToggle.remove();
     
-    // Vytvoř nový theme toggle
+    // Vytvoř mobile toggle (hamburger) pro sidebar
+    const mobileToggle = document.createElement('button');
+    mobileToggle.className = 'mobile-toggle';
+    mobileToggle.innerHTML = '☰';
+    mobileToggle.setAttribute('aria-label', 'Otevřít/zavřít menu');
+    mobileToggle.style.display = 'none'; // Skrýt na desktopu
+    headerControls.appendChild(mobileToggle);
+    
+    // Vytvoř theme toggle
     const themeToggle = document.createElement('button');
     themeToggle.className = 'theme-toggle';
     themeToggle.innerHTML = '🌙';
     themeToggle.setAttribute('aria-label', 'Přepnout tmavý/světlý režim');
+    headerControls.appendChild(themeToggle);
     
-    // Přidej před mobile toggle
-    const mobileToggle = document.querySelector('.mobile-toggle');
-    if (mobileToggle) {
-        headerControls.insertBefore(themeToggle, mobileToggle);
-    } else {
-        headerControls.appendChild(themeToggle);
-    }
+    // Event listener pro mobile toggle
+    mobileToggle.addEventListener('click', function() {
+        toggleSidebar();
+    });
     
     // Event listener pro theme toggle
     themeToggle.addEventListener('click', function() {
@@ -926,6 +939,9 @@ function setupSidebarThemeToggle() {
     // Nastavit správnou ikonu podle aktuálního tématu
     const currentTheme = localStorage.getItem('theme') || 'light';
     themeToggle.innerHTML = currentTheme === 'dark' ? '☀️' : '🌙';
+    
+    // Přidat overlay pro mobile sidebar
+    createSidebarOverlay();
 }
 
 function setupSidebarDropdowns() {
@@ -955,13 +971,59 @@ function handleSidebarLogout(event) {
     }
 }
 
+// Vytvořit overlay pro sidebar
+function createSidebarOverlay() {
+    // Odstraň existující overlay
+    const existingOverlay = document.querySelector('.sidebar-overlay');
+    if (existingOverlay) existingOverlay.remove();
+    
+    // Vytvoř nový overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+    
+    // Event listener pro zavření sidebaru klikem na overlay
+    overlay.addEventListener('click', function() {
+        closeSidebar();
+    });
+}
+
 // Globální funkce pro mobile toggle sidebaru
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar-nav');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
     if (sidebar) {
-        sidebar.classList.toggle('mobile-open');
-        console.log('📱 Sidebar toggled:', sidebar.classList.contains('mobile-open'));
+        const isOpen = sidebar.classList.contains('mobile-open');
+        
+        if (isOpen) {
+            closeSidebar();
+        } else {
+            openSidebar();
+        }
+        
+        console.log('📱 Sidebar toggled:', !isOpen ? 'opened' : 'closed');
     }
+}
+
+// Otevřít sidebar
+function openSidebar() {
+    const sidebar = document.querySelector('.sidebar-nav');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar) sidebar.classList.add('mobile-open');
+    if (overlay) overlay.classList.add('active');
+    document.body.style.overflow = 'hidden'; // Zamknout scrollování
+}
+
+// Zavřít sidebar
+function closeSidebar() {
+    const sidebar = document.querySelector('.sidebar-nav');
+    const overlay = document.querySelector('.sidebar-overlay');
+    
+    if (sidebar) sidebar.classList.remove('mobile-open');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = ''; // Obnovit scrollování
 }
 
 console.log('🏁 Navigation.js načten kompletně - v1.0.7 - SIDEBAR LAYOUT AKTIVNÍ'); 
