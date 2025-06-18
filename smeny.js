@@ -908,20 +908,44 @@ class ShiftsManager {
         const todayString = this.formatDateString(today);
         const tomorrowString = this.formatDateString(tomorrow);
         
+        console.log(`📅 DEBUG: Dnes je ${todayString}, zítra je ${tomorrowString}`);
+        console.log(`📅 DEBUG: Hledám směny pro prodejnu "${this.currentStoreFilter}"`);
+        console.log(`📅 DEBUG: Celkem směn v allShifts: ${this.allShifts.length}`);
+        
+        // Zobraz všechny směny pro debug
+        this.allShifts.forEach(shift => {
+            const shiftStore = shift.prodejna || shift.store;
+            console.log(`📅 DEBUG: Směna ${shift.date} - ${shiftStore} - ${shift.type} - ${shift.displayName || shift.username || shift.userId}`);
+        });
+        
         // Najdi směny pro dnes a zítra pro vybranou prodejnu
         const todayShifts = this.allShifts.filter(shift => {
             const shiftStore = shift.prodejna || shift.store;
-            return shift.date === todayString && 
-                   shiftStore === this.currentStoreFilter && 
-                   shift.type !== 'off' && shift.type !== 'vacation';
+            const matches = shift.date === todayString && 
+                           shiftStore === this.currentStoreFilter && 
+                           shift.type !== 'off' && shift.type !== 'vacation';
+            
+            if (matches) {
+                console.log(`📅 DEBUG: DNEŠNÍ SMĚNA NALEZENA: ${shift.date} - ${shiftStore} - ${shift.displayName || shift.username || shift.userId}`);
+            }
+            
+            return matches;
         });
         
         const tomorrowShifts = this.allShifts.filter(shift => {
             const shiftStore = shift.prodejna || shift.store;
-            return shift.date === tomorrowString && 
-                   shiftStore === this.currentStoreFilter && 
-                   shift.type !== 'off' && shift.type !== 'vacation';
+            const matches = shift.date === tomorrowString && 
+                           shiftStore === this.currentStoreFilter && 
+                           shift.type !== 'off' && shift.type !== 'vacation';
+            
+            if (matches) {
+                console.log(`📅 DEBUG: ZÍTŘEJŠÍ SMĚNA NALEZENA: ${shift.date} - ${shiftStore} - ${shift.displayName || shift.username || shift.userId}`);
+            }
+            
+            return matches;
         });
+        
+        console.log(`📅 DEBUG: Nalezeno ${todayShifts.length} dnešních směn a ${tomorrowShifts.length} zítřejších směn`);
         
         // Aktualizuj zobrazení
         const todayElement = document.getElementById('todayShifts');
@@ -948,12 +972,16 @@ class ShiftsManager {
         // Zobraz dlaždice
         todayTomorrowInfo.style.display = 'block';
         
-        console.log(`📅 Aktualizace info dlaždic pro ${this.currentStoreFilter}: Dnes=${todayShifts.length}, Zítra=${tomorrowShifts.length}`);
+        console.log(`📅 Aktualizace info dlaždic pro ${this.currentStoreFilter}: Dnes="${todayElement.textContent}", Zítra="${tomorrowElement.textContent}"`);
     }
 
     // Utility funkce
     formatDateString(date) {
-        return date.toISOString().split('T')[0];
+        // Používej lokální datum místo UTC aby nedošlo k posunu kvůli časové zóně
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     
     formatDateInput(date) {
