@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }, 300); // Kratší delay pro mobilní zařízení
     });
 
-    // Unifikovaná autentizační funkce s bezpečnostními vylepšeními
+    // Unifikovaná autentizační funkce
     function authenticateUser(usernameValue, passwordValue) {
         try {
             console.log('🔐 DEBUG: Authentication attempt', { 
@@ -66,17 +66,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other',
                 timestamp: new Date().toISOString()
             });
-            
-            // Bezpečnostní kontroly (neovlivní funkcionalitu)
-            if (window.securityManager) {
-                try {
-                    window.securityManager.checkRateLimit(usernameValue);
-                } catch (rateLimitError) {
-                    setLoadingState(false);
-                    showMessage('❌ ' + rateLimitError.message, 'error');
-                    return;
-                }
-            }
             
             // Získat uživatele z localStorage (nový systém)
             const users = getUsers();
@@ -98,12 +87,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (user) {
                 console.log('✅ DEBUG: Login successful');
                 
-                // Zaznamenej úspěšné přihlášení pro rate limiting
-                if (window.securityManager) {
-                    window.securityManager.recordLoginAttempt(usernameValue, true);
-                }
-                
-                // Úspěšné přihlášení - unified session storage s bezpečnostními vylepšeními
+                // Úspěšné přihlášení - unified session storage
                 const sessionData = {
                     isLoggedIn: 'true',
                     username: user.firstName ? `${user.firstName} ${user.lastName}` : user.name || usernameValue,
@@ -121,26 +105,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 console.log('💾 DEBUG: Saving session data', sessionData);
                 
-                // Použij bezpečný session manager pokud je dostupný, jinak classic způsob
-                if (window.securityManager) {
-                    window.securityManager.createSecureSession({
-                        id: sessionData.userId,
-                        username: usernameValue,
-                        role: sessionData.role,
-                        displayName: sessionData.username
-                    });
-                    // Přidej zbývající data pro kompatibilitu
-                    localStorage.setItem('userEmail', sessionData.userEmail);
-                    localStorage.setItem('userPhone', sessionData.userPhone);
-                    localStorage.setItem('userProdejna', sessionData.userProdejna);
-                    localStorage.setItem('sellerId', sessionData.sellerId);
-                    localStorage.setItem('deviceType', sessionData.deviceType);
-                } else {
-                    // Fallback na klasické ukládání
-                    Object.keys(sessionData).forEach(key => {
-                        localStorage.setItem(key, sessionData[key]);
-                    });
-                }
+                // Store session data
+                Object.keys(sessionData).forEach(key => {
+                    localStorage.setItem(key, sessionData[key]);
+                });
                 
                 // Mobile haptic feedback if available
                 if (navigator.vibrate) {
@@ -163,11 +131,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
             } else {
                 console.log('❌ DEBUG: Login failed - invalid credentials');
-                
-                // Zaznamenej neúspěšný pokus pro rate limiting
-                if (window.securityManager) {
-                    window.securityManager.recordLoginAttempt(usernameValue, false);
-                }
                 
                 setLoadingState(false);
                 showMessage('❌ Nesprávné přihlašovací údaje. Zkuste to znovu.', 'error');

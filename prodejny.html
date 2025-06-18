@@ -357,7 +357,6 @@
 
     <div class="version-info">v2.8.0 - Přidány ALIGATOR statistiky</div>
 
-    <script src="security-manager.js"></script>
     <script src="theme-toggle.js"></script>
     <script src="sales-assistant.js"></script>
     <script src="navigation.js?v=2.0.1"></script>
@@ -365,12 +364,9 @@
     <!-- <script src="ai-chatbot.js"></script> -->
     <script src="prodejny-data-loader.js"></script>
     <script>
-        // Bezpečnostní kontrola s podporou nového security manageru
-        if (window.SecurityManager) {
-            // Použij nový bezpečnostní systém
-            SecurityManager.securePageLoad('prodejny.html');
-        } else if (!localStorage.getItem('isLoggedIn')) {
-            // Fallback na původní kontrolu
+        // Striktní kontrola přihlášení - přesměrování na login pokud není přihlášen
+        if (!localStorage.getItem('isLoggedIn')) {
+            // Okamžité přesměrování bez možnosti zobrazení obsahu
             window.location.replace('login.html');
         } else {
             // Uživatel je přihlášen, zobrazit obsah

@@ -51,22 +51,13 @@ class AccessControlManager {
         return window.location.pathname.split('/').pop() || 'index.html';
     }
 
-    // Hlavní funkce pro kontrolu přístupu s podporou SecurityManager
+    // Hlavní funkce pro kontrolu přístupu
     checkPageAccess() {
-        // Pokud je dostupný SecurityManager, použij jeho pokročilé kontroly
-        if (window.securityManager && window.securityManager.isValidSession) {
-            if (!window.securityManager.isValidSession()) {
-                console.log('SecurityManager: Session invalid, redirecting to login');
-                this.redirectToLogin();
-                return false;
-            }
-        } else {
-            // Fallback na základní kontrolu
-            if (!this.isUserLoggedIn()) {
-                console.log('Uživatel není přihlášen, přesměrování na login');
-                this.redirectToLogin();
-                return false;
-            }
+        // Nejprve kontrola přihlášení
+        if (!this.isUserLoggedIn()) {
+            console.log('Uživatel není přihlášen, přesměrování na login');
+            this.redirectToLogin();
+            return false;
         }
 
         const currentPage = this.getCurrentPage();
