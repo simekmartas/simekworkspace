@@ -1867,6 +1867,16 @@ function renderZakaznickaKarticka(scenarioType) {
             title: '🔧 SERVIS TELEFONU',
             backFunction: 'renderServisScenario',
             continueFunction: 'proceedFromZakaznickaKartickaServis'
+        },
+        'vykup-telefon': {
+            title: '💰 VÝKUP + TELEFON',
+            backFunction: 'renderVykupScenario',
+            continueFunction: 'proceedFromZakaznickaKartickaVykupTelefon'
+        },
+        'vykup-doprodej': {
+            title: '💰 VÝKUP + DOPRODEJ',
+            backFunction: 'renderVykupScenario',
+            continueFunction: 'proceedFromZakaznickaKartickaVykupDoprodej'
         }
     };
     
