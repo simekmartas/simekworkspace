@@ -306,6 +306,10 @@
             background: linear-gradient(135deg, #9e9e9e, #616161);
         }
 
+        .shift-item.vacation {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+        }
+
         /* Modal styly */
         .shift-modal {
             position: fixed;
@@ -604,6 +608,12 @@
                     <div class="stat-label">Směn tento měsíc</div>
                 </div>
                 
+                <div class="stat-card" style="background: linear-gradient(145deg, #ff6b35 0%, #f7931e 100%); color: white; border-color: #f7931e;">
+                    <span class="stat-emoji">🏖️</span>
+                    <div class="stat-value" id="vacationHours">0</div>
+                    <div class="stat-label">Hodin dovolené</div>
+                </div>
+                
                 <div class="stat-card">
                     <span class="stat-emoji">⏰</span>
                     <div class="stat-value" id="avgHours">0</div>
@@ -632,6 +642,9 @@
                         </button>
                         <button class="btn-export" id="exportBtn">
                             📁 Exportovat
+                        </button>
+                        <button class="btn-export" id="syncBtn" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            🔄 Synchronizovat
                         </button>
                     </div>
                 </div>
@@ -672,6 +685,7 @@
                             <option value="afternoon">Odpolední směna</option>
                             <option value="evening">Večerní směna</option>
                             <option value="full">Celý den</option>
+                            <option value="vacation">Dovolená</option>
                             <option value="off">Volno</option>
                         </select>
                     </div>

@@ -40,7 +40,7 @@ class ShiftsManager {
             console.log('🌐 Pokusím se načíst směny ze serveru...');
             
             // Zkus načíst ze serveru
-            const response = await fetch('/api/shifts', {
+            const response = await fetch('/api/shifts-github', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -113,7 +113,7 @@ class ShiftsManager {
             
             // Zkus synchronizovat se serverem na pozadí
             try {
-                const response = await fetch('/api/shifts', {
+                const response = await fetch('/api/shifts-github', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -155,7 +155,7 @@ class ShiftsManager {
             
             // Zkus smazat ze serveru
             try {
-                const response = await fetch(`/api/shifts/${shiftId}`, {
+                const response = await fetch(`/api/shifts-github/${shiftId}`, {
                     method: 'DELETE',
                     headers: {
                         'Content-Type': 'application/json'
@@ -202,6 +202,11 @@ class ShiftsManager {
         // Export
         document.getElementById('exportBtn').addEventListener('click', () => {
             this.exportShifts();
+        });
+        
+        // Synchronizace
+        document.getElementById('syncBtn').addEventListener('click', () => {
+            this.syncAllShiftsToServer();
         });
         
         // Modal události
@@ -359,6 +364,10 @@ class ShiftsManager {
             return 'Volno';
         }
         
+        if (shift.type === 'vacation') {
+            return 'Dovolená';
+        }
+        
         if (shift.timeFrom && shift.timeTo) {
             return `${shift.timeFrom}-${shift.timeTo}`;
         }
@@ -385,6 +394,11 @@ class ShiftsManager {
         if (date) {
             document.getElementById('shiftDate').value = this.formatDateInput(date);
         }
+        
+        // Výchozí nastavení: celodenní směna od 8:00 do 20:00
+        document.getElementById('shiftType').value = 'full';
+        document.getElementById('timeFrom').value = '08:00';
+        document.getElementById('timeTo').value = '20:00';
         
         document.getElementById('shiftModal').classList.add('show');
     }
@@ -516,7 +530,11 @@ class ShiftsManager {
                 break;
             case 'full':
                 timeFrom.value = '08:00';
-                timeTo.value = '17:00';
+                timeTo.value = '20:00';
+                break;
+            case 'vacation':
+                timeFrom.value = '08:00';
+                timeTo.value = '16:00';
                 break;
             case 'off':
                 timeFrom.value = '';
@@ -539,12 +557,23 @@ class ShiftsManager {
                    shift.type !== 'off';
         });
         
-        // Počet směn
-        document.getElementById('monthlyShifts').textContent = monthShifts.length;
+        // Filtruj jen pracovní směny (bez dovolené)
+        const workShifts = monthShifts.filter(shift => shift.type !== 'vacation');
         
-        // Celkové hodiny
+        // Filtruj dovolené
+        const vacationShifts = this.shifts.filter(shift => {
+            const shiftDate = new Date(shift.date);
+            return shiftDate.getMonth() === currentMonth && 
+                   shiftDate.getFullYear() === currentYear &&
+                   shift.type === 'vacation';
+        });
+        
+        // Počet směn (jen pracovních)
+        document.getElementById('monthlyShifts').textContent = workShifts.length;
+        
+        // Celkové pracovní hodiny
         let totalHours = 0;
-        monthShifts.forEach(shift => {
+        workShifts.forEach(shift => {
             if (shift.timeFrom && shift.timeTo) {
                 const hours = this.calculateShiftHours(shift.timeFrom, shift.timeTo);
                 totalHours += hours;
@@ -554,16 +583,30 @@ class ShiftsManager {
                     case 'morning': totalHours += 8; break;
                     case 'afternoon': totalHours += 8; break;
                     case 'evening': totalHours += 4; break;
-                    case 'full': totalHours += 9; break;
+                    case 'full': totalHours += 12; break;
                 }
             }
         });
         
         document.getElementById('monthlyHours').textContent = totalHours;
         
-        // Průměr hodin za den
+        // Hodiny dovolené
+        let vacationHours = 0;
+        vacationShifts.forEach(shift => {
+            if (shift.timeFrom && shift.timeTo) {
+                const hours = this.calculateShiftHours(shift.timeFrom, shift.timeTo);
+                vacationHours += hours;
+            } else {
+                // Default 8 hodin pro dovolenou
+                vacationHours += 8;
+            }
+        });
+        
+        document.getElementById('vacationHours').textContent = vacationHours;
+        
+        // Průměr hodin za den (jen pracovní směny)
         const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-        const avgHours = monthShifts.length > 0 ? (totalHours / daysInMonth).toFixed(1) : 0;
+        const avgHours = workShifts.length > 0 ? (totalHours / daysInMonth).toFixed(1) : 0;
         document.getElementById('avgHours').textContent = avgHours;
         
         // Příští směna
@@ -602,7 +645,8 @@ class ShiftsManager {
         const date = new Date(nextShift.date);
         const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
         
-        return `${dayNames[date.getDay()]} ${date.getDate()}.${date.getMonth() + 1}.`;
+        const shiftType = nextShift.type === 'vacation' ? ' (dovolená)' : '';
+        return `${dayNames[date.getDay()]} ${date.getDate()}.${date.getMonth() + 1}.${shiftType}`;
     }
 
     // Export směn
@@ -632,6 +676,7 @@ class ShiftsManager {
                     'afternoon': 'Odpolední', 
                     'evening': 'Večerní',
                     'full': 'Celý den',
+                    'vacation': 'Dovolená',
                     'off': 'Volno'
                 };
                 
@@ -658,6 +703,51 @@ class ShiftsManager {
         } catch (error) {
             console.error('❌ Chyba při exportu:', error);
             this.showError('Chyba při exportu: ' + error.message);
+        }
+    }
+
+    // Hromadná synchronizace se serverem
+    async syncAllShiftsToServer() {
+        try {
+            console.log('🔄 Synchronizuji všechny směny se serverem...');
+            
+            // Načti všechny lokální směny
+            const localShifts = JSON.parse(localStorage.getItem('shifts_data') || '[]');
+            
+            if (localShifts.length === 0) {
+                this.showSuccess('Žádné směny k synchronizaci');
+                return;
+            }
+            
+            const response = await fetch('/api/shifts-github', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    shifts: localShifts,
+                    timestamp: Date.now()
+                })
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log('✅ Všechny směny synchronizovány se serverem');
+                    this.showSuccess(`Synchronizováno ${localShifts.length} směn`);
+                } else {
+                    console.warn('⚠️ Server odmítl synchronizaci:', data.error);
+                    this.showError('Synchronizace selhala: ' + data.error);
+                }
+            } else {
+                const errorText = await response.text();
+                console.error(`❌ Server error ${response.status}:`, errorText);
+                this.showError(`Server error: ${response.status}`);
+            }
+            
+        } catch (error) {
+            console.error('❌ Chyba při synchronizaci se serverem:', error);
+            this.showError('Chyba při synchronizaci: ' + error.message);
         }
     }
 
