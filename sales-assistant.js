@@ -4753,12 +4753,6 @@ function renderKonzultaceScenario() {
                     <label for="konzultace-vyreseno-ne">NE</label>
                 </div>
             </div>
-            
-            <div id="konzultace-pokracovat" style="text-align: center; margin-top: 2rem; display: none;">
-                <button class="sales-btn" onclick="proceedFromKonzultaceVyreseno()">
-                    ➡️ POKRAČOVAT
-                </button>
-            </div>
         </div>
     `;
 }
@@ -4775,8 +4769,10 @@ function selectKonzultaceVyreseno(vyreseno, element) {
     const radio = element.querySelector('input[type="radio"]');
     radio.checked = true;
     
-    // Zobraz tlačítko pokračovat
-    document.getElementById('konzultace-pokracovat').style.display = 'block';
+    // Rovnou pokračuj bez tlačítka
+    setTimeout(() => {
+        proceedFromKonzultaceVyreseno();
+    }, 300);
 }
 
 // Pokračování podle odpovědi
@@ -4897,78 +4893,323 @@ function renderKonzultaceDoprodej() {
         <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderZakaznickaKarticka('konzultace');">← Zpět na kartičku</button>
         
         <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
-            💬 CHCE KONZULTACI - Co jsi doprodal?
+            💬 CHCE KONZULTACI
         </h3>
         
         <div class="sales-content">
             <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
-                🛍️ CO JSI DOPRODAL? - Vyberte kategorie:
+                🛍️ PRODALI JSME NĚCO JINÉHO?
             </h4>
             
             <div class="scenario-grid">
-                <div class="scenario-tile" onclick="selectKonzultaceKategorie('novy-telefon')">
+                <div class="scenario-tile" onclick="selectKonzultaceReseni('novy-telefon')">
                     <span class="scenario-emoji">📱</span>
                     <h4 class="scenario-title">NOVÝ<br>TELEFON</h4>
                 </div>
-                <div class="scenario-tile" onclick="selectKonzultaceKategorie('sklicko')">
-                    <span class="scenario-emoji">🔍</span>
-                    <h4 class="scenario-title">SKLÍČKO</h4>
+                <div class="scenario-tile" onclick="selectKonzultaceReseni('ano')">
+                    <span class="scenario-emoji">✅</span>
+                    <h4 class="scenario-title">ANO</h4>
                 </div>
-                <div class="scenario-tile" onclick="selectKonzultaceKategorie('obal')">
-                    <span class="scenario-emoji">📱</span>
-                    <h4 class="scenario-title">OBAL</h4>
+                <div class="scenario-tile" onclick="selectKonzultaceReseni('ne')">
+                    <span class="scenario-emoji">❌</span>
+                    <h4 class="scenario-title">NE</h4>
                 </div>
-                <div class="scenario-tile" onclick="selectKonzultaceKategorie('prislusenstvi')">
-                    <span class="scenario-emoji">🔌</span>
-                    <h4 class="scenario-title">JINÉ<br>PŘÍSLUŠENSTVÍ</h4>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr řešení pro konzultaci
+function selectKonzultaceReseni(reseni) {
+    const modalBody = document.getElementById('salesModalBody');
+    
+    switch(reseni) {
+        case 'novy-telefon':
+            // Spustí scénář nového telefonu
+            currentScenario = 'novy-telefon';
+            modalBody.innerHTML = renderNovyTelefonScenario();
+            break;
+        case 'ano':
+            // Klasická proklikávačka SKLO/OBAL/SLUŽBY/SLEVA/KONEC
+            modalBody.innerHTML = renderKonzultaceProklikavacka();
+            break;
+        case 'ne':
+            // Otázka proč a konec scénáře
+            modalBody.innerHTML = renderKonzultaceProcNe();
+            break;
+    }
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Konzultace - proklikávačka (ANO)
+function renderKonzultaceProklikavacka() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderKonzultaceDoprodej();">← Zpět</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💬 KONZULTACE - Krok 1/3
+        </h3>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>🔍 PRODEJNÍ TIP - SKLÍČKA:</h4>
+                <p>"Displej je nejdražší část telefonu na opravu! Kvalitní ochranné sklíčko vás vyjde levněji než jedna oprava. Sunshine folie má navíc doživotní záruku - když se poškodí, vyměním ji za novou jen za 299 Kč!"</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🔍 SKLÍČKA + SUNSHINE FOLIE - Vyberte typ ochrany displeje:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectKonzultaceSklicko('kvalitnejsi')">
+                    <span class="scenario-emoji">💎</span>
+                    <h4 class="scenario-title">KVALITNĚJŠÍ<br>SKLÍČKO</h4>
                 </div>
-                <div class="scenario-tile" onclick="selectKonzultaceKategorie('sluzba')">
-                    <span class="scenario-emoji">🛠️</span>
-                    <h4 class="scenario-title">SLUŽBY</h4>
+                <div class="scenario-tile" onclick="selectKonzultaceSklicko('levnejsi')">
+                    <span class="scenario-emoji">💰</span>
+                    <h4 class="scenario-title">LEVNĚJŠÍ<br>SKLÍČKO</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceSklicko('sunshine')" style="border-color: #ffc107; background: linear-gradient(135deg, rgba(255, 193, 7, 0.15) 0%, rgba(255, 193, 7, 0.15) 100%);">
+                    <span class="scenario-emoji" style="color: #ffc107;">🌟</span>
+                    <h4 class="scenario-title" style="color: #ffc107;">SUNSHINE<br>FOLIE ⭐</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceSklicko('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SKLÍČKO<br>NEPRODÁNO</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr sklíčka v konzultaci a přechod na obaly
+function selectKonzultaceSklicko(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sklicka = [typ];
+    } else {
+        selectedItems.sklicka = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderKonzultaceObaly();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Konzultace - obaly (krok 2)
+function renderKonzultaceObaly() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderKonzultaceProklikavacka();">← Zpět na sklíčka</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💬 KONZULTACE - Krok 2/3
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Sklíčko: ${selectedItems.sklicka.length > 0 ? selectedItems.sklicka[0] + (selectedItems.sklicka[0] === 'sunshine' ? ' folie' : ' sklíčko') : 'žádné'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <div class="sales-tip" style="margin-bottom: 1.5rem;">
+                <h4>📱 PRODEJNÍ TIP - OBALY:</h4>
+                <p>"Když už chráníme displej, pojďme chránit i zbytek telefonu! Můžu vám nabídnout transparentní obal který nezmění design, barevný obal pro osobitost, nebo knížkový obal s extra ochranou."</p>
+            </div>
+            
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                📱 OBALY - Vyberte typ obalu:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectKonzultaceObal('transparentni')">
+                    <span class="scenario-emoji">🔹</span>
+                    <h4 class="scenario-title">TRANSPARENTNÍ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceObal('barevny')">
+                    <span class="scenario-emoji">🌈</span>
+                    <h4 class="scenario-title">BAREVNÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceObal('knizkovy')">
+                    <span class="scenario-emoji">📖</span>
+                    <h4 class="scenario-title">KNÍŽKOVÝ<br>OBAL</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceObal('zadny')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÝ OBAL<br>NEPRODÁN</h4>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Výběr obalu v konzultaci a přechod na služby
+function selectKonzultaceObal(typ) {
+    if (typ !== 'zadny') {
+        selectedItems.obaly = [typ];
+    } else {
+        selectedItems.obaly = [];
+    }
+    
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderKonzultaceSluzby();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Konzultace - služby (krok 3)
+function renderKonzultaceSluzby() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderKonzultaceObaly();">← Zpět na obaly</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💬 KONZULTACE - Krok 3/3
+        </h3>
+        
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">
+                ✅ Sklíčko: ${selectedItems.sklicka.length > 0 ? selectedItems.sklicka[0] + (selectedItems.sklicka[0] === 'sunshine' ? ' folie' : ' sklíčko') : 'žádné'} | 
+                Obal: ${selectedItems.obaly.length > 0 ? selectedItems.obaly[0] : 'žádný'}
+            </div>
+        </div>
+        
+        <div class="sales-content">
+            <h4 style="color: var(--primary-color); margin-bottom: 1rem; text-align: center; font-size: 0.9rem;">
+                🛠️ SLUŽBY - Vyberte prodané služby:
+            </h4>
+            
+            <div class="scenario-grid">
+                <div class="scenario-tile" onclick="selectKonzultaceSluzba('cisteni')">
+                    <span class="scenario-emoji">🧽</span>
+                    <h4 class="scenario-title">ČIŠTĚNÍ<br>TELEFONU</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceSluzba('aktualizace')">
+                    <span class="scenario-emoji">🔄</span>
+                    <h4 class="scenario-title">AKTUALIZACE<br>SYSTÉMU</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceSluzba('zalohovani')">
+                    <span class="scenario-emoji">💾</span>
+                    <h4 class="scenario-title">ZÁLOHOVÁNÍ<br>DAT</h4>
+                </div>
+                <div class="scenario-tile" onclick="selectKonzultaceSluzba('zadne')" style="border-color: #ff4757; background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(255, 71, 87, 0.1) 100%);">
+                    <span class="scenario-emoji" style="color: #ff4757;">❌</span>
+                    <h4 class="scenario-title" style="color: #ff4757;">ŽÁDNÉ SLUŽBY<br>NEPRODÁNY</h4>
                 </div>
             </div>
             
-            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; flex-wrap: wrap;">
-                <button class="sales-btn" onclick="renderKonzultaceFinal()">
-                    ➡️ POKRAČOVAT NA DOKONČENÍ
-                </button>
-                <button class="sales-btn danger" onclick="renderKonzultaceNotSold()">
-                    ❌ NEPRODAL JSEM NIC
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="sales-btn" onclick="proceedToKonzultaceSleva()">
+                    ➡️ POKRAČOVAT NA SLEVU
                 </button>
             </div>
         </div>
     `;
 }
 
-// Výběr kategorie pro konzultaci
-function selectKonzultaceKategorie(kategorie) {
-    const tile = event.target.closest('.scenario-tile');
-    
-    if (tile.classList.contains('selected')) {
-        // Odebrat výběr
-        tile.classList.remove('selected');
-        if (kategorie === 'novy-telefon') {
-            selectedItems.novyTelefon = false;
-        } else {
-            const index = selectedItems[kategorie === 'sklicko' ? 'sklicka' : (kategorie === 'sluzba' ? 'sluzby' : (kategorie + 'y'))].indexOf(kategorie);
-            if (index > -1) {
-                selectedItems[kategorie === 'sklicko' ? 'sklicka' : (kategorie === 'sluzba' ? 'sluzby' : (kategorie + 'y'))].splice(index, 1);
-            }
-        }
+// Výběr služby v konzultaci
+function selectKonzultaceSluzba(typ) {
+    if (typ !== 'zadne') {
+        selectedItems.sluzby = [typ];
     } else {
-        // Přidat výběr
-        tile.classList.add('selected');
-        if (kategorie === 'obal') {
-            selectedItems.obaly.push('obal');
-        } else if (kategorie === 'sklicko') {
-            selectedItems.sklicka.push('sklíčko');
-        } else if (kategorie === 'prislusenstvi') {
-            selectedItems.prislusenstvi.push('příslušenství');
-        } else if (kategorie === 'sluzba') {
-            selectedItems.sluzby.push('služba');
-        } else if (kategorie === 'novy-telefon') {
-            selectedItems.novyTelefon = true;
-        }
+        selectedItems.sluzby = [];
+    }
+    
+    proceedToKonzultaceSleva();
+}
+
+// Pokračování na slevu
+function proceedToKonzultaceSleva() {
+    const modalBody = document.getElementById('salesModalBody');
+    modalBody.innerHTML = renderKonzultaceFinalSleva();
+    
+    // Smooth scroll to top
+    setTimeout(function() {
+        modalBody.scrollTop = 0;
+        modalBody.classList.add('scroll-top');
+        setTimeout(function() { modalBody.classList.remove('scroll-top'); }, 300);
+    }, 50);
+}
+
+// Konzultace - formulář "proč ne"
+function renderKonzultaceProcNe() {
+    return `
+        <button class="scenario-back-btn" onclick="document.getElementById('salesModalBody').innerHTML = renderKonzultaceDoprodej();">← Zpět</button>
+        
+        <h3 style="text-align: center; color: var(--primary-color); margin-bottom: 1rem;">
+            💬 KONZULTACE - Proč se nic neprodalo?
+        </h3>
+        
+        <div class="sales-content">
+            <div style="background: rgba(255, 149, 0, 0.1); border: 1px solid rgba(255, 149, 0, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                <h4 style="margin: 0 0 0.75rem 0; color: #ff9500; text-align: center;">❓ Proč se nic dalšího neprodalo?</h4>
+                <textarea id="konzultaceProcNeText" placeholder="Důvod proč se kromě konzultace nic neprodalo..." 
+                    style="width: 100%; min-height: 80px; padding: 0.75rem; border: 1px solid rgba(255, 255, 255, 0.2); 
+                    border-radius: 6px; background: rgba(255, 255, 255, 0.05); color: var(--text-primary); 
+                    font-size: 0.9rem; resize: vertical; font-family: inherit;"></textarea>
+            </div>
+            
+            <div style="text-align: center;">
+                <button class="sales-btn success" onclick="completeKonzultaceProcNe()">
+                    ✅ DOKONČIT KONZULTACI
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Dokončení konzultace s důvodem "proč ne"
+async function completeKonzultaceProcNe() {
+    const duvod = document.getElementById('konzultaceProcNeText').value.trim();
+    
+    if (!duvod) {
+        alert('Prosím uveďte alespoň krátké vysvětlení.');
+        return;
+    }
+    
+    // Sestavuj data
+    const allItems = ['Konzultace'];
+    
+    // Spočítej čas session
+    const sessionDuration = sessionStartTime ? Date.now() - sessionStartTime : 0;
+    
+    // Přidat data do session
+    currentSalesSession.result = 'consultation-only';
+    currentSalesSession.soldItems = allItems;
+    currentSalesSession.zakaznickaKarticka = selectedItems.zakaznickaKarticka;
+    currentSalesSession.založitKarticku = selectedItems.založitKarticku;
+    currentSalesSession.konzultaceData = selectedItems;
+    currentSalesSession.noProdejReason = duvod;
+    currentSalesSession.completedAt = Date.now();
+    currentSalesSession.sessionDuration = sessionDuration;
+    currentSalesSession.sessionDurationMinutes = Math.round(sessionDuration / 60000 * 100) / 100;
+    
+    // Uložit na server
+    const saved = await saveSalesSession(currentSalesSession);
+    
+    if (saved) {
+        showSuccessMessage('Konzultace byla úspěšně zaznamenána! 💬');
+        setTimeout(function() {
+            closeSalesAssistant();
+            location.reload();
+        }, 2000);
+    } else {
+        alert('Chyba při ukládání dat. Zkuste to prosím znovu.');
     }
 }
 
