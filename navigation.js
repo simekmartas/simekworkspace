@@ -35,9 +35,40 @@ function updateNavigation() {
         <li><a href="prodejny.html">Prodejny</a></li>
     `;
     
-    // Plus tlačítko pro všechny přihlášené uživatele
+    // Plus tlačítko pro všechny přihlášené uživatele - Chrome optimized
     const salesAssistantButton = `
-        <li><a href="#" onclick="openSalesAssistant(event)" style="background: linear-gradient(135deg, #ff1493, #e91e63); color: white; border-radius: 50%; width: 40px; height: 40px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; font-size: 1.2rem; box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3); transition: all 0.3s ease;" title="Prodejní asistent" onmouseover="this.style.transform='scale(1.1)'; this.style.boxShadow='0 8px 25px rgba(255, 20, 147, 0.4)'" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='0 4px 15px rgba(255, 20, 147, 0.3)'">➕</a></li>
+        <li><a href="#" 
+               onclick="openSalesAssistant(event)" 
+               class="sales-assistant-button"
+               data-role="sales-assistant"
+               style="
+                   background: linear-gradient(135deg, #ff1493, #e91e63) !important; 
+                   color: white !important; 
+                   border-radius: 50% !important; 
+                   width: 40px !important; 
+                   height: 40px !important; 
+                   font-weight: 600 !important; 
+                   text-decoration: none !important; 
+                   display: inline-flex !important; 
+                   align-items: center !important; 
+                   justify-content: center !important; 
+                   font-size: 1.2rem !important; 
+                   box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3) !important; 
+                   transition: all 0.3s ease !important;
+                   -webkit-appearance: none !important;
+                   appearance: none !important;
+                   -webkit-user-select: none !important;
+                   user-select: none !important;
+                   cursor: pointer !important;
+                   position: relative !important;
+                   z-index: 1000 !important;
+                   will-change: transform !important;
+                   -webkit-transform: translateZ(0) !important;
+                   transform: translateZ(0) !important;
+               " 
+               title="Prodejní asistent" 
+               onmouseover="this.style.transform='scale(1.1) translateZ(0)'; this.style.boxShadow='0 8px 25px rgba(255, 20, 147, 0.4)'" 
+               onmouseout="this.style.transform='scale(1) translateZ(0)'; this.style.boxShadow='0 4px 15px rgba(255, 20, 147, 0.3)'">➕</a></li>
     `;
     
     // Prodejce menu - čisté a jednoduché
@@ -253,8 +284,26 @@ function setupHamburgerMenu() {
             nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(255,255,255,0.98) !important; transform: translateX(-100%) !important; z-index: 9999 !important; visibility: hidden !important; opacity: 0 !important;';
             nav.classList.remove('active');
         } else {
-            // Zobrazit menu
-            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(255,255,255,0.98) !important; transform: translateX(0) !important; z-index: 9999 !important; visibility: visible !important; opacity: 1 !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;';
+            // Zobrazit menu - optimalizováno pro všechny velikosti obrazovek
+            nav.style.cssText = `
+                position: fixed !important; 
+                top: 60px !important; 
+                left: 0 !important; 
+                right: 0 !important; 
+                bottom: 0 !important; 
+                width: 100vw !important;
+                max-width: 100vw !important;
+                height: calc(100vh - 60px) !important;
+                min-height: calc(100vh - 60px) !important;
+                background: rgba(255,255,255,0.98) !important; 
+                transform: translateX(0) !important; 
+                z-index: 9999 !important; 
+                visibility: visible !important; 
+                opacity: 1 !important; 
+                box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            `.replace(/\s+/g, ' ').trim();
             
             // Nastav správné styly na UL a zachovej původní obsah
             const navUl = nav.querySelector('ul');
@@ -314,7 +363,7 @@ function setupHamburgerMenu() {
     });
     
     window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
+        if (window.innerWidth > 1024) {
             closeHamburgerMenu();
         }
     });
@@ -385,81 +434,301 @@ function openNewBazarForm(event) {
     }
 }
 
-// Prodejní asistent
+// Prodejní asistent - Enhanced with Chrome compatibility
 function openSalesAssistant(event) {
-    event.preventDefault();
-    closeHamburgerMenu();
-    
-    console.log('🔍 DEBUG: openSalesAssistant called');
-    console.log('🔍 Browser:', navigator.userAgent);
-    console.log('🔍 createSalesAssistantModal available:', typeof createSalesAssistantModal);
-    
-    // Zkontroluj zda je sales-assistant.js načten
-    if (typeof createSalesAssistantModal === 'undefined') {
-        console.error('❌ Sales assistant není načten!');
-        console.log('🔍 Zkouším načíst sales-assistant.js dynamicky...');
+    try {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        closeHamburgerMenu();
         
-        // Pokus o dynamické načtení pro Chrome
-        const script = document.createElement('script');
-        script.src = 'sales-assistant.js';
-        script.onload = function() {
-            console.log('✅ Sales assistant dynamicky načten');
-            openSalesAssistant(event);
-        };
-        script.onerror = function() {
-            console.error('❌ Nepodařilo se načíst sales-assistant.js');
-            alert('Prodejní asistent se nepodařilo načíst. Obnovte stránku (Ctrl+F5).');
-        };
-        document.head.appendChild(script);
+        console.log('🔍 DEBUG: openSalesAssistant called');
+        console.log('🔍 Browser:', navigator.userAgent);
+        console.log('🔍 Chrome version:', navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Not Chrome');
+        console.log('🔍 createSalesAssistantModal available:', typeof createSalesAssistantModal);
+        
+        // Enhanced script loading check with multiple attempts
+        if (typeof createSalesAssistantModal === 'undefined') {
+            console.error('❌ Sales assistant není načten!');
+            return handleMissingScript(event);
+        }
+        
+        console.log('✅ Sales assistant je dostupný');
+        
+        // Enhanced session timing
+        try {
+            if (typeof window.sessionStartTime !== 'undefined') {
+                window.sessionStartTime = Date.now();
+                console.log('✅ Session timer started');
+            } else {
+                console.warn('⚠️ sessionStartTime není definována, vytvářím globálně');
+                window.sessionStartTime = Date.now();
+            }
+        } catch (sessionError) {
+            console.warn('⚠️ Session timer error:', sessionError);
+            window.sessionStartTime = Date.now();
+        }
+        
+        // Enhanced modal creation with fallbacks
+        return createModalWithFallbacks();
+        
+    } catch (globalError) {
+        console.error('❌ Kritická chyba v openSalesAssistant:', globalError);
+        showFallbackMessage();
+    }
+}
+
+// Helper function for missing script handling
+function handleMissingScript(originalEvent) {
+    console.log('🔍 Handling missing script...');
+    
+    // Check if we're in a retry loop
+    if (window.salesAssistantRetryCount > 2) {
+        console.error('❌ Příliš mnoho pokusů o načtení');
+        alert('Prodejní asistent se nedaří načíst. Zkuste obnovit stránku (Ctrl+F5) nebo kontaktujte administrátora.');
         return;
     }
     
-    console.log('✅ Sales assistant je dostupný');
+    window.salesAssistantRetryCount = (window.salesAssistantRetryCount || 0) + 1;
     
-    // Začni měřit čas session
-    if (typeof sessionStartTime !== 'undefined') {
-        sessionStartTime = Date.now();
-        console.log('✅ Session timer started');
-    } else {
-        console.warn('⚠️ sessionStartTime není definována');
-        // Definuj globálně
-        window.sessionStartTime = Date.now();
+    // Try multiple loading strategies
+    const loadingStrategies = [
+        () => loadScriptWithPromise('sales-assistant.js'),
+        () => loadScriptWithCallback('sales-assistant.js'),
+        () => loadScriptWithFetch('sales-assistant.js')
+    ];
+    
+    async function tryLoadingStrategies() {
+        for (let i = 0; i < loadingStrategies.length; i++) {
+            try {
+                console.log(`🔄 Zkouším strategii ${i + 1}/${loadingStrategies.length}`);
+                await loadingStrategies[i]();
+                
+                // Verify loading
+                if (typeof createSalesAssistantModal !== 'undefined') {
+                    console.log('✅ Sales assistant úspěšně načten');
+                    setTimeout(() => openSalesAssistant(originalEvent), 100);
+                    return;
+                }
+            } catch (error) {
+                console.log(`❌ Strategie ${i + 1} selhala:`, error.message);
+            }
+        }
+        
+        console.error('❌ Všechny strategie načítání selhaly');
+        showFallbackMessage();
     }
     
-    // Vytvoř prodejní asistent modal
+    tryLoadingStrategies();
+}
+
+// Script loading strategies
+function loadScriptWithPromise(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+        
+        // Timeout after 5 seconds
+        setTimeout(() => reject(new Error('Promise timeout')), 5000);
+    });
+}
+
+function loadScriptWithCallback(src) {
+    return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = false; // Different approach
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+        
+        setTimeout(() => reject(new Error('Callback timeout')), 5000);
+    });
+}
+
+async function loadScriptWithFetch(src) {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error('Fetch failed');
+    
+    const scriptText = await response.text();
+    const script = document.createElement('script');
+    script.textContent = scriptText;
+    document.head.appendChild(script);
+}
+
+// Enhanced modal creation
+function createModalWithFallbacks() {
     try {
-        if (!document.getElementById('salesAssistantModal')) {
+        const existingModal = document.getElementById('salesAssistantModal');
+        
+        if (!existingModal) {
             console.log('🔧 Vytvářím nový modal');
             createSalesAssistantModal();
         } else {
             console.log('🔧 Modal již existuje - obnovuji obsah');
-            // Resetuj obsah modalu na začátek (výběr scénářů)
-            const modalBody = document.getElementById('salesModalBody');
-            if (modalBody && typeof renderScenarioSelection !== 'undefined') {
-                modalBody.innerHTML = renderScenarioSelection();
-                console.log('✅ Obsah modalu obnoven');
-            }
+            resetExistingModal(existingModal);
         }
         
-        // Resetuj stav pro novou session
-        if (typeof currentSalesSession !== 'undefined') {
-            currentSalesSession = null;
-        }
-        if (typeof currentScenario !== 'undefined') {
-            currentScenario = null;
-        }
+        // Reset global state
+        resetGlobalState();
         
-        const modal = document.getElementById('salesAssistantModal');
-        if (modal) {
-            modal.style.display = 'flex';
-            console.log('✅ Modal zobrazený s čistým obsahem');
-        } else {
-            throw new Error('Modal se nepodařilo vytvořit');
-        }
-    } catch (error) {
-        console.error('❌ Chyba při vytváření modalu:', error);
-        alert('Chyba při otevírání prodejního asistenta: ' + error.message);
+        // Show modal with enhanced error handling
+        return showModalWithFallbacks();
+        
+    } catch (modalError) {
+        console.error('❌ Chyba při vytváření modalu:', modalError);
+        return createFallbackModal();
     }
+}
+
+// Reset existing modal
+function resetExistingModal(modal) {
+    try {
+        const modalBody = document.getElementById('salesModalBody');
+        if (modalBody && typeof renderScenarioSelection !== 'undefined') {
+            modalBody.innerHTML = renderScenarioSelection();
+            console.log('✅ Obsah modalu obnoven');
+        } else {
+            console.warn('⚠️ Nelze obnovit obsah modalu');
+        }
+    } catch (resetError) {
+        console.error('❌ Chyba při resetování modalu:', resetError);
+        // Force recreate modal
+        modal.remove();
+        createSalesAssistantModal();
+    }
+}
+
+// Reset global state
+function resetGlobalState() {
+    try {
+        if (typeof window.currentSalesSession !== 'undefined') {
+            window.currentSalesSession = null;
+        }
+        if (typeof window.currentScenario !== 'undefined') {
+            window.currentScenario = null;
+        }
+    } catch (stateError) {
+        console.warn('⚠️ Chyba při resetování stavu:', stateError);
+    }
+}
+
+// Show modal with fallbacks
+function showModalWithFallbacks() {
+    const modal = document.getElementById('salesAssistantModal');
+    
+    if (!modal) {
+        console.error('❌ Modal element nenalezen');
+        return createFallbackModal();
+    }
+    
+    try {
+        // Enhanced display for Chrome
+        modal.style.cssText = `
+            display: flex !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            z-index: 9999 !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 1rem !important;
+        `;
+        
+        // Force reflow for Chrome
+        modal.offsetHeight;
+        
+        console.log('✅ Modal zobrazený s enhanced styly');
+        return true;
+        
+    } catch (displayError) {
+        console.error('❌ Chyba při zobrazování modalu:', displayError);
+        return createFallbackModal();
+    }
+}
+
+// Fallback modal for emergency cases
+function createFallbackModal() {
+    console.log('🚨 Vytvářím fallback modal');
+    
+    const fallbackHTML = `
+        <div style="
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: rgba(0,0,0,0.8) !important;
+            z-index: 999999 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        " id="fallbackModal">
+            <div style="
+                background: white !important;
+                padding: 2rem !important;
+                border-radius: 15px !important;
+                max-width: 400px !important;
+                text-align: center !important;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3) !important;
+            ">
+                <h2 style="color: #333 !important; margin-bottom: 1rem !important;">
+                    Prodejní asistent
+                </h2>
+                <p style="color: #666 !important; margin-bottom: 1.5rem !important;">
+                    Načítání prodejního asistenta...
+                </p>
+                <button onclick="closeFallbackModal()" style="
+                    background: #ff1493 !important;
+                    color: white !important;
+                    border: none !important;
+                    padding: 0.75rem 1.5rem !important;
+                    border-radius: 25px !important;
+                    cursor: pointer !important;
+                    font-weight: 600 !important;
+                ">
+                    Zavřít
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', fallbackHTML);
+    
+    // Auto-retry after 3 seconds
+    setTimeout(() => {
+        const fallback = document.getElementById('fallbackModal');
+        if (fallback && typeof createSalesAssistantModal !== 'undefined') {
+            fallback.remove();
+            openSalesAssistant(null);
+        }
+    }, 3000);
+}
+
+// Close fallback modal
+window.closeFallbackModal = function() {
+    const fallback = document.getElementById('fallbackModal');
+    if (fallback) fallback.remove();
+};
+
+// Fallback message for critical errors
+function showFallbackMessage() {
+    alert(`❌ Prodejní asistent se nepodařilo načíst.
+
+Možná řešení:
+1. Obnovte stránku (Ctrl+F5)
+2. Vypněte rozšíření prohlížeče
+3. Zkuste jiný prohlížeč
+4. Kontaktujte administrátora
+
+Browser: ${navigator.userAgent.includes('Chrome') ? 'Chrome ' + (navigator.userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Unknown') : 'Other'}`);
 }
 
 // Inicializace při načtení stránky
