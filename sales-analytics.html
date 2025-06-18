@@ -304,8 +304,11 @@
             }
             
             .admin-btn {
-                font-size: 0.75rem !important;
-                padding: 0.5rem !important;
+                font-size: 0.7rem !important;
+                padding: 0.4rem !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             
             /* Scenario modal na mobilu */
@@ -402,7 +405,7 @@
                                 </div>
                             </div>
                             
-                            <!-- Admin akce -->
+                            <!-- Základní akce -->
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
                                 <button class="filter-btn admin-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3; font-size: 0.8rem; padding: 0.6rem;">
                                     🔄 Obnovit data
@@ -412,6 +415,9 @@
                                 </button>
                                 <button class="filter-btn admin-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757; font-size: 0.8rem; padding: 0.6rem;">
                                     🗑️ Smazat data
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="showDeleteStoreDataModal()" style="background: #e74c3c; border-color: #e74c3c; font-size: 0.8rem; padding: 0.6rem;">
+                                    🏪 Smazat prodejnu
                                 </button>
                             </div>
                             
@@ -2235,6 +2241,279 @@
                 btn.disabled = false;
                 btn.style.background = '#ff9500';
             }, 3000);
+        }
+
+        // Modal pro smazání dat podle prodejny
+        function showDeleteStoreDataModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 10000; display: flex; 
+                align-items: center; justify-content: center; padding: 1rem;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: var(--bg-primary, #ffffff); border-radius: 15px; padding: 2rem; 
+                    max-width: 500px; width: 100%; border: 1px solid rgba(255,255,255,0.1);
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+                ">
+                    <h3 style="color: var(--text-primary, #333); margin: 0 0 1.5rem 0; text-align: center;">
+                        🏪 Smazat data prodejny
+                    </h3>
+                    
+                    <div style="margin-bottom: 2rem;">
+                        <h4 style="color: var(--primary-color, #ff1493); margin-bottom: 1rem;">Vyberte prodejnu:</h4>
+                        
+                        <div style="display: block; max-height: 300px; overflow-y: auto;" id="store-delete-options">
+                            ${availableStores.map(store => `
+                                <div class="store-radio-option" data-value="${store}" style="
+                                    display: flex; align-items: center; gap: 0.75rem; cursor: pointer; 
+                                    padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; 
+                                    margin-bottom: 0.75rem; border: 2px solid transparent; transition: all 0.3s ease;
+                                ">
+                                    <div class="radio-circle" style="
+                                        width: 18px; height: 18px; border: 2px solid #ccc; border-radius: 50%; 
+                                        position: relative; background: white;
+                                    ">
+                                        <div class="radio-dot" style="
+                                            width: 8px; height: 8px; background: #ff1493; border-radius: 50%; 
+                                            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                                            opacity: 0; transition: opacity 0.3s ease;
+                                        "></div>
+                                    </div>
+                                    <span style="color: var(--text-primary, #333); font-weight: 500;">🏪 ${store}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <div id="selected-store-info" style="
+                            margin-top: 1rem; padding: 0.75rem; background: rgba(33, 150, 243, 0.1); 
+                            border-radius: 8px; border-left: 4px solid #2196F3; display: none;
+                        ">
+                            <span style="color: #2196F3; font-weight: 500;">🏪 Vybraná prodejna: </span>
+                            <span id="selected-store-text" style="color: var(--text-primary, #333);"></span>
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button onclick="closeDeleteStoreModal()" style="
+                            background: rgba(255,255,255,0.1); color: var(--text-primary, #333); 
+                            border: 1px solid rgba(255,255,255,0.2); padding: 0.75rem 1.5rem; 
+                            border-radius: 8px; cursor: pointer; font-weight: 500;
+                        ">Zrušit</button>
+                        
+                        <button id="confirm-delete-store-btn" onclick="confirmDeleteStoreData(this)" style="
+                            background: #cccccc; color: #666666; border: none; 
+                            padding: 0.75rem 1.5rem; border-radius: 8px; cursor: not-allowed; font-weight: 600;
+                        " disabled>🗑️ Smazat prodejnu</button>
+                    </div>
+                </div>
+            `;
+            
+            modal.className = 'modal';
+            modal.id = 'delete-store-modal';
+            document.body.appendChild(modal);
+            
+            // Přidej event listenery pro radio buttony
+            const radioOptions = modal.querySelectorAll('.store-radio-option');
+            let selectedStore = null;
+            
+            radioOptions.forEach(option => {
+                // Hover efekt
+                option.addEventListener('mouseenter', function() {
+                    if (selectedStore !== this.dataset.value) {
+                        this.style.background = 'rgba(255,255,255,0.1)';
+                    }
+                });
+                
+                option.addEventListener('mouseleave', function() {
+                    if (selectedStore !== this.dataset.value) {
+                        this.style.background = 'rgba(255,255,255,0.05)';
+                    }
+                });
+                
+                option.addEventListener('click', function() {
+                    // Odznač všechny ostatní
+                    radioOptions.forEach(opt => {
+                        opt.style.borderColor = 'transparent';
+                        opt.style.background = 'rgba(255,255,255,0.05)';
+                        const dot = opt.querySelector('.radio-dot');
+                        if (dot) dot.style.opacity = '0';
+                    });
+                    
+                    // Označ aktuální
+                    this.style.borderColor = '#e74c3c';
+                    this.style.background = 'rgba(231, 76, 60, 0.1)';
+                    const dot = this.querySelector('.radio-dot');
+                    if (dot) {
+                        dot.style.opacity = '1';
+                        dot.style.background = '#e74c3c';
+                    }
+                    
+                    selectedStore = this.dataset.value;
+                    
+                    // Aktualizuj info a tlačítko
+                    const infoDiv = modal.querySelector('#selected-store-info');
+                    const textSpan = modal.querySelector('#selected-store-text');
+                    const deleteBtn = modal.querySelector('#confirm-delete-store-btn');
+                    
+                    if (infoDiv && textSpan && deleteBtn) {
+                        infoDiv.style.display = 'block';
+                        textSpan.textContent = selectedStore;
+                        
+                        deleteBtn.disabled = false;
+                        deleteBtn.style.cursor = 'pointer';
+                        deleteBtn.style.background = '#e74c3c';
+                        deleteBtn.style.color = 'white';
+                    }
+                    
+                    console.log('🏪 Vybraná prodejna:', selectedStore);
+                });
+            });
+            
+            // Zavření na klik mimo
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.remove();
+            });
+            
+            // Ulož selected store pro pozdější použití
+            modal.selectedStore = null;
+            modal.getSelectedStore = () => selectedStore;
+        }
+
+        // Zavření delete store modalu
+        function closeDeleteStoreModal() {
+            const modal = document.getElementById('delete-store-modal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        // Potvrzení smazání dat prodejny
+        async function confirmDeleteStoreData(btn) {
+            const modal = document.getElementById('delete-store-modal');
+            const selectedStore = modal ? modal.getSelectedStore() : null;
+            
+            console.log('🏪 Attempting delete store data for:', selectedStore);
+            
+            if (!selectedStore) {
+                alert('Prosím vyberte prodejnu pro smazání.');
+                return;
+            }
+            
+            if (!confirm(`Opravdu chcete smazat VŠECHNA DATA pro prodejnu "${selectedStore}"?\n\nTato akce je nevratná!`)) {
+                return;
+            }
+            
+            btn.textContent = '⏳ Mazání...';
+            btn.disabled = true;
+            
+            try {
+                const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
+                
+                // Filtruj data - ponech jen ty, které NEJSOU z vybrané prodejny
+                const filteredData = localData.filter(session => {
+                    const sessionStore = session.store || session.prodejna || 'Neznámá prodejna';
+                    return sessionStore !== selectedStore;
+                });
+                
+                const deletedCount = localData.length - filteredData.length;
+                
+                console.log(`🏪 Nalezeno ${deletedCount} sessions pro prodejnu "${selectedStore}"`);
+                
+                if (deletedCount === 0) {
+                    alert(`Žádná data pro prodejnu "${selectedStore}" nebyla nalezena.`);
+                    btn.textContent = '🗑️ Smazat prodejnu';
+                    btn.disabled = false;
+                    return;
+                }
+                
+                // 1. Ulož filtrovaná data lokálně
+                localStorage.setItem('sales_sessions', JSON.stringify(filteredData));
+                
+                console.log(`🗑️ Lokálně smazáno: ${deletedCount} sessions pro prodejnu "${selectedStore}"`);
+                console.log(`📊 Lokálně zůstává: ${filteredData.length} sessions`);
+                
+                // 2. Synchronizuj se serverem - smaž sessions z vybrané prodejny
+                btn.textContent = '🌐 Sync se serverem...';
+                
+                try {
+                    console.log('🌐 Mažu data prodejny na serveru...');
+                    
+                    // Najdi sessions k smazání (ty co jsou z vybrané prodejny)
+                    const sessionsToDelete = localData.filter(session => {
+                        const sessionStore = session.store || session.prodejna || 'Neznámá prodejna';
+                        return sessionStore === selectedStore;
+                    });
+                    
+                    console.log('🗑️ Mažu', sessionsToDelete.length, 'sessions prodejny na serveru');
+                    
+                    let serverDeletedCount = 0;
+                    let serverErrors = 0;
+                    
+                    // Maž sessions pomocí server API
+                    for (const session of sessionsToDelete) {
+                        try {
+                            const sessionId = session.id || session.timestamp;
+                            
+                            const deleteResponse = await fetch(`/api/sales-data?id=${encodeURIComponent(sessionId)}`, {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' }
+                            });
+                            
+                            if (deleteResponse.ok) {
+                                serverDeletedCount++;
+                                console.log(`✅ Smazána session ${sessionId} prodejny "${selectedStore}"`);
+                            } else {
+                                serverErrors++;
+                                console.warn(`⚠️ Nepodařilo se smazat session ${sessionId}:`, deleteResponse.status);
+                            }
+                        } catch (deleteError) {
+                            serverErrors++;
+                            console.warn('⚠️ Chyba při mazání session:', deleteError);
+                        }
+                    }
+                    
+                    // Zobraz výsledek mazání
+                    if (serverDeletedCount === sessionsToDelete.length) {
+                        btn.textContent = '✅ Prodejna smazána';
+                        btn.style.background = '#2ed573';
+                        console.log(`✅ Všechny sessions prodejny "${selectedStore}" úspěšně smazány na serveru`);
+                    } else if (serverDeletedCount > 0) {
+                        btn.textContent = `⚠️ Částečně smazáno (${serverDeletedCount}/${sessionsToDelete.length})`;
+                        btn.style.background = '#ff9500';
+                        console.log(`⚠️ Částečně úspěšné mazání prodejny: ${serverDeletedCount} úspěšných, ${serverErrors} chyb`);
+                    } else {
+                        btn.textContent = '❌ Server mazání selhalo';
+                        btn.style.background = '#ff4757';
+                        console.log(`❌ Mazání prodejny na serveru selhalo: ${serverErrors} chyb`);
+                    }
+                    
+                } catch (serverError) {
+                    console.error('❌ Server sync error:', serverError);
+                    btn.textContent = '⚠️ Server error - data smazána lokálně';
+                    btn.style.background = '#ff9500';
+                }
+                
+                // 3. Aktualizuj UI
+                loadAvailableStores();
+                loadAnalytics();
+                
+                // Zavři modal
+                closeDeleteStoreModal();
+                
+                // Zobraz výsledek
+                setTimeout(() => {
+                    alert(`✅ Prodejna "${selectedStore}" byla smazána!\n\nSmazáno ${deletedCount} záznamů.\n${filteredData.length} záznamů zůstává.`);
+                }, 500);
+                
+            } catch (error) {
+                console.error('❌ Chyba při mazání dat prodejny:', error);
+                btn.textContent = '❌ Chyba při mazání';
+                btn.style.background = '#ff4757';
+                alert('❌ Chyba při mazání dat prodejny!');
+            }
         }
 
         // Modal pro smazání dat
