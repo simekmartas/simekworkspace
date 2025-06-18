@@ -4,33 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Přihlášení - Mobil Maják</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2.0.4">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta name="theme-color" content="#ff1493">
 </head>
-<body class="sidebar-layout">
+<body>
     <header>
-        <!-- Logo pouze na mobilu, jinak skryto -->
-        <a href="index.html" class="logo">MOBIL MAJÁK</a>
-        <div class="header-controls">
-            <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
-            <!-- Theme toggle bude přidán navigation.js -->
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+                </ul>
+            </nav>
         </div>
-        <!-- Skrytá původní nav -->
-        <nav style="display: none;">
-            <ul></ul>
-        </nav>
     </header>
-
-    <!-- Sidebar Navigation -->
-    <nav class="sidebar-nav" id="sidebarNav">
-        <div class="sidebar-logo">MOBIL MAJÁK</div>
-        <ul id="sidebarMenu">
-            <!-- Menu bude načteno JavaScriptem -->
-        </ul>
-    </nav>
 
     <main>
         <section class="hero">
@@ -96,7 +86,7 @@
     <div class="version-info">v2.4.0</div>
 
     <script src="theme-toggle.js"></script>
-    <script src="navigation.js?v=1.0.8"></script>
+    <script src="navigation.js?v=1.0.1"></script>
     <script src="login.js"></script>
 </body>
 </html> 

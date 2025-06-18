@@ -4,30 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mobil Maják - Měsíční</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2.0.4">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 </head>
-<body class="sidebar-layout">
+<body>
     <header>
-        <!-- Logo pouze na mobilu, jinak skryto -->
-        <a href="index.html" class="logo">MOBIL MAJÁK</a>
-        <div class="header-controls">
-            <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
-            <!-- Theme toggle bude přidán navigation.js -->
-        </div>
-        <!-- Skrytá původní nav -->
-        <nav style="display: none;">
-            <ul></ul>
+        <nav>
+            <ul>
+                <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+            </ul>
         </nav>
     </header>
-
-    <!-- Sidebar Navigation -->
-    <nav class="sidebar-nav" id="sidebarNav">
-        <div class="sidebar-logo">MOBIL MAJÁK</div>
-        <ul id="sidebarMenu">
-            <!-- Menu bude načteno JavaScriptem -->
-        </ul>
-    </nav>
     <main>
         <section class="hero">
             <h1>&gt; Mobil Maják - Měsíční_</h1>
@@ -73,7 +60,7 @@
 
     <div class="version-info">&lt; v1.0 &gt;</div>
 
-    <script src="navigation.js?v=1.0.8"></script>
+    <script src="navigation.js?v=1.0.1"></script>
     <script src="simple-data-loader.js"></script>
     <script>
     // Ochrana stránky pro členy

@@ -78,7 +78,7 @@ function updateNavigation() {
                 <li><a href="celkem.html">Celkem</a></li>
             </ul>
         </li>
-        <li><a href="sales-analytics.html">📊 Prodejní analytika</a></li>
+        <li><a href="sales-analytics.html">Analytika</a></li>
         <li><a href="user-profile.html">${userDisplayName}</a></li>
         <li><a href="user-management.html">Správa uživatelů</a></li>
     `;
@@ -248,50 +248,10 @@ function setupDropdownMenus() {
     }
 }
 
-// Hamburger menu pro malé obrazovky
+// Žádné hamburger menu - jednoduché horizontální menu
 function setupHamburgerMenu() {
-    // Přidej hamburger tlačítko, pokud neexistuje
-    let hamburger = document.querySelector('.hamburger');
-    if (!hamburger) {
-        const headerControls = document.querySelector('.header-controls');
-        if (headerControls) {
-            hamburger = document.createElement('button');
-            hamburger.className = 'hamburger';
-            hamburger.innerHTML = '<span></span><span></span><span></span>';
-            headerControls.appendChild(hamburger);
-        }
-    }
-    
-    const nav = document.querySelector('nav');
-    
-    if (!hamburger || !nav) {
-        return;
-    }
-    
-    hamburger.addEventListener('click', function(e) {
-        e.stopPropagation();
-        nav.classList.toggle('active');
-        hamburger.classList.toggle('active');
-        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
-    });
-    
-    document.addEventListener('click', function(e) {
-        if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
-            closeHamburgerMenu();
-        }
-    });
-    
-    nav.addEventListener('click', function(e) {
-        if (e.target.tagName === 'A' && !e.target.classList.contains('dropdown-toggle')) {
-            closeHamburgerMenu();
-        }
-    });
-    
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 700) {
-            closeHamburgerMenu();
-        }
-    });
+    console.log('✅ Menu je vždy horizontální - žádný hamburger');
+    // Hamburger menu je deaktivováno
 }
 
 // Zavření hamburger menu

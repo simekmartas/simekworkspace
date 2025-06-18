@@ -7,7 +7,7 @@
     <!-- Legacy Browser Support First -->
     <script src="legacy-browser-support.js"></script>
     <link rel="stylesheet" href="legacy-browser-styles.css">
-    <link rel="stylesheet" href="styles.css">
+            <link rel="stylesheet" href="styles.css?v=2.0.4">
     <link rel="stylesheet" href="progressive-enhancement.css">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -550,27 +550,18 @@
         }
     </style>
 </head>
-<body class="protected-page sidebar-layout">
+<body>
     <header>
-        <!-- Logo pouze na mobilu, jinak skryto -->
-        <a href="index.html" class="logo">MOBIL MAJÁK</a>
-        <div class="header-controls">
-            <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
-            <!-- Theme toggle bude přidán navigation.js -->
+        <div class="header-content">
+            <a href="index.html" class="logo">Mobil Maják</a>
+            <nav>
+                <ul>
+                    <!-- Navigace bude dynamicky načtena pomocí JavaScriptu -->
+                </ul>
+            </nav>
+            <!-- Theme toggle a hamburger menu budou přidány navigation.js -->
         </div>
-        <!-- Skrytá původní nav -->
-        <nav style="display: none;">
-            <ul></ul>
-        </nav>
     </header>
-
-    <!-- Sidebar Navigation -->
-    <nav class="sidebar-nav" id="sidebarNav">
-        <div class="sidebar-logo">MOBIL MAJÁK</div>
-        <ul id="sidebarMenu">
-            <!-- Menu bude načteno JavaScriptem -->
-        </ul>
-    </nav>
 
     <main>
         <div class="leaderboard-container">
@@ -676,7 +667,7 @@
     <!-- Scripts -->
     <script src="theme-toggle.js"></script>
     <script src="sales-assistant.js"></script>
-    <script src="navigation.js?v=1.0.8"></script>
+    <script src="navigation.js?v=1.0.1"></script>
     <script src="leaderboards-data-loader.js"></script>
     <script src="history-data-manager.js"></script>
     <script src="history-ui-components.js"></script>
