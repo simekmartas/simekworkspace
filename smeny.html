@@ -67,6 +67,69 @@
             margin-bottom: 3rem;
         }
 
+        /* Informační dlaždice dnes/zítra */
+        .today-tomorrow-info {
+            margin-bottom: 2rem;
+        }
+
+        .info-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .info-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-light);
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .info-card.today {
+            border-left: 4px solid #10b981;
+        }
+
+        .info-card.tomorrow {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .info-emoji {
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .info-content {
+            flex-grow: 1;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .info-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+
         .stat-card {
             background: var(--bg-primary);
             border: 1px solid var(--border-light);
@@ -545,6 +608,15 @@
                 grid-template-columns: 1fr;
             }
 
+            .info-cards {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+
+            .info-card {
+                padding: 1rem;
+            }
+
             .time-row {
                 grid-template-columns: 1fr;
             }
@@ -672,6 +744,27 @@
                 </div>
             </div>
 
+            <!-- Informační dlaždice pro konkrétní prodejny -->
+            <div class="today-tomorrow-info" id="todayTomorrowInfo" style="display: none;">
+                <div class="info-cards">
+                    <div class="info-card today">
+                        <div class="info-emoji">📅</div>
+                        <div class="info-content">
+                            <div class="info-label">Dnes má směnu</div>
+                            <div class="info-value" id="todayShifts">Nikdo</div>
+                        </div>
+                    </div>
+                    
+                    <div class="info-card tomorrow">
+                        <div class="info-emoji">🔜</div>
+                        <div class="info-content">
+                            <div class="info-label">Zítra má směnu</div>
+                            <div class="info-value" id="tomorrowShifts">Nikdo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Kalendář -->
             <div class="calendar-container">
                 <div class="calendar-header">
@@ -792,6 +885,7 @@
     </footer>
 
     <!-- Scripts -->
+    <script src="security-manager.js"></script>
     <script src="theme-toggle.js"></script>
     <script src="navigation.js?v=2.0.1"></script>
     <script src="accessibility-enhancements.js"></script>

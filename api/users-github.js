@@ -94,13 +94,29 @@ async function saveUsersToGitHub(users) {
 }
 
 exports.handler = async (event, context) => {
-    // CORS headers
+    // Bezpečnostní CORS headers
+    const origin = event.headers.origin || event.headers.Origin;
+    const allowedOrigins = [
+        'https://mobilmajak.netlify.app',
+        'https://your-domain.netlify.app',
+        'http://localhost:3000' // Pro development
+    ];
+    
     const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Content-Type': 'application/json'
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, X-Session-ID',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Content-Type': 'application/json',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Robots-Tag': 'noindex, nofollow'
     };
+    
+    // Nastavení CORS pouze pro povolené domény
+    if (allowedOrigins.includes(origin) || (process.env.NODE_ENV === 'development' && origin?.includes('localhost'))) {
+        headers['Access-Control-Allow-Origin'] = origin;
+        headers['Access-Control-Allow-Credentials'] = 'true';
+    }
 
     // Handle preflight requests
     if (event.httpMethod === 'OPTIONS') {

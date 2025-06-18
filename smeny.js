@@ -39,6 +39,7 @@ class ShiftsManager {
             
             this.renderCalendar();
             this.updateStats();
+            this.updateTodayTomorrowInfo();
             console.log('✅ Směny systém úspěšně načten');
         } catch (error) {
             console.error('❌ Chyba při inicializaci směn:', error);
@@ -237,12 +238,14 @@ class ShiftsManager {
             this.currentDate.setMonth(this.currentDate.getMonth() - 1);
             this.renderCalendar();
             this.updateStats();
+            this.updateTodayTomorrowInfo();
         });
         
         document.getElementById('nextMonth').addEventListener('click', () => {
             this.currentDate.setMonth(this.currentDate.getMonth() + 1);
             this.renderCalendar();
             this.updateStats();
+            this.updateTodayTomorrowInfo();
         });
         
         // Přidání směny
@@ -266,6 +269,7 @@ class ShiftsManager {
             this.applyStoreFilter();
             this.renderCalendar();
             this.updateStats();
+            this.updateTodayTomorrowInfo();
         });
         
         // Modal události
@@ -437,6 +441,13 @@ class ShiftsManager {
             }
         }
         
+        // Přidej jméno uživatele pokud nejsme ve filtru "Moje směny"
+        if (this.currentStoreFilter !== 'my') {
+            const userName = shift.displayName || shift.username || shift.userId || 'Neznámý';
+            const shortName = this.getShortUserName(userName);
+            display += ` - ${shortName}`;
+        }
+        
         // Přidej označení prodejny pokud je jiná než uživatelova a nejsme ve filtru "Moje směny"
         const shiftStore = shift.prodejna || shift.store;
         if (this.currentStoreFilter === 'my' && shiftStore && shiftStore !== this.userProdejna) {
@@ -456,6 +467,33 @@ class ShiftsManager {
             case 'Hlavní pobočka': return 'HLV';
             default: return storeName.substring(0, 3).toUpperCase();
         }
+    }
+
+    // Zkrácené jméno uživatele pro zobrazení
+    getShortUserName(userName) {
+        if (!userName) return 'N/A';
+        
+        // Speciální jména
+        const nameMap = {
+            'Šimon': 'Šim',
+            'Simon': 'Šim',
+            'Létal': 'Lét',
+            'Martin': 'Mar',
+            'Petra': 'Pet',
+            'Pavel': 'Pav',
+            'Jana': 'Jan',
+            'Tomáš': 'Tom',
+            'Lucie': 'Luc',
+            'David': 'Dav'
+        };
+        
+        // Pokud máme speciální mapping, použij ho
+        if (nameMap[userName]) {
+            return nameMap[userName];
+        }
+        
+        // Jinak vezmi první 3 znaky
+        return userName.substring(0, 3);
     }
 
     // Otevření modalu pro směnu
@@ -532,7 +570,8 @@ class ShiftsManager {
                 note: document.getElementById('shiftNote').value || null,
                 userId: this.userId,
                 sellerId: this.userId,
-                username: localStorage.getItem('username'),
+                username: localStorage.getItem('username') || this.userId,
+                displayName: localStorage.getItem('displayName') || localStorage.getItem('username') || this.userId,
                 prodejna: store, // Uložit vybranou prodejnu
                 store: store, // Pro kompatibilitu
                 created: this.editingShift ? this.editingShift.created : new Date().toISOString(),
@@ -541,22 +580,8 @@ class ShiftsManager {
             
             console.log('💾 Ukládám směnu:', shiftData);
             
-            // Uložit
+            // Uložit na server (který zároveň aktualizuje this.allShifts)
             await this.saveShift(shiftData);
-            
-            // Aktualizuj lokální data
-            if (this.editingShift) {
-                // Aktualizuj v allShifts
-                const allIndex = this.allShifts.findIndex(s => s.id === this.editingShift.id);
-                if (allIndex !== -1) {
-                    this.allShifts[allIndex] = shiftData;
-                } else {
-                    this.allShifts.push(shiftData);
-                }
-            } else {
-                // Přidej do allShifts
-                this.allShifts.push(shiftData);
-            }
             
             // Aplikuj filtr aby se aktualizoval this.shifts
             this.applyStoreFilter();
@@ -565,6 +590,7 @@ class ShiftsManager {
             this.closeShiftModal();
             this.renderCalendar();
             this.updateStats();
+            this.updateTodayTomorrowInfo();
             
             this.showSuccess('Směna byla úspěšně uložena');
             
@@ -592,6 +618,7 @@ class ShiftsManager {
             this.closeShiftModal();
             this.renderCalendar();
             this.updateStats();
+            this.updateTodayTomorrowInfo();
             
             this.showSuccess('Směna byla smazána');
             
@@ -862,6 +889,66 @@ class ShiftsManager {
             console.error('❌ Chyba při synchronizaci se serverem:', error);
             this.showError('Chyba při synchronizaci: ' + error.message);
         }
+    }
+
+    // Aktualizace informací o dnešních a zítřejších směnách
+    updateTodayTomorrowInfo() {
+        const todayTomorrowInfo = document.getElementById('todayTomorrowInfo');
+        
+        // Zobraz jen u konkrétních prodejen (ne "Moje směny" nebo "Všechny prodejny")
+        if (this.currentStoreFilter === 'my' || this.currentStoreFilter === 'all') {
+            todayTomorrowInfo.style.display = 'none';
+            return;
+        }
+        
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        const todayString = this.formatDateString(today);
+        const tomorrowString = this.formatDateString(tomorrow);
+        
+        // Najdi směny pro dnes a zítra pro vybranou prodejnu
+        const todayShifts = this.allShifts.filter(shift => {
+            const shiftStore = shift.prodejna || shift.store;
+            return shift.date === todayString && 
+                   shiftStore === this.currentStoreFilter && 
+                   shift.type !== 'off' && shift.type !== 'vacation';
+        });
+        
+        const tomorrowShifts = this.allShifts.filter(shift => {
+            const shiftStore = shift.prodejna || shift.store;
+            return shift.date === tomorrowString && 
+                   shiftStore === this.currentStoreFilter && 
+                   shift.type !== 'off' && shift.type !== 'vacation';
+        });
+        
+        // Aktualizuj zobrazení
+        const todayElement = document.getElementById('todayShifts');
+        const tomorrowElement = document.getElementById('tomorrowShifts');
+        
+        if (todayShifts.length > 0) {
+            const names = todayShifts.map(shift => 
+                shift.displayName || shift.username || shift.userId || 'Neznámý'
+            ).join(', ');
+            todayElement.textContent = names;
+        } else {
+            todayElement.textContent = 'Nikdo';
+        }
+        
+        if (tomorrowShifts.length > 0) {
+            const names = tomorrowShifts.map(shift => 
+                shift.displayName || shift.username || shift.userId || 'Neznámý'
+            ).join(', ');
+            tomorrowElement.textContent = names;
+        } else {
+            tomorrowElement.textContent = 'Nikdo';
+        }
+        
+        // Zobraz dlaždice
+        todayTomorrowInfo.style.display = 'block';
+        
+        console.log(`📅 Aktualizace info dlaždic pro ${this.currentStoreFilter}: Dnes=${todayShifts.length}, Zítra=${tomorrowShifts.length}`);
     }
 
     // Utility funkce

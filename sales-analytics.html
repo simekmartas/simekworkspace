@@ -334,6 +334,24 @@
             .scenario-modal .session-card {
                 padding: 1rem !important;
             }
+            
+            /* Zákaznické kartičky na mobilu */
+            .customer-card-detail {
+                padding: 1rem !important;
+                min-width: auto !important;
+            }
+            
+            .customer-card-detail div[style*="font-size: 4rem"] {
+                font-size: 2.5rem !important;
+            }
+            
+            .customer-card-detail div[style*="font-size: 3rem"] {
+                font-size: 2rem !important;
+            }
+            
+            .customer-card-detail div[style*="font-size: 1.5rem"] {
+                font-size: 1.2rem !important;
+            }
         }
     </style>
 </head>
@@ -462,6 +480,7 @@
         </div>
     </footer>
 
+    <script src="security-manager.js"></script>
     <script src="theme-toggle.js"></script>
     <script src="sales-assistant.js"></script>
     <script src="navigation.js?v=1.0.1"></script>
@@ -1197,6 +1216,12 @@
                     </div>
                 </div>
 
+                <!-- Detailní zákaznické kartičky -->
+                <h2 class="section-title">💳 Přehled zákaznických kartiček</h2>
+                <div class="chart-container">
+                    ${renderDetailedCustomerCards(stats.cardStats, stats.totalSessions, stats.successfulSales)}
+                </div>
+
                 <!-- Výkonnost prodejen -->
                 ${stats.storeStats && Object.keys(stats.storeStats).length > 0 ? `
                 <h2 class="section-title">🏪 Výkonnost prodejen</h2>
@@ -1498,6 +1523,118 @@
                         <div style="font-size: 2.5rem; color: #ff1493; margin-bottom: 1rem;">${cardStats.hadCard + cardStats.newCards}</div>
                         <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Celkem s kartičkou</div>
                         <div style="color: var(--text-secondary); font-size: 0.9rem;">Po dokončení prodeje</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Detailní přehled zákaznických kartiček
+        function renderDetailedCustomerCards(cardStats, totalSessions, successfulSales) {
+            const conversionWithCard = cardStats.hadCard > 0 && successfulSales > 0 ? 
+                ((cardStats.hadCard / successfulSales) * 100).toFixed(1) : 0;
+            const newCardConversion = cardStats.newCards > 0 && successfulSales > 0 ? 
+                ((cardStats.newCards / successfulSales) * 100).toFixed(1) : 0;
+            const totalCardsAfterSale = cardStats.hadCard + cardStats.newCards;
+            const cardCoveragePercent = totalSessions > 0 ? 
+                ((cardStats.totalWithCardData / totalSessions) * 100).toFixed(1) : 0;
+            const averageNewCardsPerSale = successfulSales > 0 ? 
+                (cardStats.newCards / successfulSales).toFixed(2) : 0;
+
+            return `
+                <div style="background: linear-gradient(135deg, rgba(108, 92, 231, 0.05) 0%, rgba(255, 20, 147, 0.05) 100%); border-radius: 20px; padding: 2rem; border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <!-- Hlavní přehled kartiček -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+                        <!-- Existující kartičky -->
+                        <div class="customer-card-detail" style="
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white; border-radius: 15px; padding: 2rem; text-align: center;
+                            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+                        ">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">👤</div>
+                            <div style="font-size: 3rem; font-weight: 700; margin-bottom: 0.5rem;">${cardStats.hadCard}</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">Existující zákazníci</div>
+                            <div style="opacity: 0.9; font-size: 0.9rem; margin-bottom: 1rem;">Již měli zákaznickou kartičku</div>
+                            <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 0.5rem;">
+                                <div style="font-size: 0.8rem; opacity: 0.9;">Z úspěšných prodejů</div>
+                                <div style="font-size: 1.5rem; font-weight: 600;">${conversionWithCard}%</div>
+                            </div>
+                        </div>
+
+                        <!-- Nové kartičky -->
+                        <div class="customer-card-detail" style="
+                            background: linear-gradient(135deg, #2ed573 0%, #20bf6b 100%);
+                            color: white; border-radius: 15px; padding: 2rem; text-align: center;
+                            box-shadow: 0 8px 25px rgba(46, 213, 115, 0.3);
+                        ">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">💳</div>
+                            <div style="font-size: 3rem; font-weight: 700; margin-bottom: 0.5rem;">${cardStats.newCards}</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">Nové kartičky</div>
+                            <div style="opacity: 0.9; font-size: 0.9rem; margin-bottom: 1rem;">Založeno během prodeje</div>
+                            <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 0.5rem;">
+                                <div style="font-size: 0.8rem; opacity: 0.9;">Z úspěšných prodejů</div>
+                                <div style="font-size: 1.5rem; font-weight: 600;">${newCardConversion}%</div>
+                            </div>
+                        </div>
+
+                        <!-- Celkový přehled -->
+                        <div class="customer-card-detail" style="
+                            background: linear-gradient(135deg, #ff9500 0%, #ff6b6b 100%);
+                            color: white; border-radius: 15px; padding: 2rem; text-align: center;
+                            box-shadow: 0 8px 25px rgba(255, 149, 0, 0.3);
+                        ">
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">🎯</div>
+                            <div style="font-size: 3rem; font-weight: 700; margin-bottom: 0.5rem;">${totalCardsAfterSale}</div>
+                            <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">Zákazníci s kartičkou</div>
+                            <div style="opacity: 0.9; font-size: 0.9rem; margin-bottom: 1rem;">Po dokončení prodeje</div>
+                            <div style="background: rgba(255,255,255,0.2); border-radius: 8px; padding: 0.5rem;">
+                                <div style="font-size: 0.8rem; opacity: 0.9;">Pokrytí zákaznické báze</div>
+                                <div style="font-size: 1.5rem; font-weight: 600;">${cardStats.hadCardPercent}%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailní analýza -->
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.1);">
+                        <h4 style="color: var(--primary-color); margin: 0 0 1.5rem 0; text-align: center; font-size: 1.1rem;">
+                            📊 Detailní analýza zákaznických kartiček
+                        </h4>
+                        
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                            <!-- Pokrytí dotazů -->
+                            <div style="text-align: center; padding: 1rem; background: rgba(108, 92, 231, 0.1); border-radius: 10px; border: 1px solid rgba(108, 92, 231, 0.2);">
+                                <div style="color: #6c5ce7; font-size: 2rem; margin-bottom: 0.5rem;">📝</div>
+                                <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.25rem;">Pokrytí dotazů</div>
+                                <div style="color: #6c5ce7; font-size: 1.5rem; font-weight: 700;">${cardCoveragePercent}%</div>
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">${cardStats.totalWithCardData}/${totalSessions} sessions</div>
+                            </div>
+
+                            <!-- Průměr nových kartiček -->
+                            <div style="text-align: center; padding: 1rem; background: rgba(46, 213, 115, 0.1); border-radius: 10px; border: 1px solid rgba(46, 213, 115, 0.2);">
+                                <div style="color: #2ed573; font-size: 2rem; margin-bottom: 0.5rem;">📈</div>
+                                <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.25rem;">Průměr nových/prodej</div>
+                                <div style="color: #2ed573; font-size: 1.5rem; font-weight: 700;">${averageNewCardsPerSale}</div>
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">kartiček na úspěšný prodej</div>
+                            </div>
+
+                            <!-- Úspěšnost nabídky -->
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 152, 0, 0.1); border-radius: 10px; border: 1px solid rgba(255, 152, 0, 0.2);">
+                                <div style="color: #ff9800; font-size: 2rem; margin-bottom: 0.5rem;">🎯</div>
+                                <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.25rem;">Úspěšnost nabídky</div>
+                                <div style="color: #ff9800; font-size: 1.5rem; font-weight: 700;">
+                                    ${cardStats.totalWithCardData > cardStats.hadCard ? 
+                                        (((cardStats.newCards / (cardStats.totalWithCardData - cardStats.hadCard)) * 100).toFixed(1)) : '0'}%
+                                </div>
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">zákazníků bez kartičky souhlasilo</div>
+                            </div>
+
+                            <!-- Retention potenciál -->
+                            <div style="text-align: center; padding: 1rem; background: rgba(255, 20, 147, 0.1); border-radius: 10px; border: 1px solid rgba(255, 20, 147, 0.2);">
+                                <div style="color: #ff1493; font-size: 2rem; margin-bottom: 0.5rem;">💎</div>
+                                <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.25rem;">Loajální zákazníci</div>
+                                <div style="color: #ff1493; font-size: 1.5rem; font-weight: 700;">${cardStats.hadCard}</div>
+                                <div style="color: var(--text-secondary); font-size: 0.8rem;">opakovaní návštěvníci</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
