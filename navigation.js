@@ -1,3 +1,6 @@
+// Navigation.js - Cache Buster Version 1.0.1
+console.log('🔄 Navigation.js načten - verze 1.0.1 - ' + new Date().toISOString());
+
 // Minimalistické menu systém
 console.log('🧭 Navigation.js se načítá...');
 
@@ -35,41 +38,13 @@ function updateNavigation() {
         <li><a href="prodejny.html">Prodejny</a></li>
     `;
     
-    // Plus tlačítko pro všechny přihlášené uživatele - Chrome optimized
+    // Normální menu tlačítko pro prodejního asistenta - DEBUG
     const salesAssistantButton = `
-        <li><a href="#" 
-               onclick="openSalesAssistant(event)" 
-               class="sales-assistant-button"
-               data-role="sales-assistant"
-               style="
-                   background: linear-gradient(135deg, #ff1493, #e91e63) !important; 
-                   color: white !important; 
-                   border-radius: 50% !important; 
-                   width: 40px !important; 
-                   height: 40px !important; 
-                   font-weight: 600 !important; 
-                   text-decoration: none !important; 
-                   display: inline-flex !important; 
-                   align-items: center !important; 
-                   justify-content: center !important; 
-                   font-size: 1.2rem !important; 
-                   box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3) !important; 
-                   transition: all 0.3s ease !important;
-                   -webkit-appearance: none !important;
-                   appearance: none !important;
-                   -webkit-user-select: none !important;
-                   user-select: none !important;
-                   cursor: pointer !important;
-                   position: relative !important;
-                   z-index: 1000 !important;
-                   will-change: transform !important;
-                   -webkit-transform: translateZ(0) !important;
-                   transform: translateZ(0) !important;
-               " 
-               title="Prodejní asistent" 
-               onmouseover="this.style.transform='scale(1.1) translateZ(0)'; this.style.boxShadow='0 8px 25px rgba(255, 20, 147, 0.4)'" 
-               onmouseout="this.style.transform='scale(1) translateZ(0)'; this.style.boxShadow='0 4px 15px rgba(255, 20, 147, 0.3)'">➕</a></li>
+        <li><a href="#" onclick="openSalesAssistant(event)">Nový zákazník</a></li>
     `;
+    
+    console.log('🔄 DEBUG: salesAssistantButton vytvořeno:', salesAssistantButton);
+    console.log('🔄 DEBUG: isLoggedIn:', isLoggedIn, 'userRole:', userRole);
     
     // Prodejce menu - čisté a jednoduché
     const prodejceItems = `
