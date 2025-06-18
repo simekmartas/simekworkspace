@@ -1,5 +1,5 @@
-// Navigation.js - Cache Buster Version 1.0.8 - SIDEBAR MOBILE FIX
-console.log('🔄 Navigation.js načten - verze 1.0.8 - SIDEBAR MOBILE FIX - ' + new Date().toISOString());
+// Navigation.js - Cache Buster Version 1.0.4 - LOGOUT MOVED TO HEADER
+console.log('🔄 Navigation.js načten - verze 1.0.4 - LOGOUT PŘESUNUT DO HEADER - ' + new Date().toISOString());
 
 // Minimalistické menu systém
 console.log('🧭 Navigation.js se načítá...');
@@ -7,10 +7,10 @@ console.log('🧭 Navigation.js se načítá...');
 function updateNavigation() {
     console.log('🔧 updateNavigation() spuštěna');
     
-    // SIDEBAR LAYOUT: Detekce sidebar verze (nyní defaultní)
-    const isSidebarLayout = document.body.classList.contains('sidebar-layout') || document.querySelector('.sidebar-nav');
-    if (isSidebarLayout) {
-        console.log('🎯 SIDEBAR LAYOUT DETEKOVÁN - používám sidebar logiku');
+    // SIDEBAR TEST: Detekce sidebar verze
+    const isSidebarTest = document.body.classList.contains('sidebar-test');
+    if (isSidebarTest) {
+        console.log('🎯 SIDEBAR TEST DETEKOVÁN - používám sidebar logiku');
         return updateSidebarNavigation();
     }
     
@@ -248,131 +248,10 @@ function setupDropdownMenus() {
     }
 }
 
-// Jednoduché hamburger menu
+// Menu setup - pouze dropdown funkcionality
 function setupHamburgerMenu() {
-    // Přidej hamburger tlačítko, pokud neexistuje
-    let hamburger = document.querySelector('.hamburger');
-    if (!hamburger) {
-        const headerControls = document.querySelector('.header-controls');
-        if (headerControls) {
-            hamburger = document.createElement('button');
-            hamburger.className = 'hamburger';
-            hamburger.innerHTML = '<span></span><span></span><span></span>';
-            headerControls.appendChild(hamburger);
-        }
-    }
-    
-    const nav = document.querySelector('nav');
-    
-    // DEBUG informace
-    console.log('🔍 DEBUG setupHamburgerMenu:');
-    console.log('🍔 Hamburger found:', !!hamburger);
-    console.log('🧭 Nav found:', !!nav);
-    if (nav) {
-        console.log('📝 Nav HTML:', nav.outerHTML.substring(0, 200) + '...');
-        console.log('📍 Nav position:', window.getComputedStyle(nav).position);
-        console.log('👁️ Nav visibility:', window.getComputedStyle(nav).visibility);
-        console.log('🎨 Nav display:', window.getComputedStyle(nav).display);
-    }
-    
-    if (!hamburger || !nav) {
-        console.error('❌ Missing elements - hamburger:', !!hamburger, 'nav:', !!nav);
-        return;
-    }
-    
-    hamburger.addEventListener('click', function(e) {
-        e.stopPropagation();
-        console.log('🍔 Hamburger clicked!');
-        
-        // DEBUG: Force inline styles
-        if (nav.classList.contains('active')) {
-            // Skrýt menu
-            nav.style.cssText = 'position: fixed !important; top: 60px !important; left: 0 !important; right: 0 !important; bottom: 0 !important; background: rgba(255,255,255,0.98) !important; transform: translateX(-100%) !important; z-index: 9999 !important; visibility: hidden !important; opacity: 0 !important;';
-            nav.classList.remove('active');
-        } else {
-            // Zobrazit menu - optimalizováno pro všechny velikosti obrazovek
-            nav.style.cssText = `
-                position: fixed !important; 
-                top: 60px !important; 
-                left: 0 !important; 
-                right: 0 !important; 
-                bottom: 0 !important; 
-                width: 100vw !important;
-                max-width: 100vw !important;
-                height: calc(100vh - 60px) !important;
-                min-height: calc(100vh - 60px) !important;
-                background: rgba(255,255,255,0.98) !important; 
-                transform: translateX(0) !important; 
-                z-index: 9999 !important; 
-                visibility: visible !important; 
-                opacity: 1 !important; 
-                box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important;
-                overflow-y: auto !important;
-                -webkit-overflow-scrolling: touch !important;
-            `.replace(/\s+/g, ' ').trim();
-            
-            // Nastav správné styly na UL a zachovej původní obsah
-            const navUl = nav.querySelector('ul');
-            if (navUl) {
-                // Nastav styly na UL
-                navUl.style.cssText = 'visibility: visible !important; opacity: 1 !important; display: flex !important; flex-direction: column !important; padding: 20px !important; margin: 0 !important; list-style: none !important; background: rgba(255,255,255,0.95) !important; width: 100% !important; height: auto !important;';
-                
-                // Nastav styly na všechny LI elementy
-                const menuItems = navUl.querySelectorAll('li');
-                menuItems.forEach((li, index) => {
-                    li.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; padding: 0 !important; margin: 0 0 10px 0 !important; width: 100% !important;';
-                    
-                    // Nastav styly na odkazy
-                    const link = li.querySelector('a');
-                    if (link) {
-                        link.style.cssText = 'color: #333 !important; font-size: 18px !important; font-weight: 500 !important; text-decoration: none !important; display: block !important; padding: 15px 20px !important; border-radius: 8px !important; background: transparent !important; transition: background 0.2s ease !important;';
-                        
-                        // Přidej hover efekt
-                        link.addEventListener('mouseenter', () => {
-                            link.style.background = 'rgba(255, 20, 147, 0.1) !important';
-                        });
-                        link.addEventListener('mouseleave', () => {
-                            link.style.background = 'transparent !important';
-                        });
-                        
-                        // Přidej click handler pro zavření menu
-                        link.addEventListener('click', () => {
-                            closeHamburgerMenu();
-                        });
-                    }
-                });
-                
-                console.log('✅ Menu styly aplikovány na', menuItems.length, 'položek');
-            } else {
-                console.error('❌ Nav UL element nenalezen!');
-            }
-            
-            nav.classList.add('active');
-        }
-        
-        hamburger.classList.toggle('active');
-        console.log('🔄 Nav classes:', nav.classList);
-        console.log('📱 Nav styles:', nav.style.cssText);
-        document.body.style.overflow = nav.classList.contains('active') ? 'hidden' : '';
-    });
-    
-    document.addEventListener('click', function(e) {
-        if (!nav.contains(e.target) && !hamburger.contains(e.target)) {
-            closeHamburgerMenu();
-        }
-    });
-    
-    nav.addEventListener('click', function(e) {
-        if (e.target.tagName === 'A' && !e.target.classList.contains('dropdown-toggle')) {
-            closeHamburgerMenu();
-        }
-    });
-    
-    window.addEventListener('resize', function() {
-        if (window.innerWidth > 1024) {
-            closeHamburgerMenu();
-        }
-    });
+    // Menu je nyní vždy horizontální s automatickým scrollem
+    console.log('✅ Menu nastaveno jako vždy horizontální - žádné hamburger menu');
 }
 
 // Zavření hamburger menu
@@ -876,11 +755,6 @@ function updateSidebarNavigation() {
         menuContent += `
             <li style="margin-top: auto;"><a href="#" class="logout-btn" onclick="handleSidebarLogout(event)">Odhlásit</a></li>
         `;
-    } else {
-        // Pro nepřihlášené uživatele - přidat login tlačítko
-        menuContent += `
-            <li style="margin-top: auto;"><a href="login.html" class="header-login-btn">Přihlásit</a></li>
-        `;
     }
     
     sidebarMenu.innerHTML = menuContent;
@@ -898,31 +772,23 @@ function setupSidebarThemeToggle() {
     const headerControls = document.querySelector('.header-controls');
     if (!headerControls) return;
     
-    // Odstraň existující prvky
+    // Odstraň existující theme toggle
     const existingToggle = document.querySelector('.theme-toggle');
-    const existingMobileToggle = document.querySelector('.mobile-toggle');
     if (existingToggle) existingToggle.remove();
-    if (existingMobileToggle) existingMobileToggle.remove();
     
-    // Vytvoř mobile toggle (hamburger) pro sidebar
-    const mobileToggle = document.createElement('button');
-    mobileToggle.className = 'mobile-toggle';
-    mobileToggle.innerHTML = '☰';
-    mobileToggle.setAttribute('aria-label', 'Otevřít/zavřít menu');
-    mobileToggle.style.display = 'none'; // Skrýt na desktopu
-    headerControls.appendChild(mobileToggle);
-    
-    // Vytvoř theme toggle
+    // Vytvoř nový theme toggle
     const themeToggle = document.createElement('button');
     themeToggle.className = 'theme-toggle';
     themeToggle.innerHTML = '🌙';
     themeToggle.setAttribute('aria-label', 'Přepnout tmavý/světlý režim');
-    headerControls.appendChild(themeToggle);
     
-    // Event listener pro mobile toggle
-    mobileToggle.addEventListener('click', function() {
-        toggleSidebar();
-    });
+    // Přidej před mobile toggle
+    const mobileToggle = document.querySelector('.mobile-toggle');
+    if (mobileToggle) {
+        headerControls.insertBefore(themeToggle, mobileToggle);
+    } else {
+        headerControls.appendChild(themeToggle);
+    }
     
     // Event listener pro theme toggle
     themeToggle.addEventListener('click', function() {
@@ -939,9 +805,6 @@ function setupSidebarThemeToggle() {
     // Nastavit správnou ikonu podle aktuálního tématu
     const currentTheme = localStorage.getItem('theme') || 'light';
     themeToggle.innerHTML = currentTheme === 'dark' ? '☀️' : '🌙';
-    
-    // Přidat overlay pro mobile sidebar
-    createSidebarOverlay();
 }
 
 function setupSidebarDropdowns() {
@@ -971,59 +834,13 @@ function handleSidebarLogout(event) {
     }
 }
 
-// Vytvořit overlay pro sidebar
-function createSidebarOverlay() {
-    // Odstraň existující overlay
-    const existingOverlay = document.querySelector('.sidebar-overlay');
-    if (existingOverlay) existingOverlay.remove();
-    
-    // Vytvoř nový overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'sidebar-overlay';
-    document.body.appendChild(overlay);
-    
-    // Event listener pro zavření sidebaru klikem na overlay
-    overlay.addEventListener('click', function() {
-        closeSidebar();
-    });
-}
-
 // Globální funkce pro mobile toggle sidebaru
 function toggleSidebar() {
     const sidebar = document.querySelector('.sidebar-nav');
-    const overlay = document.querySelector('.sidebar-overlay');
-    
     if (sidebar) {
-        const isOpen = sidebar.classList.contains('mobile-open');
-        
-        if (isOpen) {
-            closeSidebar();
-        } else {
-            openSidebar();
-        }
-        
-        console.log('📱 Sidebar toggled:', !isOpen ? 'opened' : 'closed');
+        sidebar.classList.toggle('mobile-open');
+        console.log('📱 Sidebar toggled:', sidebar.classList.contains('mobile-open'));
     }
 }
 
-// Otevřít sidebar
-function openSidebar() {
-    const sidebar = document.querySelector('.sidebar-nav');
-    const overlay = document.querySelector('.sidebar-overlay');
-    
-    if (sidebar) sidebar.classList.add('mobile-open');
-    if (overlay) overlay.classList.add('active');
-    document.body.style.overflow = 'hidden'; // Zamknout scrollování
-}
-
-// Zavřít sidebar
-function closeSidebar() {
-    const sidebar = document.querySelector('.sidebar-nav');
-    const overlay = document.querySelector('.sidebar-overlay');
-    
-    if (sidebar) sidebar.classList.remove('mobile-open');
-    if (overlay) overlay.classList.remove('active');
-    document.body.style.overflow = ''; // Obnovit scrollování
-}
-
-console.log('🏁 Navigation.js načten kompletně - v1.0.7 - SIDEBAR LAYOUT AKTIVNÍ'); 
+console.log('🏁 Navigation.js načten kompletně - v1.0.4 + SIDEBAR TEST FUNKCE'); 
