@@ -29,7 +29,10 @@ function createSalesAssistantModal() {
             <div class="sales-modal-content">
                 <div class="sales-modal-header">
                     <h2>Prodejní asistent</h2>
-                    <button class="sales-close-btn" onclick="closeSalesAssistant()">×</button>
+                    <div class="sales-header-buttons">
+                        <button class="sales-end-btn" id="salesEndBtn" onclick="endCurrentScenario()" style="display: none;">KONEC</button>
+                        <button class="sales-close-btn" onclick="closeSalesAssistant()">×</button>
+                    </div>
                 </div>
                 <div class="sales-modal-body" id="salesModalBody">
                     ${renderScenarioSelection()}
@@ -98,6 +101,32 @@ function addSalesAssistantStyles() {
             color: var(--text-primary);
             font-size: 1.5rem;
             font-weight: 600;
+        }
+        
+        .sales-header-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .sales-end-btn {
+            background: linear-gradient(135deg, #ff4757, #ff3838);
+            border: none;
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .sales-end-btn:hover {
+            background: linear-gradient(135deg, #ff3838, #ff2424);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4);
         }
         
         .sales-close-btn {
@@ -611,6 +640,15 @@ function addSalesAssistantStyles() {
                 padding: 1rem;
             }
             
+            .sales-modal-header h2 {
+                font-size: 1.2rem;
+            }
+            
+            .sales-end-btn {
+                font-size: 0.7rem;
+                padding: 0.4rem 0.8rem;
+            }
+            
             .scenario-grid {
                 grid-template-columns: 1fr;
             }
@@ -700,6 +738,9 @@ function renderScenarioSelection() {
 // Výběr scénáře
 function selectScenario(scenario) {
     currentScenario = scenario;
+    
+    // Zobraz tlačítko KONEC
+    showEndButton();
     
     // Inicializace sales session
     currentSalesSession = {
@@ -1408,7 +1449,46 @@ function renderComingSoon(title, emoji) {
 function goBackToScenarios() {
     currentScenario = null;
     currentSalesSession = null;
+    hideEndButton();
     document.getElementById('salesModalBody').innerHTML = renderScenarioSelection();
+}
+
+// Zobrazí tlačítko KONEC
+function showEndButton() {
+    const endBtn = document.getElementById('salesEndBtn');
+    if (endBtn) {
+        endBtn.style.display = 'block';
+    }
+}
+
+// Skryje tlačítko KONEC
+function hideEndButton() {
+    const endBtn = document.getElementById('salesEndBtn');
+    if (endBtn) {
+        endBtn.style.display = 'none';
+    }
+}
+
+// Ukončí aktuální scénář a obnoví stránku
+function endCurrentScenario() {
+    if (confirm('Opravdu chcete ukončit aktuální scénář? Všechna neuložená data budou ztracena.')) {
+        // Reset stavu
+        currentSalesSession = null;
+        currentScenario = null;
+        currentWizardStep = 1;
+        selectedItems = { 
+            obaly: [], 
+            sklicka: [], 
+            prislusenstvi: [],
+            cisteni: [],
+            sluzby: [],
+            hadrik: false
+        };
+        
+        // Zavři modal a obnov stránku
+        closeSalesAssistant();
+        location.reload();
+    }
 }
 
 // Zpracování výsledku prodeje
@@ -3894,6 +3974,9 @@ function closeSalesAssistant() {
     if (modal) {
         modal.style.display = 'none';
     }
+    
+    // Skryj tlačítko KONEC
+    hideEndButton();
     
     // Reset stavu
     currentSalesSession = null;
