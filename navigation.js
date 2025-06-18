@@ -6,6 +6,14 @@ console.log('🧭 Navigation.js se načítá...');
 
 function updateNavigation() {
     console.log('🔧 updateNavigation() spuštěna');
+    
+    // SIDEBAR TEST: Detekce sidebar verze
+    const isSidebarTest = document.body.classList.contains('sidebar-test');
+    if (isSidebarTest) {
+        console.log('🎯 SIDEBAR TEST DETEKOVÁN - používám sidebar logiku');
+        return updateSidebarNavigation();
+    }
+    
     const nav = document.querySelector('nav ul');
     if (!nav) {
         console.error('❌ Navigation ul element not found!');
@@ -799,4 +807,161 @@ if (navigator.userAgent.includes('Chrome')) {
             }
         }, 1000);
     });
-} 
+}
+
+// ================================
+// SIDEBAR TEST FUNKCE - pouze pro testování
+// ================================
+
+function updateSidebarNavigation() {
+    console.log('🎯 Aktualizuji SIDEBAR navigation');
+    
+    const sidebarMenu = document.querySelector('#sidebarMenu');
+    if (!sidebarMenu) {
+        console.error('❌ Sidebar menu ul nenalezen!');
+        return;
+    }
+    
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userRole = localStorage.getItem('role');
+    const userDisplayName = getUserDisplayName();
+    
+    // Základní menu položky
+    const baseItems = `
+        <li><a href="index.html">Domů</a></li>
+        <li><a href="novinky.html" class="active">Novinky</a></li>
+        <li><a href="leaderboards.html">Žebříček</a></li>
+        <li><a href="prodejny.html">Prodejny</a></li>
+    `;
+    
+    // Nový zákazník tlačítko
+    const salesAssistantButton = `
+        <li><a href="#" onclick="openSalesAssistant(event)">Nový zákazník</a></li>
+    `;
+    
+    let menuContent = baseItems;
+    
+    if (isLoggedIn) {
+        menuContent += salesAssistantButton;
+        
+        if (userRole === 'Prodejce') {
+            menuContent += `
+                <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
+                <li><a href="user-profile.html">${userDisplayName}</a></li>
+            `;
+        } else if (userRole === 'Administrator' || userRole === 'Administrátor') {
+            menuContent += `
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle">Mobil Maják</a>
+                    <ul class="dropdown-menu">
+                        <li><a href="prodejny.html">Prodejny</a></li>
+                        <li><a href="servis.html">Servis</a></li>
+                        <li><a href="eshop.html">Eshop</a></li>
+                        <li><a href="bazar.html">Bazar</a></li>
+                        <li><a href="bazar.html" onclick="openNewBazarForm(event)">Přidat výkup</a></li>
+                        <li><a href="celkem.html">Celkem</a></li>
+                    </ul>
+                </li>
+                <li><a href="sales-analytics.html">📊 Prodejní analytika</a></li>
+                <li><a href="user-profile.html">${userDisplayName}</a></li>
+                <li><a href="user-management.html">Správa uživatelů</a></li>
+            `;
+        } else {
+            menuContent += `
+                <li><a href="user-profile.html">${userDisplayName}</a></li>
+            `;
+        }
+        
+        // Logout tlačítko na konec sidebaru
+        menuContent += `
+            <li style="margin-top: auto;"><a href="#" class="logout-btn" onclick="handleSidebarLogout(event)">Odhlásit</a></li>
+        `;
+    }
+    
+    sidebarMenu.innerHTML = menuContent;
+    
+    // Nastav theme toggle v header
+    setupSidebarThemeToggle();
+    
+    // Nastav dropdown v sidebaru
+    setupSidebarDropdowns();
+    
+    console.log('✅ Sidebar navigation aktualizována');
+}
+
+function setupSidebarThemeToggle() {
+    const headerControls = document.querySelector('.header-controls');
+    if (!headerControls) return;
+    
+    // Odstraň existující theme toggle
+    const existingToggle = document.querySelector('.theme-toggle');
+    if (existingToggle) existingToggle.remove();
+    
+    // Vytvoř nový theme toggle
+    const themeToggle = document.createElement('button');
+    themeToggle.className = 'theme-toggle';
+    themeToggle.innerHTML = '🌙';
+    themeToggle.setAttribute('aria-label', 'Přepnout tmavý/světlý režim');
+    
+    // Přidej před mobile toggle
+    const mobileToggle = document.querySelector('.mobile-toggle');
+    if (mobileToggle) {
+        headerControls.insertBefore(themeToggle, mobileToggle);
+    } else {
+        headerControls.appendChild(themeToggle);
+    }
+    
+    // Event listener pro theme toggle
+    themeToggle.addEventListener('click', function() {
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        html.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        themeToggle.innerHTML = newTheme === 'dark' ? '☀️' : '🌙';
+    });
+    
+    // Nastavit správnou ikonu podle aktuálního tématu
+    const currentTheme = localStorage.getItem('theme') || 'light';
+    themeToggle.innerHTML = currentTheme === 'dark' ? '☀️' : '🌙';
+}
+
+function setupSidebarDropdowns() {
+    const dropdowns = document.querySelectorAll('.sidebar-nav .dropdown');
+    
+    dropdowns.forEach(dropdown => {
+        const toggle = dropdown.querySelector('.dropdown-toggle');
+        if (toggle) {
+            toggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                dropdown.classList.toggle('active');
+            });
+        }
+    });
+}
+
+function handleSidebarLogout(event) {
+    event.preventDefault();
+    
+    if (confirm('Opravdu se chcete odhlásit?')) {
+        const sessionKeys = [
+            'isLoggedIn', 'username', 'role', 'userId', 'sellerId',
+            'userEmail', 'userPhone', 'userProdejna', 'userData'
+        ];
+        sessionKeys.forEach(key => localStorage.removeItem(key));
+        window.location.href = 'index.html';
+    }
+}
+
+// Globální funkce pro mobile toggle sidebaru
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar-nav');
+    if (sidebar) {
+        sidebar.classList.toggle('mobile-open');
+        console.log('📱 Sidebar toggled:', sidebar.classList.contains('mobile-open'));
+    }
+}
+
+console.log('🏁 Navigation.js načten kompletně - v1.0.4 + SIDEBAR TEST FUNKCE'); 
