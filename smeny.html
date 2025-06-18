@@ -168,6 +168,41 @@
             text-align: center;
         }
 
+        .store-filter {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .store-select {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border-light);
+            border-radius: 8px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+
+        .store-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .store-select:hover {
+            border-color: var(--accent-blue);
+        }
+
         .calendar-actions {
             display: flex;
             gap: 1rem;
@@ -476,6 +511,16 @@
             .calendar-header {
                 flex-direction: column;
                 text-align: center;
+                gap: 1rem;
+            }
+
+            .store-filter {
+                justify-content: center;
+                order: -1;
+            }
+
+            .store-select {
+                min-width: 200px;
             }
 
             .calendar-actions {
@@ -636,6 +681,18 @@
                         <button class="nav-btn" id="nextMonth">›</button>
                     </div>
                     
+                    <div class="store-filter">
+                        <label class="filter-label">🏪 Prodejna:</label>
+                        <select class="store-select" id="storeFilter">
+                            <option value="my">Moje směny</option>
+                            <option value="Globus">Globus</option>
+                            <option value="Hlavní sklad - Senimo">Hlavní sklad - Senimo</option>
+                            <option value="Praha 1">Praha 1</option>
+                            <option value="Hlavní pobočka">Hlavní pobočka</option>
+                            <option value="all">Všechny prodejny</option>
+                        </select>
+                    </div>
+                    
                     <div class="calendar-actions">
                         <button class="btn-add-shift" id="addShiftBtn">
                             ➕ Přidat směnu
@@ -687,6 +744,17 @@
                             <option value="full">Celý den</option>
                             <option value="vacation">Dovolená</option>
                             <option value="off">Volno</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="shiftStore">Prodejna</label>
+                        <select class="form-select" id="shiftStore" required>
+                            <option value="">Vyberte prodejnu</option>
+                            <option value="Globus">Globus</option>
+                            <option value="Hlavní sklad - Senimo">Hlavní sklad - Senimo</option>
+                            <option value="Praha 1">Praha 1</option>
+                            <option value="Hlavní pobočka">Hlavní pobočka</option>
                         </select>
                     </div>
                     
