@@ -44,16 +44,16 @@
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
         
         .stat-card {
             background: var(--bg-primary);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
-            padding: 2rem;
+            border-radius: 12px;
+            padding: 1.5rem;
             text-align: center;
             transition: all 0.3s ease;
             position: relative;
@@ -248,11 +248,19 @@
             
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
+                gap: 0.75rem;
             }
             
             .stat-card {
-                padding: 1.5rem;
+                padding: 1rem;
+            }
+            
+            .stat-emoji {
+                font-size: 2rem !important;
+            }
+            
+            .stat-value {
+                font-size: 1.8rem !important;
             }
             
             .stat-value {
@@ -365,21 +373,6 @@
                     </div>
                 </div>
                 
-                <!-- Jednoduché akce -->
-                <div style="margin-bottom: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                        <button class="filter-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3; font-weight: 600;">
-                            🔄 Obnovit data
-                        </button>
-                        <button class="filter-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500; font-weight: 600;">
-                            ↩️ Reset filtrů
-                        </button>
-                        <button class="filter-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757; font-weight: 600;">
-                            🗑️ Smazat data
-                        </button>
-                    </div>
-                </div>
-                
                 <!-- Pokročilé nástroje - skládací -->
                 <div style="text-align: center;">
                     <button id="admin-tools-toggle" onclick="toggleAdminTools()" style="
@@ -401,6 +394,27 @@
                             background: rgba(255,255,255,0.03); border-radius: 10px;
                             border: 1px solid rgba(255,255,255,0.1);
                         ">
+                            <!-- Status ukládání dat -->
+                            <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px;">
+                                <h5 style="color: var(--primary-color); margin: 0 0 0.5rem 0; font-size: 0.9rem;">📊 Status ukládání dat</h5>
+                                <div id="storage-info" style="color: var(--text-secondary); font-size: 0.85rem;">
+                                    <div>🔍 Kontroluji stav úložiště...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Admin akce -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                                <button class="filter-btn admin-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3; font-size: 0.8rem; padding: 0.6rem;">
+                                    🔄 Obnovit data
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500; font-size: 0.8rem; padding: 0.6rem;">
+                                    ↩️ Reset filtrů
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757; font-size: 0.8rem; padding: 0.6rem;">
+                                    🗑️ Smazat data
+                                </button>
+                            </div>
+                            
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
                                 <button class="filter-btn admin-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500; font-size: 0.8rem; padding: 0.6rem;">
                                     🔄 Sync server
@@ -914,7 +928,19 @@
                 dailyStats: {},
                 totalSessionTime: 0,
                 sessionsWithTime: 0,
-                averageSessionTime: 0
+                averageSessionTime: 0,
+                cardStats: {
+                    hadCard: 0,
+                    newCards: 0,
+                    hadCardPercent: 0,
+                    totalWithCardData: 0
+                },
+                productStats: {
+                    glasses: { cheap: 0, quality: 0, sunshine: 0 },
+                    cases: { transparent: 0, colored: 0, book: 0 },
+                    services: {},
+                    serviceVsAccessory: { services: 0, accessories: 0 }
+                }
             };
             
             // Počítej základní statistiky
@@ -923,12 +949,15 @@
                 if (session.result === 'sold') {
                     stats.successfulSales++;
                     
-                    // Populární položky
-                    if (session.soldItems) {
-                        session.soldItems.forEach(item => {
-                            stats.popularItems[item] = (stats.popularItems[item] || 0) + 1;
-                        });
-                    }
+                                    // Populární položky
+                if (session.soldItems) {
+                    session.soldItems.forEach(item => {
+                        stats.popularItems[item] = (stats.popularItems[item] || 0) + 1;
+                        
+                        // Analýza produktů
+                        analyzeProductType(item, stats.productStats);
+                    });
+                }
                     
                     // Používání slevy
                     if (session.discountUsed === true) {
@@ -1032,6 +1061,19 @@
                 } else {
                     stats.storeStats[store].notSold++;
                 }
+                
+                // Statistiky zákaznických kartiček
+                if (session.hadCard !== undefined || session.newCard !== undefined) {
+                    stats.cardStats.totalWithCardData++;
+                    
+                    if (session.hadCard === true) {
+                        stats.cardStats.hadCard++;
+                    }
+                    
+                    if (session.newCard === true) {
+                        stats.cardStats.newCards++;
+                    }
+                }
             });
             
             // Spočítej conversion rate
@@ -1050,6 +1092,11 @@
                     stats.topSellers[seller].avgTime = (stats.topSellers[seller].totalTime / stats.topSellers[seller].total).toFixed(1);
                 }
             });
+            
+            // Spočítej procenta kartiček
+            if (stats.cardStats.totalWithCardData > 0) {
+                stats.cardStats.hadCardPercent = ((stats.cardStats.hadCard / stats.cardStats.totalWithCardData) * 100).toFixed(1);
+            }
             
             console.log('🏭 Statistiky vygenerovány:', {
                 totalSessions: stats.totalSessions,
@@ -1130,9 +1177,29 @@
                         <div class="stat-value">${stats.averageSessionTime || '0'} min</div>
                         <div class="stat-label">Průměrný čas session</div>
                     </div>
+                    
+                    <div class="stat-card">
+                        <span class="stat-emoji">💳</span>
+                        <div class="stat-value">${stats.cardStats.newCards}</div>
+                        <div class="stat-label">Nové kartičky</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <span class="stat-emoji">🎯</span>
+                        <div class="stat-value">${stats.cardStats.hadCardPercent}%</div>
+                        <div class="stat-label">Mělo kartičku</div>
+                    </div>
                 </div>
 
-                <!-- Top prodejci -->
+                <!-- Výkonnost prodejen -->
+                ${stats.storeStats && Object.keys(stats.storeStats).length > 0 ? `
+                <h2 class="section-title">🏪 Výkonnost prodejen</h2>
+                <div class="chart-container">
+                    ${renderStoresTable(stats.storeStats)}
+                </div>
+                ` : ''}
+
+                <!-- Výkonnost prodejců -->
                 <h2 class="section-title">🏆 Výkonnost prodejců</h2>
                 <div class="chart-container">
                     ${renderSellersTable(stats.topSellers)}
@@ -1144,21 +1211,17 @@
                     ${renderScenariosTable(stats.scenarioStats)}
                 </div>
 
-                <!-- Populární položky -->
-                ${stats.popularItems && Object.keys(stats.popularItems).length > 0 ? `
-                <h2 class="section-title">🛍️ Nejprodávanější položky</h2>
+                <!-- Statistiky zákaznických kartiček -->
+                <h2 class="section-title">💳 Zákaznické kartičky</h2>
                 <div class="chart-container">
-                    ${renderPopularItems(stats.popularItems)}
+                    ${renderCardStats(stats.cardStats)}
                 </div>
-                ` : ''}
 
-                <!-- Statistiky prodejen -->
-                ${stats.storeStats && Object.keys(stats.storeStats).length > 0 ? `
-                <h2 class="section-title">🏪 Výkonnost prodejen</h2>
+                <!-- Nejprodávanější položky a analýza produktů -->
+                <h2 class="section-title">🛍️ Analýza prodejů - Produkty</h2>
                 <div class="chart-container">
-                    ${renderStoresTable(stats.storeStats)}
+                    ${renderProductAnalysis(stats)}
                 </div>
-                ` : ''}
 
                 <!-- Používání slevy -->
                 ${stats.discountUsage.used > 0 || stats.discountUsage.notUsed > 0 ? `
@@ -1399,6 +1462,184 @@
                         <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Sleva nepoužita</div>
                         <div style="color: var(--text-secondary);">${notUsedPercentage}% případů</div>
                     </div>
+                </div>
+            `;
+        }
+
+        // Statistiky zákaznických kartiček
+        function renderCardStats(cardStats) {
+            return `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <div style="text-align: center; padding: 1.5rem; background: rgba(108, 92, 231, 0.1); border-radius: 12px; border-left: 4px solid #6c5ce7;">
+                        <div style="font-size: 2.5rem; color: #6c5ce7; margin-bottom: 1rem;">${cardStats.hadCard}</div>
+                        <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Mělo kartičku</div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem;">${cardStats.hadCardPercent}% zákazníků</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1.5rem; background: rgba(46, 213, 115, 0.1); border-radius: 12px; border-left: 4px solid #2ed573;">
+                        <div style="font-size: 2.5rem; color: #2ed573; margin-bottom: 1rem;">${cardStats.newCards}</div>
+                        <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Nové kartičky</div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem;">Vytvořeno během prodeje</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1.5rem; background: rgba(255, 152, 0, 0.1); border-radius: 12px; border-left: 4px solid #ff9800;">
+                        <div style="font-size: 2.5rem; color: #ff9800; margin-bottom: 1rem;">${cardStats.totalWithCardData}</div>
+                        <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Celkem dotázáno</div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem;">Sessions s info o kartičce</div>
+                    </div>
+                    
+                    <div style="text-align: center; padding: 1.5rem; background: rgba(255, 20, 147, 0.1); border-radius: 12px; border-left: 4px solid #ff1493;">
+                        <div style="font-size: 2.5rem; color: #ff1493; margin-bottom: 1rem;">${cardStats.hadCard + cardStats.newCards}</div>
+                        <div style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">Celkem s kartičkou</div>
+                        <div style="color: var(--text-secondary); font-size: 0.9rem;">Po dokončení prodeje</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Analýza produktů
+        function renderProductAnalysis(stats) {
+            const productStats = stats.productStats;
+            const popularItems = stats.popularItems || {};
+            
+            // Sklíčka - výpočet procent
+            const totalGlasses = productStats.glasses.cheap + productStats.glasses.quality + productStats.glasses.sunshine;
+            const glassPercentages = {
+                cheap: totalGlasses > 0 ? ((productStats.glasses.cheap / totalGlasses) * 100).toFixed(1) : 0,
+                quality: totalGlasses > 0 ? ((productStats.glasses.quality / totalGlasses) * 100).toFixed(1) : 0,
+                sunshine: totalGlasses > 0 ? ((productStats.glasses.sunshine / totalGlasses) * 100).toFixed(1) : 0
+            };
+            
+            // Obaly - výpočet procent
+            const totalCases = productStats.cases.transparent + productStats.cases.colored + productStats.cases.book;
+            const casePercentages = {
+                transparent: totalCases > 0 ? ((productStats.cases.transparent / totalCases) * 100).toFixed(1) : 0,
+                colored: totalCases > 0 ? ((productStats.cases.colored / totalCases) * 100).toFixed(1) : 0,
+                book: totalCases > 0 ? ((productStats.cases.book / totalCases) * 100).toFixed(1) : 0
+            };
+            
+            // Služby vs Příslušenství
+            const totalSvA = productStats.serviceVsAccessory.services + productStats.serviceVsAccessory.accessories;
+            const serviceVsAccPercentages = {
+                services: totalSvA > 0 ? ((productStats.serviceVsAccessory.services / totalSvA) * 100).toFixed(1) : 0,
+                accessories: totalSvA > 0 ? ((productStats.serviceVsAccessory.accessories / totalSvA) * 100).toFixed(1) : 0
+            };
+            
+            // Top 10 nejprodávanějších položek
+            const topItems = Object.entries(popularItems)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 10);
+            
+            const totalItems = Object.values(popularItems).reduce((sum, count) => sum + count, 0);
+            
+            return `
+                <!-- Nejprodávanější položky -->
+                ${topItems.length > 0 ? `
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="color: var(--primary-color); margin-bottom: 1rem;">🏆 Top 10 nejprodávanějších položek</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        ${topItems.map(([item, count]) => {
+                            const percentage = totalItems > 0 ? ((count / totalItems) * 100).toFixed(1) : 0;
+                            return `
+                                <div style="text-align: center; padding: 1rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                    <div style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--primary-color);">${count}</div>
+                                    <div style="color: var(--text-primary); font-weight: 500; margin-bottom: 0.5rem; font-size: 0.9rem; line-height: 1.2;">${item}</div>
+                                    <div style="color: var(--text-secondary); font-size: 0.8rem;">${percentage}%</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Analýza kategorií -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                    <!-- Sklíčka -->
+                    ${totalGlasses > 0 ? `
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border-left: 4px solid #2196F3;">
+                        <h4 style="color: #2196F3; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                            🔍 Sklíčka <span style="font-size: 0.8rem; background: rgba(33,150,243,0.2); padding: 0.2rem 0.5rem; border-radius: 10px;">${totalGlasses} ks</span>
+                        </h4>
+                        <div style="display: grid; gap: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                <span style="color: var(--text-primary);">🌟 Sunshine folie</span>
+                                <span style="color: #ff9800; font-weight: 600;">${productStats.glasses.sunshine} (${glassPercentages.sunshine}%)</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                <span style="color: var(--text-primary);">💎 Kvalitní sklo</span>
+                                <span style="color: #2ed573; font-weight: 600;">${productStats.glasses.quality} (${glassPercentages.quality}%)</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                <span style="color: var(--text-primary);">💰 Levné sklo</span>
+                                <span style="color: #ff4757; font-weight: 600;">${productStats.glasses.cheap} (${glassPercentages.cheap}%)</span>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Obaly -->
+                    ${totalCases > 0 ? `
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border-left: 4px solid #8e44ad;">
+                        <h4 style="color: #8e44ad; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                            📱 Obaly <span style="font-size: 0.8rem; background: rgba(142,68,173,0.2); padding: 0.2rem 0.5rem; border-radius: 10px;">${totalCases} ks</span>
+                        </h4>
+                        <div style="display: grid; gap: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                <span style="color: var(--text-primary);">📖 Kniha/Flip</span>
+                                <span style="color: #ff9800; font-weight: 600;">${productStats.cases.book} (${casePercentages.book}%)</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                <span style="color: var(--text-primary);">🎨 Barevné</span>
+                                <span style="color: #2ed573; font-weight: 600;">${productStats.cases.colored} (${casePercentages.colored}%)</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                <span style="color: var(--text-primary);">🔍 Průhledné</span>
+                                <span style="color: #ff4757; font-weight: 600;">${productStats.cases.transparent} (${casePercentages.transparent}%)</span>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Služby -->
+                    ${Object.keys(productStats.services).length > 0 ? `
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border-left: 4px solid #2ed573;">
+                        <h4 style="color: #2ed573; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                            🔧 Nejprodávanější služby <span style="font-size: 0.8rem; background: rgba(46,213,115,0.2); padding: 0.2rem 0.5rem; border-radius: 10px;">${Object.values(productStats.services).reduce((sum, count) => sum + count, 0)} ks</span>
+                        </h4>
+                        <div style="display: grid; gap: 0.5rem;">
+                            ${Object.entries(productStats.services)
+                                .sort(([,a], [,b]) => b - a)
+                                .slice(0, 5)
+                                .map(([service, count]) => `
+                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px;">
+                                        <span style="color: var(--text-primary); font-size: 0.9rem;">${service}</span>
+                                        <span style="color: #2ed573; font-weight: 600;">${count}</span>
+                                    </div>
+                                `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <!-- Služby vs Příslušenství -->
+                    ${totalSvA > 0 ? `
+                    <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 1.5rem; border-left: 4px solid #ff9800;">
+                        <h4 style="color: #ff9800; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                            ⚖️ Služby vs Příslušenství <span style="font-size: 0.8rem; background: rgba(255,152,0,0.2); padding: 0.2rem 0.5rem; border-radius: 10px;">${totalSvA} ks</span>
+                        </h4>
+                        <div style="display: grid; gap: 1rem;">
+                            <div style="text-align: center; padding: 1rem; background: rgba(46, 213, 115, 0.1); border-radius: 8px;">
+                                <div style="font-size: 2rem; color: #2ed573; margin-bottom: 0.5rem;">${productStats.serviceVsAccessory.services}</div>
+                                <div style="color: var(--text-primary); font-weight: 600;">🔧 Služby</div>
+                                <div style="color: var(--text-secondary); font-size: 0.9rem;">${serviceVsAccPercentages.services}%</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: rgba(108, 92, 231, 0.1); border-radius: 8px;">
+                                <div style="font-size: 2rem; color: #6c5ce7; margin-bottom: 0.5rem;">${productStats.serviceVsAccessory.accessories}</div>
+                                <div style="color: var(--text-primary); font-weight: 600;">📱 Příslušenství</div>
+                                <div style="color: var(--text-secondary); font-size: 0.9rem;">${serviceVsAccPercentages.accessories}%</div>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
                 </div>
             `;
         }
@@ -2899,6 +3140,44 @@
             return null;
         }
 
+        // Analýza typu produktu
+        function analyzeProductType(item, productStats) {
+            const itemLower = item.toLowerCase();
+            
+            // Analýza sklíček
+            if (itemLower.includes('sklo') || itemLower.includes('sklíčko')) {
+                if (itemLower.includes('sunshine') || itemLower.includes('folie')) {
+                    productStats.glasses.sunshine++;
+                } else if (itemLower.includes('levn') || itemLower.includes('obyčejn') || itemLower.includes('basic')) {
+                    productStats.glasses.cheap++;
+                } else {
+                    productStats.glasses.quality++;
+                }
+                productStats.serviceVsAccessory.accessories++;
+            }
+            // Analýza obalů
+            else if (itemLower.includes('obal') || itemLower.includes('pouzdro') || itemLower.includes('kryt')) {
+                if (itemLower.includes('průhledn') || itemLower.includes('transparentn')) {
+                    productStats.cases.transparent++;
+                } else if (itemLower.includes('kniha') || itemLower.includes('book') || itemLower.includes('flip')) {
+                    productStats.cases.book++;
+                } else {
+                    productStats.cases.colored++;
+                }
+                productStats.serviceVsAccessory.accessories++;
+            }
+            // Analýza služeb
+            else if (itemLower.includes('servis') || itemLower.includes('služba') || itemLower.includes('oprava') || 
+                     itemLower.includes('čištění') || itemLower.includes('instalace') || itemLower.includes('přenos')) {
+                productStats.services[item] = (productStats.services[item] || 0) + 1;
+                productStats.serviceVsAccessory.services++;
+            }
+            // Ostatní příslušenství
+            else {
+                productStats.serviceVsAccessory.accessories++;
+            }
+        }
+
         // Získání zobrazovacího jména prodejce
         function getSellerDisplayName(seller) {
             const customDisplayNames = JSON.parse(localStorage.getItem('seller_display_names') || '{}');
@@ -3535,32 +3814,6 @@
         // Inicializace při načtení stránky
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Analytika se inicializuje...');
-            
-            // Přidej status section před analytiky
-            const analyticsContainer = document.querySelector('.analytics-container');
-            const filterSection = document.querySelector('.filter-section');
-            
-            if (analyticsContainer && filterSection) {
-                const statusSection = document.createElement('div');
-                statusSection.innerHTML = `
-                    <div style="
-                        background: rgba(255,255,255,0.05); border-radius: 10px; padding: 1rem; 
-                        margin-bottom: 2rem; border-left: 4px solid var(--primary-color);
-                    ">
-                        <h4 style="color: var(--primary-color); margin: 0 0 0.5rem 0; font-size: 0.9rem;">
-                            📊 Status ukládání dat
-                        </h4>
-                        <div id="storage-info" style="color: var(--text-secondary); font-size: 0.85rem;">
-                            <div>🔍 Kontroluji stav úložiště...</div>
-                        </div>
-                    </div>
-                `;
-                
-                analyticsContainer.insertBefore(statusSection, filterSection.nextSibling);
-                
-                // Zobraz status dat
-                setTimeout(showDataStatus, 200);
-            }
             
             // Debug info při startu
             const localData = JSON.parse(localStorage.getItem('sales_sessions') || '[]');
