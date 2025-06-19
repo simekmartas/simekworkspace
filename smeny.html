@@ -312,6 +312,27 @@
             box-shadow: 0 8px 25px rgba(156, 39, 176, 0.4);
         }
 
+        .btn-delete-shifts {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        .btn-delete-shifts:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.4);
+            background: linear-gradient(135deg, #e53935, #c62828);
+        }
+
         .btn-export {
             background: linear-gradient(135deg, #2196F3, #1976D2);
             color: white;
@@ -653,7 +674,7 @@
                 flex-wrap: wrap;
             }
 
-            .btn-apple-calendar, .btn-google-calendar {
+            .btn-apple-calendar, .btn-google-calendar, .btn-delete-shifts {
                 padding: 0.6rem 1rem;
                 font-size: 0.875rem;
             }
@@ -883,6 +904,57 @@
         .dark-theme .mini-day.other-month {
             background: var(--bg-tertiary);
         }
+
+        /* Styly pro hromadné mazání směn */
+        .delete-shifts-modal .modal-content {
+            max-width: 650px;
+        }
+
+        .mini-day.has-shifts {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4caf50;
+            font-weight: 600;
+        }
+
+        .mini-day.has-shifts:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .mini-day.has-shifts.selected {
+            background: var(--error);
+            color: white;
+            border-color: var(--error);
+        }
+
+        .mini-day.has-shifts.selected:hover {
+            background: #d32f2f;
+        }
+
+        .shifts-to-delete-info {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .shifts-to-delete-info h4 {
+            margin: 0 0 0.5rem 0;
+            color: var(--error);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .shifts-to-delete-list {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+
+        .dark-theme .shifts-to-delete-info {
+            background: rgba(244, 67, 54, 0.15);
+            border-color: rgba(244, 67, 54, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -988,6 +1060,9 @@
                         </button>
                         <button class="btn-add-shifts" id="addMultipleShiftsBtn">
                             📅 Přidat směny
+                        </button>
+                        <button class="btn-delete-shifts" id="deleteMultipleShiftsBtn">
+                            🗑️ Smazat směny
                         </button>
                         <button class="btn-export" id="exportBtn">
                             📁 Exportovat
@@ -1164,6 +1239,46 @@
             <div class="modal-actions">
                 <button type="button" class="btn-cancel" id="cancelMultipleBtn">Zrušit</button>
                 <button type="submit" class="btn-save" id="saveMultipleBtn">Uložit směny</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro hromadné mazání směn -->
+    <div class="shift-modal delete-shifts-modal" id="deleteMultipleShiftsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Smazat směny hromadně</h2>
+                <button class="modal-close" id="closeDeleteModal">×</button>
+            </div>
+            
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Vyberte dny se směnami ke smazání</label>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                        🟢 Zelené dny mají směny. Kliknutím na ně vyberete směny ke smazání.
+                    </p>
+                    <div class="mini-calendar">
+                        <div class="mini-calendar-header">
+                            <button type="button" class="mini-nav-btn" id="deleteMiniPrevMonth">‹</button>
+                            <div class="mini-calendar-month" id="deleteMiniCurrentMonth">Leden 2025</div>
+                            <button type="button" class="mini-nav-btn" id="deleteMiniNextMonth">›</button>
+                        </div>
+                        <div class="mini-calendar-grid" id="deleteMiniCalendarGrid">
+                            <!-- Kalendář bude generován JavaScriptem -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informace o vybraných směnách ke smazání -->
+                <div class="shifts-to-delete-info" id="shiftsToDeleteInfo" style="display: none;">
+                    <h4>⚠️ Směny ke smazání:</h4>
+                    <div class="shifts-to-delete-list" id="shiftsToDeleteList"></div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" id="cancelDeleteBtn">Zrušit</button>
+                <button type="button" class="btn-delete" id="confirmDeleteBtn" style="display: none;">Smazat vybrané směny</button>
             </div>
         </div>
     </div>
