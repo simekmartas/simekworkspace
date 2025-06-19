@@ -15,6 +15,10 @@ class ShiftsManager {
         this.miniCalendarDate = new Date();
         this.selectedDates = new Set(); // Set pro vybrané datumy
         
+        // Pro hromadné mazání směn
+        this.deleteMiniCalendarDate = new Date();
+        this.selectedShiftsToDelete = new Set(); // Set pro vybrané směny ke smazání
+        
         // Získat ID uživatele pro filtrování směn
         this.userId = localStorage.getItem('sellerId') || localStorage.getItem('userId') || localStorage.getItem('username');
         this.userProdejna = localStorage.getItem('userProdejna') || 'Globus';
@@ -195,18 +199,32 @@ class ShiftsManager {
 
     // Smazání směny
     async deleteShift(shiftId) {
+        console.log('🗑️ Začínám mazání směny ID:', shiftId);
+        
         try {
-            // Smaž z localStorage
+            // Načti aktuální data z localStorage
             const existingShifts = JSON.parse(localStorage.getItem('shifts_data') || '[]');
+            console.log('📦 Nalezeno v localStorage:', existingShifts.length, 'směn');
+            
+            // Najdi směnu ke smazání
+            const shiftToDelete = existingShifts.find(s => s.id === shiftId);
+            if (!shiftToDelete) {
+                console.warn('⚠️ Směna s ID', shiftId, 'nebyla nalezena v localStorage');
+                throw new Error('Směna nebyla nalezena');
+            }
+            
+            console.log('✅ Nalezena směna ke smazání:', shiftToDelete.date, shiftToDelete.type);
+            
+            // Smaž z localStorage
             const filteredShifts = existingShifts.filter(s => s.id !== shiftId);
             localStorage.setItem('shifts_data', JSON.stringify(filteredShifts));
             
             // Aktualizuj allShifts
             this.allShifts = filteredShifts;
             
-            console.log('📦 Směna smazána z localStorage');
+            console.log('📦 Směna smazána z localStorage. Zbývá:', filteredShifts.length, 'směn');
             
-            // Zkus smazat ze serveru
+            // Zkus smazat ze serveru na pozadí
             try {
                 const response = await fetch(`/api/shifts-github/${shiftId}`, {
                     method: 'DELETE',
@@ -222,6 +240,7 @@ class ShiftsManager {
                 }
             } catch (syncError) {
                 console.warn('⚠️ Delete synchronizace selhala:', syncError.message);
+                // Toto není kritická chyba - směna je už smazána lokálně
             }
             
             return true;
@@ -257,6 +276,16 @@ class ShiftsManager {
         // Hromadné přidání směn
         document.getElementById('addMultipleShiftsBtn').addEventListener('click', () => {
             this.openMultipleShiftsModal();
+        });
+        
+        // Hromadné mazání směn
+        document.getElementById('deleteMultipleShiftsBtn').addEventListener('click', () => {
+            this.openDeleteShiftsModal();
+        });
+        
+        // Odstranění duplicitních směn
+        document.getElementById('removeDuplicatesBtn').addEventListener('click', () => {
+            this.removeDuplicateShifts();
         });
         
         // Export
@@ -356,6 +385,37 @@ class ShiftsManager {
         document.getElementById('multipleShiftsModal').addEventListener('click', (e) => {
             if (e.target.id === 'multipleShiftsModal') {
                 this.closeMultipleShiftsModal();
+            }
+        });
+        
+        // Delete shifts modal události
+        document.getElementById('closeDeleteModal').addEventListener('click', () => {
+            this.closeDeleteShiftsModal();
+        });
+        
+        document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+            this.closeDeleteShiftsModal();
+        });
+        
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            this.deleteSelectedShifts();
+        });
+        
+        // Navigace v delete minikalendáři
+        document.getElementById('deleteMiniPrevMonth').addEventListener('click', () => {
+            this.deleteMiniCalendarDate.setMonth(this.deleteMiniCalendarDate.getMonth() - 1);
+            this.renderDeleteMiniCalendar();
+        });
+        
+        document.getElementById('deleteMiniNextMonth').addEventListener('click', () => {
+            this.deleteMiniCalendarDate.setMonth(this.deleteMiniCalendarDate.getMonth() + 1);
+            this.renderDeleteMiniCalendar();
+        });
+        
+        // Zavření delete modal při kliknutí mimo
+        document.getElementById('deleteMultipleShiftsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'deleteMultipleShiftsModal') {
+                this.closeDeleteShiftsModal();
             }
         });
     }
@@ -657,25 +717,33 @@ class ShiftsManager {
 
     // Smazání aktuální směny
     async deleteCurrentShift() {
-        if (!this.editingShift) return;
+        if (!this.editingShift) {
+            this.showError('Žádná směna není vybrána');
+            return;
+        }
         
         if (!confirm('Opravdu chcete smazat tuto směnu?')) {
             return;
         }
         
         try {
+            console.log('🗑️ Mažu směnu:', this.editingShift.id);
+            
+            // Smaž směnu
             await this.deleteShift(this.editingShift.id);
             
-            // Odstraň z lokálních dat
-            this.allShifts = this.allShifts.filter(s => s.id !== this.editingShift.id);
+            // Po smazání aktualizuj filtrované směny
             this.applyStoreFilter();
             
+            // Zavři modal
             this.closeShiftModal();
+            
+            // Aktualizuj zobrazení
             this.renderCalendar();
             this.updateStats();
             this.updateTodayTomorrowInfo();
             
-            this.showSuccess('Směna byla smazána');
+            this.showSuccess('Směna byla úspěšně smazána');
             
         } catch (error) {
             console.error('❌ Chyba při mazání směny:', error);
@@ -1091,6 +1159,235 @@ class ShiftsManager {
         return typeNames[type] || 'Neznámá směna';
     }
 
+    // ===== HROMADNÉ MAZÁNÍ SMĚN =====
+    
+    // Otevření modalu pro hromadné mazání směn
+    openDeleteShiftsModal() {
+        // Vyčisti předchozí výběr
+        this.selectedShiftsToDelete.clear();
+        
+        // Nastav kalendář na aktuální měsíc
+        this.deleteMiniCalendarDate = new Date();
+        this.renderDeleteMiniCalendar();
+        this.updateSelectedShiftsToDeleteDisplay();
+        
+        // Zobraz modal
+        document.getElementById('deleteMultipleShiftsModal').classList.add('show');
+    }
+    
+    // Zavření modalu pro hromadné mazání směn
+    closeDeleteShiftsModal() {
+        document.getElementById('deleteMultipleShiftsModal').classList.remove('show');
+        this.selectedShiftsToDelete.clear();
+    }
+    
+    // Vykreslení minikalendáře pro mazání
+    renderDeleteMiniCalendar() {
+        const year = this.deleteMiniCalendarDate.getFullYear();
+        const month = this.deleteMiniCalendarDate.getMonth();
+        
+        // Aktualizuj nadpis měsíce
+        const monthNames = [
+            'Leden', 'Únor', 'Březen', 'Duben', 'Květen', 'Červen',
+            'Červenec', 'Srpen', 'Září', 'Říjen', 'Listopad', 'Prosinec'
+        ];
+        document.getElementById('deleteMiniCurrentMonth').textContent = `${monthNames[month]} ${year}`;
+        
+        // Vyčisti kalendář
+        const grid = document.getElementById('deleteMiniCalendarGrid');
+        grid.innerHTML = '';
+        
+        // Přidej hlavičky dnů
+        const dayHeaders = ['Po', 'Út', 'St', 'Čt', 'Pá', 'So', 'Ne'];
+        dayHeaders.forEach(day => {
+            const header = document.createElement('div');
+            header.className = 'mini-day-header';
+            header.textContent = day;
+            grid.appendChild(header);
+        });
+        
+        // Prvý den měsíce a počet dní
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        
+        // Začni od pondělí (1) místo neděle (0)
+        let startDay = firstDay.getDay();
+        startDay = startDay === 0 ? 6 : startDay - 1;
+        
+        // Předchozí měsíc
+        const prevMonth = new Date(year, month - 1, 0);
+        for (let i = startDay - 1; i >= 0; i--) {
+            const day = prevMonth.getDate() - i;
+            this.createDeleteMiniDayElement(day, month - 1, year, true);
+        }
+        
+        // Aktuální měsíc
+        for (let day = 1; day <= daysInMonth; day++) {
+            this.createDeleteMiniDayElement(day, month, year, false);
+        }
+        
+        // Následující měsíc
+        const totalCells = 42 - 7; // 42 - 7 headers
+        const usedCells = startDay + daysInMonth;
+        const remainingCells = totalCells - usedCells;
+        
+        for (let day = 1; day <= remainingCells; day++) {
+            this.createDeleteMiniDayElement(day, month + 1, year, true);
+        }
+    }
+    
+    // Vytvoření elementu dne v delete minikalendáři
+    createDeleteMiniDayElement(day, month, year, isOtherMonth) {
+        const dayElement = document.createElement('div');
+        dayElement.className = 'mini-day';
+        dayElement.textContent = day;
+        
+        if (isOtherMonth) {
+            dayElement.classList.add('other-month');
+        }
+        
+        const cellDate = new Date(year, month, day);
+        const dateString = this.formatDateString(cellDate);
+        
+        // Zkontroluj jestli je to dnešek
+        const today = new Date();
+        if (cellDate.toDateString() === today.toDateString()) {
+            dayElement.classList.add('today');
+        }
+        
+        // Zkontroluj jestli má tento den nějaké směny
+        const dayShifts = this.shifts.filter(shift => shift.date === dateString);
+        if (dayShifts.length > 0 && !isOtherMonth) {
+            dayElement.classList.add('has-shifts');
+            
+            // Zkontroluj jestli jsou směny vybrané ke smazání
+            const isSelected = dayShifts.some(shift => this.selectedShiftsToDelete.has(shift.id));
+            if (isSelected) {
+                dayElement.classList.add('selected');
+            }
+            
+            // Přidej kliknutí pro výběr směn ke smazání
+            dayElement.addEventListener('click', () => {
+                this.toggleShiftsForDeletion(dayShifts);
+            });
+        }
+        
+        document.getElementById('deleteMiniCalendarGrid').appendChild(dayElement);
+    }
+    
+    // Přepínání výběru směn ke smazání
+    toggleShiftsForDeletion(dayShifts) {
+        // Zkontroluj jestli jsou všechny směny z tohoto dne již vybrané
+        const allSelected = dayShifts.every(shift => this.selectedShiftsToDelete.has(shift.id));
+        
+        if (allSelected) {
+            // Odeber všechny směny z tohoto dne
+            dayShifts.forEach(shift => {
+                this.selectedShiftsToDelete.delete(shift.id);
+            });
+        } else {
+            // Přidej všechny směny z tohoto dne
+            dayShifts.forEach(shift => {
+                this.selectedShiftsToDelete.add(shift.id);
+            });
+        }
+        
+        // Aktualizuj zobrazení
+        this.renderDeleteMiniCalendar();
+        this.updateSelectedShiftsToDeleteDisplay();
+    }
+    
+    // Aktualizace zobrazení vybraných směn ke smazání
+    updateSelectedShiftsToDeleteDisplay() {
+        const infoDiv = document.getElementById('shiftsToDeleteInfo');
+        const listDiv = document.getElementById('shiftsToDeleteList');
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        
+        if (this.selectedShiftsToDelete.size === 0) {
+            infoDiv.style.display = 'none';
+            deleteBtn.style.display = 'none';
+            return;
+        }
+        
+        // Najdi vybrané směny
+        const selectedShifts = this.shifts.filter(shift => 
+            this.selectedShiftsToDelete.has(shift.id)
+        ).sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Vytvoř seznam směn
+        const shiftsInfo = selectedShifts.map(shift => {
+            const date = new Date(shift.date + 'T00:00:00');
+            const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+            const dateStr = `${dayNames[date.getDay()]} ${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+            
+            let shiftInfo = dateStr;
+            if (shift.timeFrom && shift.timeTo) {
+                shiftInfo += ` (${shift.timeFrom}-${shift.timeTo})`;
+            }
+            shiftInfo += ` - ${shift.prodejna || shift.store || 'Neznámá prodejna'}`;
+            
+            return shiftInfo;
+        });
+        
+        listDiv.innerHTML = `${shiftsInfo.join('<br>')} <br><strong>Celkem: ${selectedShifts.length} směn</strong>`;
+        infoDiv.style.display = 'block';
+        deleteBtn.style.display = 'block';
+    }
+    
+    // Smazání vybraných směn
+    async deleteSelectedShifts() {
+        if (this.selectedShiftsToDelete.size === 0) {
+            this.showError('Žádné směny nevybrány ke smazání');
+            return;
+        }
+        
+        const shiftsCount = this.selectedShiftsToDelete.size;
+        console.log(`🗑️ Připravuji hromadné mazání ${shiftsCount} směn`);
+        
+        if (!confirm(`Opravdu chcete smazat ${shiftsCount} vybraných směn?\n\nTato akce je nevratná!`)) {
+            return;
+        }
+        
+        try {
+            console.log(`🗑️ Začínám hromadné mazání ${shiftsCount} směn...`);
+            
+            let deletedCount = 0;
+            let errorCount = 0;
+            
+            // Smaž všechny vybrané směny
+            for (const shiftId of this.selectedShiftsToDelete) {
+                try {
+                    await this.deleteShift(shiftId);
+                    deletedCount++;
+                    console.log(`✅ Smazána směna ${deletedCount}/${shiftsCount}`);
+                } catch (error) {
+                    errorCount++;
+                    console.error(`❌ Chyba při mazání směny ${shiftId}:`, error);
+                }
+            }
+            
+            // Aktualizuj lokální data
+            this.applyStoreFilter();
+            
+            // Zavři modal a aktualizuj zobrazení
+            this.closeDeleteShiftsModal();
+            this.renderCalendar();
+            this.updateStats();
+            this.updateTodayTomorrowInfo();
+            
+            if (errorCount === 0) {
+                this.showSuccess(`Úspěšně smazáno všech ${deletedCount} směn`);
+            } else {
+                this.showError(`Smazáno ${deletedCount} směn, ${errorCount} chyb`);
+            }
+            
+        } catch (error) {
+            console.error('❌ Kritická chyba při hromadném mazání směn:', error);
+            this.showError('Kritická chyba při mazání směn: ' + error.message);
+        }
+    }
+
     // Hromadná synchronizace se serverem
     async syncAllShiftsToServer() {
         try {
@@ -1500,6 +1797,91 @@ class ShiftsManager {
         setTimeout(() => {
             messageDiv.remove();
         }, 5000);
+    }
+
+    // Odstranění duplicitních směn
+    async removeDuplicateShifts() {
+        try {
+            console.log('🔍 Hledám duplicitní směny...');
+            
+            // Mapa pro sledování unikátních směn
+            const uniqueShifts = new Map();
+            const duplicates = [];
+            
+            // Projdi všechny směny a najdi duplicity
+            this.allShifts.forEach(shift => {
+                // Vytvoř unikátní klíč na základě data, času, typu a prodejny
+                const key = `${shift.date}-${shift.type}-${shift.timeFrom || 'no-time'}-${shift.timeTo || 'no-time'}-${shift.prodejna || shift.store || 'no-store'}-${shift.userId || shift.sellerId || 'no-user'}`;
+                
+                if (uniqueShifts.has(key)) {
+                    // Duplicitní směna nalezena
+                    duplicates.push(shift);
+                    console.log('🔍 Nalezena duplicitní směna:', shift.date, shift.type, shift.id);
+                } else {
+                    // První výskyt této směny
+                    uniqueShifts.set(key, shift);
+                }
+            });
+            
+            if (duplicates.length === 0) {
+                this.showSuccess('Žádné duplicitní směny nebyly nalezeny');
+                return;
+            }
+            
+            console.log(`🔍 Nalezeno ${duplicates.length} duplicitních směn`);
+            
+            // Zobraz seznam duplicitních směn a zeptej se na potvrzení
+            let duplicatesList = 'Nalezené duplicitní směny:\n\n';
+            duplicates.forEach((shift, index) => {
+                const date = new Date(shift.date + 'T00:00:00');
+                const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+                const dateStr = `${dayNames[date.getDay()]} ${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`;
+                
+                let shiftInfo = `${index + 1}. ${dateStr}`;
+                if (shift.timeFrom && shift.timeTo) {
+                    shiftInfo += ` (${shift.timeFrom}-${shift.timeTo})`;
+                }
+                shiftInfo += ` - ${shift.type} - ${shift.prodejna || shift.store || 'Neznámá prodejna'}`;
+                duplicatesList += shiftInfo + '\n';
+            });
+            
+            duplicatesList += `\nCelkem: ${duplicates.length} duplicitních směn\n\nChcete je všechny smazat?`;
+            
+            if (!confirm(duplicatesList)) {
+                return;
+            }
+            
+            // Smaž všechny duplicitní směny
+            let deletedCount = 0;
+            let errorCount = 0;
+            
+            for (const duplicate of duplicates) {
+                try {
+                    await this.deleteShift(duplicate.id);
+                    deletedCount++;
+                    console.log(`✅ Smazána duplicitní směna ${deletedCount}/${duplicates.length}`);
+                } catch (error) {
+                    errorCount++;
+                    console.error(`❌ Chyba při mazání duplicitní směny ${duplicate.id}:`, error);
+                }
+            }
+            
+            // Aktualizuj zobrazení
+            this.applyStoreFilter();
+            this.renderCalendar();
+            this.updateStats();
+            this.updateTodayTomorrowInfo();
+            
+            if (errorCount === 0) {
+                this.showSuccess(`Úspěšně smazáno ${deletedCount} duplicitních směn`);
+            } else {
+                this.showError(`Smazáno ${deletedCount} duplicitních směn, ${errorCount} chyb`);
+            }
+            
+        } catch (error) {
+            console.error('❌ Chyba při odstraňování duplicitních směn:', error);
+            this.showError('Chyba při odstraňování duplicitních směn: ' + error.message);
+        }
     }
 }
 
