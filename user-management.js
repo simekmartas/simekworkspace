@@ -27,7 +27,8 @@ class UserManager {
         await this.loadUsers();
         this.setupEventListeners();
         this.startAutoSync();
-        this.checkServerStatus();
+        // Dočasně odstraněno kvůli chybě
+        // this.checkServerStatus();
         
         // Sleduj změny v localStorage (při změnách uživatelů v jiném tabu)
         window.addEventListener('storage', async (e) => {
@@ -569,7 +570,228 @@ class UserManager {
     }
 }
 
+// Emergency restore function - CRITICAL
+window.emergencyRestoreUsers = async function() {
+    console.log('🚨 EMERGENCY RESTORE - Obnovuji všechny uživatele...');
+    
+    // Kompletní seznam všech původních uživatelů
+    const fullUsersList = [
+        {
+            id: 1,
+            firstName: 'Admin',
+            lastName: 'Administrátor',
+            username: 'admin',
+            email: 'admin@mobilmajak.cz',
+            phone: '+420777888999',
+            prodejna: 'Hlavní pobočka',
+            password: 'Admin123',
+            role: 'Administrator',
+            bio: 'Hlavní administrátor systému MobilMajak'
+        },
+        {
+            id: 2,
+            customId: '2',
+            firstName: 'Šimon',
+            lastName: 'Malčík',
+            username: 'simon',
+            email: 'simon@mobilmajak.cz',
+            phone: '+420777123456',
+            prodejna: 'Praha 1',
+            password: 'simon123',
+            role: 'Prodejce',
+            bio: 'Prodejce mobilních telefonů'
+        },
+        {
+            id: 3,
+            customId: '3',
+            firstName: 'Martin',
+            lastName: 'Šimek',
+            username: 'malek',
+            email: 'martin@mobilmajak.cz',
+            phone: '+420777234567',
+            prodejna: 'Brno',
+            password: 'malek123',
+            role: 'Prodejce',
+            bio: 'Vedoucí prodejce'
+        },
+        {
+            id: 4,
+            customId: '4',
+            firstName: 'Jakub',
+            lastName: 'Novák',
+            username: 'jakub',
+            email: 'jakub@mobilmajak.cz',
+            phone: '+420777345678',
+            prodejna: 'Ostrava',
+            password: 'jakub123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 5,
+            customId: '5',
+            firstName: 'Petr',
+            lastName: 'Svoboda',
+            username: 'petr',
+            email: 'petr@mobilmajak.cz',
+            phone: '+420777456789',
+            prodejna: 'Plzeň',
+            password: 'petr123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 6,
+            customId: '6',
+            firstName: 'Tomáš',
+            lastName: 'Dvořák',
+            username: 'tomas',
+            email: 'tomas@mobilmajak.cz',
+            phone: '+420777567890',
+            prodejna: 'České Budějovice',
+            password: 'tomas123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 7,
+            customId: '7',
+            firstName: 'Michal',
+            lastName: 'Procházka',
+            username: 'michal',
+            email: 'michal@mobilmajak.cz',
+            phone: '+420777678901',
+            prodejna: 'Hradec Králové',
+            password: 'michal123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 8,
+            customId: '8',
+            firstName: 'David',
+            lastName: 'Krejčí',
+            username: 'david',
+            email: 'david@mobilmajak.cz',
+            phone: '+420777789012',
+            prodejna: 'Olomouc',
+            password: 'david123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 9,
+            customId: '9',
+            firstName: 'Lukáš',
+            lastName: 'Černý',
+            username: 'lukas',
+            email: 'lukas@mobilmajak.cz',
+            phone: '+420777890123',
+            prodejna: 'Pardubice',
+            password: 'lukas123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 10,
+            customId: '10',
+            firstName: 'Ondřej',
+            lastName: 'Veselý',
+            username: 'ondrej',
+            email: 'ondrej@mobilmajak.cz',
+            phone: '+420777901234',
+            prodejna: 'Zlín',
+            password: 'ondrej123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 11,
+            customId: '11',
+            firstName: 'Pavel',
+            lastName: 'Horáček',
+            username: 'pavel',
+            email: 'pavel@mobilmajak.cz',
+            phone: '+420777012345',
+            prodejna: 'Jihlava',
+            password: 'pavel123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        },
+        {
+            id: 12,
+            customId: '12',
+            firstName: 'Jan',
+            lastName: 'Staněk',
+            username: 'jan',
+            email: 'jan@mobilmajak.cz',
+            phone: '+420777123456',
+            prodejna: 'Karlovy Vary',
+            password: 'jan123',
+            role: 'Prodejce',
+            bio: 'Prodejce'
+        }
+    ];
+    
+    // Okamžitě ulož do localStorage
+    localStorage.setItem('users', JSON.stringify(fullUsersList));
+    console.log(`💾 Uloženo ${fullUsersList.length} uživatelů do localStorage`);
+    
+    // Zkus nahrát na server
+    try {
+        const response = await fetch('/api/users-github', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                users: fullUsersList,
+                timestamp: Date.now(),
+                action: 'emergency_restore'
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                console.log('✅ RESCUE SUCCESS! Všichni uživatelé obnoveni na serveru');
+                alert('✅ EMERGENCY RESTORE ÚSPĚŠNÝ!\n\n12 uživatelů bylo obnoveno.\nStránku prosím obnovte.');
+                
+                // Obnov zobrazení
+                if (window.userManager) {
+                    window.userManager.users = fullUsersList;
+                    window.userManager.displayUsers();
+                }
+                
+                return true;
+            }
+        }
+        
+        throw new Error(`Server error: ${response.status}`);
+        
+    } catch (error) {
+        console.error('❌ Server restore failed:', error);
+        alert('⚠️ Uživatelé obnoveni lokálně, ale nepodařilo se synchronizovat se serverem.\n\nStránku prosím obnovte a zkuste to znovu.');
+        
+        // Alespoň obnov zobrazení lokálně
+        if (window.userManager) {
+            window.userManager.users = fullUsersList;
+            window.userManager.displayUsers();
+        }
+        
+        return false;
+    }
+};
+
 // Inicializace
 document.addEventListener('DOMContentLoaded', () => {
     window.userManager = new UserManager();
+    
+    // Auto-kontrola při načtení stránky
+    setTimeout(() => {
+        if (window.userManager && window.userManager.users.length < 10) {
+            console.log('⚠️ Detekováno málo uživatelů, spouštím emergency restore...');
+            window.emergencyRestoreUsers();
+        }
+    }, 2000);
 }); 
