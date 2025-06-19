@@ -376,21 +376,21 @@
                     </div>
                 </div>
                 
-                <!-- Pokročilé nástroje - skládací -->
+                <!-- Admin nástroje - důležité pro administrátory -->
                 <div style="text-align: center;">
                     <button id="admin-tools-toggle" onclick="toggleAdminTools()" style="
-                        background: rgba(255,255,255,0.1); color: var(--text-secondary); 
-                        border: 1px solid rgba(255,255,255,0.2); padding: 0.5rem 1rem; 
-                        border-radius: 20px; cursor: pointer; font-size: 0.85rem; 
-                        transition: all 0.3s ease; font-weight: 500;
+                        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); 
+                        color: white; border: none; padding: 0.75rem 1.5rem; 
+                        border-radius: 25px; cursor: pointer; font-size: 0.9rem; 
+                        transition: all 0.3s ease; font-weight: 600; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
                     ">
-                        ⚙️ Pokročilé nástroje 
+                        🛠️ ADMIN NÁSTROJE - SPRÁVA DAT
                         <span id="admin-tools-arrow" style="margin-left: 0.5rem; transition: transform 0.3s ease;">▼</span>
                     </button>
                     
                     <div id="admin-tools-content" style="
-                        max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
-                        margin-top: 0;
+                        max-height: 250px; overflow: visible; transition: max-height 0.3s ease;
+                        margin-top: 1rem; opacity: 1;
                     ">
                         <div style="
                             margin-top: 1rem; padding: 1rem; 
@@ -406,18 +406,38 @@
                             </div>
                             
                             <!-- Základní akce -->
+                            <!-- ⚠️ VAROVÁNÍ: Tlačítka pro smazání dat -->
+                            <div style="background: rgba(255, 71, 87, 0.1); border: 2px solid #ff4757; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+                                <h5 style="color: #ff4757; margin: 0 0 0.75rem 0; font-size: 0.9rem; text-align: center;">⚠️ KRITICKÉ AKCE - SMAZÁNÍ DAT</h5>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;">
+                                    <button class="filter-btn admin-btn" onclick="showDeleteDataModal()" style="
+                                        background: linear-gradient(135deg, #ff4757 0%, #c44569 100%); 
+                                        border: 2px solid #ff4757; color: white; font-size: 0.85rem; padding: 0.75rem; 
+                                        font-weight: 600; box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
+                                        transition: all 0.3s ease;
+                                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(255, 71, 87, 0.4)'" 
+                                       onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 12px rgba(255, 71, 87, 0.3)'">
+                                        🗑️ SMAZAT DATA<br><small style="font-size: 0.7rem; opacity: 0.9;">podle období</small>
+                                    </button>
+                                    <button class="filter-btn admin-btn" onclick="showDeleteStoreDataModal()" style="
+                                        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); 
+                                        border: 2px solid #e74c3c; color: white; font-size: 0.85rem; padding: 0.75rem; 
+                                        font-weight: 600; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+                                        transition: all 0.3s ease;
+                                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(231, 76, 60, 0.4)'" 
+                                       onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 12px rgba(231, 76, 60, 0.3)'">
+                                        🏪 SMAZAT PRODEJNU<br><small style="font-size: 0.7rem; opacity: 0.9;">všechna data</small>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Ostatní admin nástroje -->
                             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
                                 <button class="filter-btn admin-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3; font-size: 0.8rem; padding: 0.6rem;">
                                     🔄 Obnovit data
                                 </button>
                                 <button class="filter-btn admin-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500; font-size: 0.8rem; padding: 0.6rem;">
                                     ↩️ Reset filtrů
-                                </button>
-                                <button class="filter-btn admin-btn" onclick="showDeleteDataModal()" style="background: #ff4757; border-color: #ff4757; font-size: 0.8rem; padding: 0.6rem;">
-                                    🗑️ Smazat data
-                                </button>
-                                <button class="filter-btn admin-btn" onclick="showDeleteStoreDataModal()" style="background: #e74c3c; border-color: #e74c3c; font-size: 0.8rem; padding: 0.6rem;">
-                                    🏪 Smazat prodejnu
                                 </button>
                             </div>
                             
@@ -1913,24 +1933,31 @@
             }
         }
 
-        // Toggle pokročilých nástrojů
+        // Toggle admin nástrojů
         function toggleAdminTools() {
             const content = document.getElementById('admin-tools-content');
             const arrow = document.getElementById('admin-tools-arrow');
             const toggle = document.getElementById('admin-tools-toggle');
             
-            if (content.style.maxHeight === '0px' || content.style.maxHeight === '') {
-                // Otevři
-                content.style.maxHeight = '200px';
-                arrow.style.transform = 'rotate(180deg)';
-                toggle.style.background = 'rgba(255,255,255,0.15)';
-                toggle.style.color = 'var(--text-primary)';
-            } else {
+            // Zkontroluj aktuální stav - pokud je rozbalené, zabal to
+            if (content.style.maxHeight === '250px' || content.style.maxHeight === '' || parseInt(content.style.maxHeight) > 0) {
                 // Zavři
                 content.style.maxHeight = '0px';
+                content.style.overflow = 'hidden';
+                content.style.opacity = '0';
                 arrow.style.transform = 'rotate(0deg)';
                 toggle.style.background = 'rgba(255,255,255,0.1)';
                 toggle.style.color = 'var(--text-secondary)';
+                toggle.innerHTML = '🛠️ ADMIN NÁSTROJE - SPRÁVA DAT <span id="admin-tools-arrow" style="margin-left: 0.5rem; transition: transform 0.3s ease;">▼</span>';
+            } else {
+                // Otevři
+                content.style.maxHeight = '250px';
+                content.style.overflow = 'visible';
+                content.style.opacity = '1';
+                arrow.style.transform = 'rotate(180deg)';
+                toggle.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)';
+                toggle.style.color = 'white';
+                toggle.innerHTML = '🛠️ ADMIN NÁSTROJE - SPRÁVA DAT <span id="admin-tools-arrow" style="margin-left: 0.5rem; transition: transform 0.3s ease; transform: rotate(180deg);">▼</span>';
             }
         }
 
