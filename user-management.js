@@ -546,6 +546,27 @@ class UserManager {
         a.click();
         window.URL.revokeObjectURL(url);
     }
+
+    // Kontrola stavu serveru - CRITICAL: chybějící funkce
+    async checkServerStatus() {
+        try {
+            console.log('🔍 Testuji spojení se serverem...');
+            const response = await fetch('/api/users-github', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                console.log('✅ Server je dostupný');
+            } else {
+                console.warn(`⚠️ Server error: ${response.status}`);
+            }
+        } catch (error) {
+            console.warn('⚠️ Server nedostupný:', error.message);
+        }
+    }
 }
 
 // Inicializace
