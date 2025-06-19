@@ -992,25 +992,86 @@ class ShiftsManager {
                 return;
             }
             
+            console.log(`🍎 Otevírám Apple kalendář pro ${monthShifts.length} směn...`);
+            
+            // Vytvoř ICS soubor
             const icsContent = this.generateICS(monthShifts, 'Apple');
             
-            // Stáhni soubor
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `smeny-${monthNames[month]}-${year}-apple.ics`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            this.showSuccess(`Export do Apple kalendáře dokončen (${monthShifts.length} směn)`);
+            // Zkus použít webcal:// protokol pro přímé otevření v kalendáři
+            this.openAppleCalendarWithWebcal(icsContent, monthNames[month], year, monthShifts.length);
             
         } catch (error) {
-            console.error('❌ Chyba při exportu do Apple kalendáře:', error);
-            this.showError('Chyba při exportu: ' + error.message);
+            console.error('❌ Chyba při otevírání Apple kalendáře:', error);
+            this.showError('Chyba při otevírání Apple kalendáře: ' + error.message);
         }
+    }
+    
+    // Otevření Apple kalendáře s webcal protokolem
+    openAppleCalendarWithWebcal(icsContent, monthName, year, shiftsCount) {
+        // Vytvoř blob a URL pro ICS soubor
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        
+        // Vytvoř data URL pro webcal protokol
+        const dataUrl = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsContent);
+        
+        // Zobraz dialog s možnostmi
+        const options = [
+            '1️⃣ Otevřít iCloud kalendář v prohlížeči',
+            '2️⃣ Stáhnout ICS soubor pro import',
+            '3️⃣ Zkusit otevřít přímo v kalendáři (macOS/iOS)'
+        ].join('\\n');
+        
+        const choice = prompt(
+            `🍎 Apple Kalendář - ${shiftsCount} směn\\n\\n` +
+            `Jak chcete importovat směny?\\n\\n${options}\\n\\n` +
+            'Zadejte číslo volby (1-3):'
+        );
+        
+        switch (choice) {
+            case '1':
+                // Otevři iCloud kalendář
+                window.open('https://calendar.icloud.com/', '_blank');
+                this.showSuccess('iCloud kalendář otevřen. Importuj ICS soubor přes tlačítko Nastavení (⚙️) → Import');
+                break;
+                
+            case '2':
+                // Stáhni ICS soubor
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `smeny-${monthName}-${year}-apple.ics`;
+                link.click();
+                this.showSuccess('ICS soubor stažen. Otevři ho v Apple kalendáři nebo importuj ručně');
+                break;
+                
+            case '3':
+                // Zkus webcal protokol
+                try {
+                    const webcalUrl = dataUrl.replace('data:', 'webcal://data:');
+                    window.location.href = webcalUrl;
+                    this.showSuccess('Pokusím se otevřít kalendář přímo...');
+                } catch (e) {
+                    // Fallback na data URL
+                    window.open(dataUrl, '_blank');
+                    this.showSuccess('Otevírám kalendářový soubor...');
+                }
+                break;
+                
+            default:
+                // Výchozí - otevři iCloud a stáhni soubor
+                window.open('https://calendar.icloud.com/', '_blank');
+                const defaultLink = document.createElement('a');
+                defaultLink.href = url;
+                defaultLink.download = `smeny-${monthName}-${year}-apple.ics`;
+                defaultLink.click();
+                this.showSuccess('iCloud kalendář otevřen a ICS soubor stažen');
+                break;
+        }
+        
+        // Vyčisti URL po chvíli
+        setTimeout(() => {
+            URL.revokeObjectURL(url);
+        }, 10000);
     }
     
     // Export do Google kalendáře
@@ -1036,25 +1097,189 @@ class ShiftsManager {
                 return;
             }
             
-            const icsContent = this.generateICS(monthShifts, 'Google');
+            console.log(`📱 Otevírám Google kalendář pro ${monthShifts.length} směn...`);
             
-            // Stáhni soubor
-            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `smeny-${monthNames[month]}-${year}-google.ics`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            this.showSuccess(`Export do Google kalendáře dokončen (${monthShifts.length} směn)`);
+            // Pro Google kalendář použijeme různé metody podle počtu směn
+            if (monthShifts.length <= 3) {
+                // Pro malý počet směn - otevři každou jednotlivě
+                this.openGoogleCalendarEvents(monthShifts);
+            } else {
+                // Pro větší počet směn - nabídni možnosti
+                this.showGoogleCalendarOptions(monthShifts, monthNames[month], year);
+            }
             
         } catch (error) {
-            console.error('❌ Chyba při exportu do Google kalendáře:', error);
-            this.showError('Chyba při exportu: ' + error.message);
+            console.error('❌ Chyba při otevírání Google kalendáře:', error);
+            this.showError('Chyba při otevírání Google kalendáře: ' + error.message);
         }
+    }
+    
+    // Otevření jednotlivých událostí v Google kalendáři
+    openGoogleCalendarEvents(shifts) {
+        shifts.forEach((shift, index) => {
+            setTimeout(() => {
+                const googleUrl = this.createGoogleCalendarEventUrl(shift);
+                window.open(googleUrl, `_blank_${index}`);
+            }, index * 500); // Zpoždění mezi otevíráním tabů
+        });
+        
+        this.showSuccess(`Otevírám ${shifts.length} směn v Google kalendáři`);
+    }
+    
+    // Zobrazení možností pro Google kalendář
+    showGoogleCalendarOptions(shifts, monthName, year) {
+        const options = [
+            '1️⃣ 🚀 Hromadný import (doporučeno)',
+            '2️⃣ 📝 Quick Add - kopírovat do schránky',
+            '3️⃣ 📁 Stáhnout ICS soubor',
+            '4️⃣ ➕ Otevřít Google kalendář ručně'
+        ].join('\\n');
+        
+        const choice = prompt(
+            `📱 Google Kalendář - ${shifts.length} směn\\n\\n` +
+            `Jak chcete přidat směny?\\n\\n${options}\\n\\n` +
+            'Zadejte číslo volby (1-4):'
+        );
+        
+        switch (choice) {
+            case '1':
+                // Hromadný import - otevři speciální modal
+                this.openGoogleBatchImport(shifts, monthName, year);
+                break;
+                
+            case '2':
+                // Quick Add - zkopíruj do schránky
+                this.copyGoogleQuickAddToClipboard(shifts);
+                break;
+                
+            case '3':
+                // Stáhni ICS soubor
+                this.openGoogleCalendarImport(shifts, monthName, year);
+                break;
+                
+            case '4':
+                // Jen otevři Google kalendář
+                window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
+                this.showSuccess('Google kalendář otevřen. Přidejte směny ručně');
+                break;
+                
+            default:
+                // Výchozí - hromadný import
+                this.openGoogleBatchImport(shifts, monthName, year);
+                break;
+        }
+    }
+    
+    // Vytvoření URL pro Google kalendář událost
+    createGoogleCalendarEventUrl(shift) {
+        const shiftDate = new Date(shift.date + 'T00:00:00');
+        
+        // Název události
+        let eventTitle = '';
+        const storeName = shift.prodejna || shift.store || 'Neznámá prodejna';
+        
+        switch (shift.type) {
+            case 'morning':
+                eventTitle = `🌅 Ranní směna - ${storeName}`;
+                break;
+            case 'afternoon':
+                eventTitle = `☀️ Odpolední směna - ${storeName}`;
+                break;
+            case 'evening':
+                eventTitle = `🌙 Večerní směna - ${storeName}`;
+                break;
+            case 'full':
+                eventTitle = `💼 Celý den - ${storeName}`;
+                break;
+            case 'vacation':
+                eventTitle = `🏖️ Dovolená`;
+                break;
+            default:
+                eventTitle = `📝 Směna - ${storeName}`;
+                break;
+        }
+        
+        // Časy události
+        let startDateTime, endDateTime;
+        if (shift.timeFrom && shift.timeTo) {
+            const startDate = new Date(shift.date + `T${shift.timeFrom}:00`);
+            const endDate = new Date(shift.date + `T${shift.timeTo}:00`);
+            
+            startDateTime = this.formatGoogleDateTime(startDate);
+            endDateTime = this.formatGoogleDateTime(endDate);
+        } else {
+            // Celý den
+            startDateTime = this.formatGoogleDate(shiftDate);
+            endDateTime = this.formatGoogleDate(new Date(shiftDate.getTime() + 24 * 60 * 60 * 1000));
+        }
+        
+        // Popis události
+        let description = `Pracovní směna v prodejně ${storeName}`;
+        if (shift.note) {
+            description += `\\nPoznámka: ${shift.note}`;
+        }
+        description += `\\nTyp směny: ${this.getShiftTypeName(shift.type)}`;
+        description += `\\nExportováno z Mobil Maják systému`;
+        
+        // Lokace
+        const location = shift.type === 'vacation' ? 'Dovolená' : `Prodejna ${storeName}`;
+        
+        // Vytvoř Google Calendar URL
+        const params = new URLSearchParams({
+            action: 'TEMPLATE',
+            text: eventTitle,
+            dates: `${startDateTime}/${endDateTime}`,
+            details: description,
+            location: location
+        });
+        
+        return `https://calendar.google.com/calendar/render?${params.toString()}`;
+    }
+    
+    // Otevření Google kalendáře s ICS importem
+    openGoogleCalendarImport(shifts, monthName, year) {
+        const icsContent = this.generateICS(shifts, 'Google');
+        
+        // Vytvoř data URL s ICS obsahem
+        const dataUrl = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(icsContent);
+        
+        // Otevři Google Calendar import
+        const importUrl = `https://calendar.google.com/calendar/u/0/r/settings/export`;
+        
+        // Nejdříve stáhni ICS (dočasně)
+        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `smeny-${monthName}-${year}-google.ics`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        // Pak otevři Google Calendar import stránku
+        setTimeout(() => {
+            window.open('https://calendar.google.com/calendar/u/0/r/settings/export', '_blank');
+        }, 1000);
+        
+        this.showSuccess(
+            `📁 ICS soubor stažen! Google kalendář se otevře pro import.\\n\\n` +
+            `📝 Jak importovat:\\n` +
+            `1. V Google kalendáři klikni na ⚙️ Nastavení\\n` +
+            `2. Vyber "Import a export"\\n` +
+            `3. Klikni "Vybrat soubor" a najdi stažený ICS soubor`
+        );
+    }
+    
+    // Formátování data a času pro Google Calendar
+    formatGoogleDateTime(date) {
+        return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    }
+    
+    // Formátování pouze data pro Google Calendar
+    formatGoogleDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
     }
     
     // Generování ICS (iCalendar) souboru
@@ -1882,6 +2107,267 @@ class ShiftsManager {
             console.error('❌ Chyba při odstraňování duplicitních směn:', error);
             this.showError('Chyba při odstraňování duplicitních směn: ' + error.message);
         }
+    }
+
+    // Hromadný import do Google kalendáře
+    openGoogleBatchImport(shifts, monthName, year) {
+        // Vytvoř HTML pro batch import modal
+        const modalHtml = this.createBatchImportModal(shifts, monthName, year);
+        
+        // Přidej modal do stránky
+        const existingModal = document.getElementById('googleBatchModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Zobraz modal
+        const modal = document.getElementById('googleBatchModal');
+        modal.classList.add('show');
+        
+        // Přidej event listenery
+        this.setupBatchImportListeners(shifts);
+        
+        this.showSuccess('Modal pro hromadný import otevřen! Klikněte na směny které chcete přidat');
+    }
+    
+    // Vytvoření HTML pro batch import modal
+    createBatchImportModal(shifts, monthName, year) {
+        const shiftsHtml = shifts.map((shift, index) => {
+            const date = new Date(shift.date + 'T00:00:00');
+            const dayNames = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+            const dateStr = `${dayNames[date.getDay()]} ${date.getDate()}.${date.getMonth() + 1}.`;
+            
+            let timeStr = '';
+            if (shift.timeFrom && shift.timeTo) {
+                timeStr = `${shift.timeFrom}-${shift.timeTo}`;
+            }
+            
+            const typeNames = {
+                'morning': 'Ranní směna',
+                'afternoon': 'Odpolední směna',
+                'evening': 'Večerní směna',
+                'full': 'Celý den',
+                'vacation': 'Dovolená'
+            };
+            
+            return `
+                <div class="batch-shift-item" data-index="${index}">
+                    <div class="shift-info">
+                        <div class="shift-date">${dateStr}</div>
+                        <div class="shift-details">
+                            <span class="shift-type">${typeNames[shift.type] || shift.type}</span>
+                            ${timeStr ? `<span class="shift-time">${timeStr}</span>` : ''}
+                            <span class="shift-store">${shift.prodejna || shift.store}</span>
+                        </div>
+                    </div>
+                    <button class="btn-add-single" data-index="${index}">
+                        ➕ Přidat
+                    </button>
+                </div>
+            `;
+        }).join('');
+        
+        return `
+            <div class="shift-modal" id="googleBatchModal">
+                <div class="modal-content" style="max-width: 700px;">
+                    <div class="modal-header">
+                        <h2 class="modal-title">📱 Hromadný import do Google kalendáře</h2>
+                        <button class="modal-close" id="closeBatchModal">×</button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="batch-header">
+                            <p><strong>${shifts.length} směn pro ${monthName} ${year}</strong></p>
+                            <p>Klikněte na "Přidat" u jednotlivých směn nebo použijte hromadné akce:</p>
+                            
+                            <div class="batch-actions">
+                                <button class="btn-batch-all" id="addAllShifts">
+                                    🚀 Přidat všechny (${shifts.length})
+                                </button>
+                                <button class="btn-batch-selected" id="addSelectedShifts">
+                                    ✅ Přidat vybrané (0)
+                                </button>
+                                <button class="btn-select-all" id="selectAllShifts">
+                                    📋 Vybrat vše
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="batch-shifts-list">
+                            ${shiftsHtml}
+                        </div>
+                        
+                        <div class="batch-info">
+                            <p><small>💡 <strong>Tip:</strong> Každá směna se otevře v novém tabu s předvyplněnými údaji. Stačí kliknout "Uložit".</small></p>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel" id="cancelBatchImport">Zavřít</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Nastavení event listenerů pro batch import
+    setupBatchImportListeners(shifts) {
+        // Zavření modalu
+        document.getElementById('closeBatchModal').onclick = () => this.closeBatchImportModal();
+        document.getElementById('cancelBatchImport').onclick = () => this.closeBatchImportModal();
+        
+        // Přidání všech směn
+        document.getElementById('addAllShifts').onclick = () => {
+            this.addShiftsToGoogleCalendar(shifts);
+            this.closeBatchImportModal();
+        };
+        
+        // Výběr všech
+        document.getElementById('selectAllShifts').onclick = () => this.selectAllBatchShifts();
+        
+        // Přidání vybraných
+        document.getElementById('addSelectedShifts').onclick = () => this.addSelectedBatchShifts(shifts);
+        
+        // Jednotlivé směny
+        document.querySelectorAll('.btn-add-single').forEach(btn => {
+            btn.onclick = (e) => {
+                const index = parseInt(e.target.dataset.index);
+                this.addShiftsToGoogleCalendar([shifts[index]]);
+                e.target.textContent = '✅ Přidáno';
+                e.target.disabled = true;
+            };
+        });
+        
+        // Výběr jednotlivých směn
+        document.querySelectorAll('.batch-shift-item').forEach(item => {
+            item.onclick = (e) => {
+                if (e.target.classList.contains('btn-add-single')) return;
+                item.classList.toggle('selected');
+                this.updateSelectedBatchCount();
+            };
+        });
+    }
+    
+    // Kopírování Quick Add textu do schránky
+    async copyGoogleQuickAddToClipboard(shifts) {
+        try {
+            const quickAddTexts = shifts.map(shift => {
+                const date = new Date(shift.date + 'T00:00:00');
+                const dateStr = `${date.getDate()}. ${date.getMonth() + 1}. ${date.getFullYear()}`;
+                
+                const typeNames = {
+                    'morning': 'Ranní směna',
+                    'afternoon': 'Odpolední směna',
+                    'evening': 'Večerní směna',
+                    'full': 'Celý den',
+                    'vacation': 'Dovolená'
+                };
+                
+                let eventText = `${typeNames[shift.type] || shift.type} ${dateStr}`;
+                
+                if (shift.timeFrom && shift.timeTo) {
+                    eventText += ` ${shift.timeFrom}-${shift.timeTo}`;
+                }
+                
+                if (shift.prodejna || shift.store) {
+                    eventText += ` v ${shift.prodejna || shift.store}`;
+                }
+                
+                if (shift.note) {
+                    eventText += ` (${shift.note})`;
+                }
+                
+                return eventText;
+            });
+            
+            const fullText = quickAddTexts.join('\\n');
+            
+            // Zkus zkopírovat do schránky
+            if (navigator.clipboard) {
+                await navigator.clipboard.writeText(fullText);
+                
+                // Otevři Google kalendář
+                window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
+                
+                this.showSuccess(
+                    `📋 ${shifts.length} směn zkopírováno do schránky!\\n\\n` +
+                    `📝 Jak použít Quick Add:\\n` +
+                    `1. V Google kalendáři klikni na "+" nebo "Vytvořit"\\n` +
+                    `2. Vlož zkopírovaný text (Ctrl+V)\\n` +
+                    `3. Google automaticky rozpozná datum a čas`
+                );
+            } else {
+                // Fallback - zobraz text v prompt
+                prompt(
+                    '📋 Zkopírujte tento text a vložte ho do Google kalendáře:',
+                    fullText
+                );
+                
+                window.open('https://calendar.google.com/calendar/u/0/r', '_blank');
+                this.showSuccess('Google kalendář otevřen. Použijte zkopírovaný text v Quick Add');
+            }
+            
+        } catch (error) {
+            console.error('❌ Chyba při kopírování do schránky:', error);
+            this.showError('Chyba při kopírování do schránky: ' + error.message);
+        }
+    }
+    
+    // Pomocné funkce pro batch import
+    closeBatchImportModal() {
+        const modal = document.getElementById('googleBatchModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    selectAllBatchShifts() {
+        document.querySelectorAll('.batch-shift-item').forEach(item => {
+            item.classList.add('selected');
+        });
+        this.updateSelectedBatchCount();
+    }
+    
+    updateSelectedBatchCount() {
+        const selectedCount = document.querySelectorAll('.batch-shift-item.selected').length;
+        const btn = document.getElementById('addSelectedShifts');
+        if (btn) {
+            btn.textContent = `✅ Přidat vybrané (${selectedCount})`;
+        }
+    }
+    
+    addSelectedBatchShifts(shifts) {
+        const selectedItems = document.querySelectorAll('.batch-shift-item.selected');
+        const selectedShifts = Array.from(selectedItems).map(item => {
+            const index = parseInt(item.dataset.index);
+            return shifts[index];
+        });
+        
+        if (selectedShifts.length === 0) {
+            this.showError('Žádné směny nevybrány');
+            return;
+        }
+        
+        this.addShiftsToGoogleCalendar(selectedShifts);
+        this.closeBatchImportModal();
+    }
+    
+    addShiftsToGoogleCalendar(shifts) {
+        console.log(`📱 Přidávám ${shifts.length} směn do Google kalendáře...`);
+        
+        shifts.forEach((shift, index) => {
+            setTimeout(() => {
+                const googleUrl = this.createGoogleCalendarEventUrl(shift);
+                window.open(googleUrl, `_blank_shift_${index}`);
+            }, index * 200); // Kratší zpoždění mezi okny
+        });
+        
+        this.showSuccess(
+            `🚀 Otevírám ${shifts.length} směn v Google kalendáři!\\n\\n` +
+            `💡 Tip: V každém tabu stačí kliknout "Uložit" pro přidání směny.`
+        );
     }
 }
 

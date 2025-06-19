@@ -957,6 +957,215 @@
             background: rgba(244, 67, 54, 0.15);
             border-color: rgba(244, 67, 54, 0.3);
         }
+        
+        /* Styly pro batch import modal */
+        .batch-header {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .batch-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn-batch-all, .btn-batch-selected, .btn-select-all {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+            font-size: 0.875rem;
+        }
+        
+        .btn-batch-all:hover, .btn-batch-selected:hover, .btn-select-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(33, 150, 243, 0.4);
+        }
+        
+        .btn-batch-all {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-batch-all:hover {
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-select-all {
+            background: linear-gradient(135deg, #9c27b0, #7b1fa2);
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3);
+        }
+        
+        .btn-select-all:hover {
+            box-shadow: 0 8px 25px rgba(156, 39, 176, 0.4);
+        }
+        
+        .batch-shifts-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--border-light);
+            border-radius: 12px;
+            background: var(--bg-primary);
+        }
+        
+        .batch-shift-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .batch-shift-item:last-child {
+            border-bottom: none;
+        }
+        
+        .batch-shift-item:hover {
+            background: rgba(33, 150, 243, 0.05);
+        }
+        
+        .batch-shift-item.selected {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 4px solid var(--accent-blue);
+        }
+        
+        .shift-info {
+            flex-grow: 1;
+        }
+        
+        .shift-date {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+        
+        .shift-details {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .shift-type {
+            background: var(--accent-blue);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .shift-time {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .shift-store {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+        
+        .btn-add-single {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.75rem;
+            min-width: 80px;
+        }
+        
+        .btn-add-single:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+        }
+        
+        .btn-add-single:disabled {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .batch-info {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(33, 150, 243, 0.05);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-blue);
+        }
+        
+        .batch-info p {
+            margin: 0;
+        }
+        
+        /* Responzivní úpravy pro batch modal */
+        @media (max-width: 768px) {
+            .batch-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-batch-all, .btn-batch-selected, .btn-select-all {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            
+            .shift-details {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .batch-shift-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .btn-add-single {
+                align-self: flex-end;
+            }
+        }
+        
+        /* Dark theme úpravy pro batch modal */
+        .dark-theme .batch-shifts-list {
+            background: var(--bg-secondary);
+        }
+        
+        .dark-theme .batch-shift-item:hover {
+            background: rgba(33, 150, 243, 0.1);
+        }
+        
+        .dark-theme .shift-time {
+            background: var(--bg-tertiary);
+        }
+        
+        .dark-theme .batch-info {
+            background: rgba(33, 150, 243, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -1073,10 +1282,10 @@
                             📁 Exportovat
                         </button>
                         <button class="btn-apple-calendar" id="appleCalendarBtn">
-                            🍎 APPLE
+                            🍎 Apple kalendář
                         </button>
                         <button class="btn-google-calendar" id="googleCalendarBtn">
-                            📱 ANDROID
+                            📱 Google kalendář
                         </button>
                         <button class="btn-export" id="syncBtn" style="background: linear-gradient(135deg, #10b981, #059669);">
                             🔄 Synchronizovat
