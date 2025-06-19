@@ -375,96 +375,6 @@
                         <!-- Dynamicky načtené prodejny -->
                     </div>
                 </div>
-                
-                <!-- Admin nástroje - důležité pro administrátory -->
-                <div style="text-align: center;">
-                    <button id="admin-tools-toggle" onclick="toggleAdminTools()" style="
-                        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); 
-                        color: white; border: none; padding: 0.75rem 1.5rem; 
-                        border-radius: 25px; cursor: pointer; font-size: 0.9rem; 
-                        transition: all 0.3s ease; font-weight: 600; box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-                    ">
-                        🛠️ ADMIN NÁSTROJE - SPRÁVA DAT
-                        <span id="admin-tools-arrow" style="margin-left: 0.5rem; transition: transform 0.3s ease;">▼</span>
-                    </button>
-                    
-                    <div id="admin-tools-content" style="
-                        max-height: 250px; overflow: visible; transition: max-height 0.3s ease;
-                        margin-top: 1rem; opacity: 1;
-                    ">
-                        <div style="
-                            margin-top: 1rem; padding: 1rem; 
-                            background: rgba(255,255,255,0.03); border-radius: 10px;
-                            border: 1px solid rgba(255,255,255,0.1);
-                        ">
-                            <!-- Status ukládání dat -->
-                            <div style="margin-bottom: 1rem; padding: 1rem; background: rgba(255,255,255,0.03); border-radius: 8px;">
-                                <h5 style="color: var(--primary-color); margin: 0 0 0.5rem 0; font-size: 0.9rem;">📊 Status ukládání dat</h5>
-                                <div id="storage-info" style="color: var(--text-secondary); font-size: 0.85rem;">
-                                    <div>🔍 Kontroluji stav úložiště...</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Základní akce -->
-                            <!-- ⚠️ VAROVÁNÍ: Tlačítka pro smazání dat -->
-                            <div style="background: rgba(255, 71, 87, 0.1); border: 2px solid #ff4757; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
-                                <h5 style="color: #ff4757; margin: 0 0 0.75rem 0; font-size: 0.9rem; text-align: center;">⚠️ KRITICKÉ AKCE - SMAZÁNÍ DAT</h5>
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem;">
-                                    <button class="filter-btn admin-btn" onclick="showDeleteDataModal()" style="
-                                        background: linear-gradient(135deg, #ff4757 0%, #c44569 100%); 
-                                        border: 2px solid #ff4757; color: white; font-size: 0.85rem; padding: 0.75rem; 
-                                        font-weight: 600; box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3);
-                                        transition: all 0.3s ease;
-                                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(255, 71, 87, 0.4)'" 
-                                       onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 12px rgba(255, 71, 87, 0.3)'">
-                                        🗑️ SMAZAT DATA<br><small style="font-size: 0.7rem; opacity: 0.9;">podle období</small>
-                                    </button>
-                                    <button class="filter-btn admin-btn" onclick="showDeleteStoreDataModal()" style="
-                                        background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); 
-                                        border: 2px solid #e74c3c; color: white; font-size: 0.85rem; padding: 0.75rem; 
-                                        font-weight: 600; box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
-                                        transition: all 0.3s ease;
-                                    " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(231, 76, 60, 0.4)'" 
-                                       onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 12px rgba(231, 76, 60, 0.3)'">
-                                        🏪 SMAZAT PRODEJNU<br><small style="font-size: 0.7rem; opacity: 0.9;">všechna data</small>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- Ostatní admin nástroje -->
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
-                                <button class="filter-btn admin-btn" onclick="debugLoadData()" style="background: #2196F3; border-color: #2196F3; font-size: 0.8rem; padding: 0.6rem;">
-                                    🔄 Obnovit data
-                                </button>
-                                <button class="filter-btn admin-btn" onclick="resetAllFilters()" style="background: #ff9500; border-color: #ff9500; font-size: 0.8rem; padding: 0.6rem;">
-                                    ↩️ Reset filtrů
-                                </button>
-                            </div>
-                            
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;">
-                                <button class="filter-btn admin-btn" onclick="syncWithServer()" style="background: #ff9500; border-color: #ff9500; font-size: 0.8rem; padding: 0.6rem;">
-                                    🔄 Sync server
-                                </button>
-                                <button class="filter-btn admin-btn" onclick="testServerConnection()" style="background: #2ed573; border-color: #2ed573; font-size: 0.8rem; padding: 0.6rem;">
-                                    🌐 Test server
-                                </button>
-                                <button class="filter-btn admin-btn" onclick="cleanDuplicateSellerData()" style="background: #8e44ad; border-color: #8e44ad; font-size: 0.8rem; padding: 0.6rem;">
-                                    🔧 Fix duplicity
-                                </button>
-                                <button class="filter-btn admin-btn" onclick="showSellerNameManager()" style="background: #6c5ce7; border-color: #6c5ce7; font-size: 0.8rem; padding: 0.6rem;">
-                                    👤 Správa jmen
-                                </button>
-                                <button class="filter-btn admin-btn" onclick="resetServerData()" style="background: #e74c3c; border-color: #e74c3c; font-size: 0.8rem; padding: 0.6rem;">
-                                    🌐 Reset serveru
-                                </button>
-                            </div>
-                            
-                            <div style="text-align: center; margin-top: 0.75rem; font-size: 0.75rem; color: var(--text-secondary);">
-                                ⚠️ Nástroje pro správce systému
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <div id="analyticsContent">
@@ -472,6 +382,201 @@
                     <div class="loading-spinner">⏳</div>
                     <p>Načítám analytické data...</p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Admin nástroje - na konci stránky pro administrátory -->
+        <div style="margin-top: 4rem; border-top: 2px solid rgba(255,255,255,0.1); padding-top: 2rem;">
+            <div style="text-align: center;">
+                <button id="admin-tools-toggle" onclick="toggleAdminTools()" style="
+                    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); 
+                    color: white; border: none; padding: 1rem 2rem; 
+                    border-radius: 25px; cursor: pointer; font-size: 1rem; 
+                    transition: all 0.3s ease; font-weight: 600; 
+                    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+                    position: relative; overflow: hidden;
+                " onmouseover="this.style.transform='translateY(-3px)'; this.style.boxShadow='0 8px 25px rgba(255, 107, 107, 0.5)'" 
+                   onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 6px 20px rgba(255, 107, 107, 0.4)'">
+                    <span style="position: relative; z-index: 2;">
+                        🛠️ ADMIN NÁSTROJE - SPRÁVA DAT
+                        <span id="admin-tools-arrow" style="margin-left: 0.5rem; transition: transform 0.3s ease; transform: rotate(180deg);">▼</span>
+                    </span>
+                    <span style="
+                        position: absolute; top: 0; left: -100%; width: 100%; height: 100%; 
+                        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+                        transition: left 0.5s ease;
+                    "></span>
+                </button>
+                
+                <div id="admin-tools-content" style="
+                    max-height: 350px; overflow: visible; transition: max-height 0.4s ease;
+                    margin-top: 1.5rem; opacity: 1;
+                ">
+                    <div style="
+                        margin: 0 auto; padding: 2rem; max-width: 1000px;
+                        background: linear-gradient(135deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0.05) 100%); 
+                        border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+                    ">
+                        <!-- Status ukládání dat -->
+                        <div style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(255,255,255,0.03); border-radius: 12px; border-left: 4px solid var(--primary-color, #ff1493);">
+                            <h5 style="color: var(--primary-color, #ff1493); margin: 0 0 1rem 0; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                📊 Status ukládání dat
+                                <span style="font-size: 0.8rem; background: rgba(255, 20, 147, 0.2); padding: 0.25rem 0.5rem; border-radius: 10px;">Systémové info</span>
+                            </h5>
+                            <div id="storage-info" style="color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">
+                                <div>🔍 Kontroluji stav úložiště...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- ⚠️ VAROVÁNÍ: Tlačítka pro smazání dat -->
+                        <div style="
+                            background: linear-gradient(135deg, rgba(255, 71, 87, 0.1) 0%, rgba(220, 53, 69, 0.1) 100%); 
+                            border: 2px solid #ff4757; border-radius: 15px; padding: 2rem; margin-bottom: 2rem;
+                            position: relative; overflow: hidden;
+                        ">
+                            <div style="
+                                position: absolute; top: 0; left: 0; width: 100%; height: 4px;
+                                background: linear-gradient(90deg, #ff4757, #e74c3c, #ff4757);
+                                animation: danger-glow 2s ease-in-out infinite alternate;
+                            "></div>
+                            <h5 style="
+                                color: #ff4757; margin: 0 0 1.5rem 0; font-size: 1.1rem; text-align: center; 
+                                font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+                                text-shadow: 0 2px 4px rgba(255, 71, 87, 0.3);
+                            ">
+                                ⚠️ KRITICKÉ AKCE - SMAZÁNÍ DAT ⚠️
+                            </h5>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                <button class="filter-btn admin-btn" onclick="showDeleteDataModal()" style="
+                                    background: linear-gradient(135deg, #ff4757 0%, #c44569 100%); 
+                                    border: 2px solid #ff4757; color: white; font-size: 0.9rem; padding: 1rem; 
+                                    font-weight: 600; box-shadow: 0 6px 15px rgba(255, 71, 87, 0.4);
+                                    transition: all 0.3s ease; border-radius: 12px; position: relative; overflow: hidden;
+                                " onmouseover="this.style.transform='translateY(-3px) scale(1.02)'; this.style.boxShadow='0 8px 25px rgba(255, 71, 87, 0.5)'" 
+                                   onmouseout="this.style.transform='translateY(0px) scale(1)'; this.style.boxShadow='0 6px 15px rgba(255, 71, 87, 0.4)'">
+                                    <span style="position: relative; z-index: 2;">
+                                        🗑️ SMAZAT DATA<br>
+                                        <small style="font-size: 0.75rem; opacity: 0.9; font-weight: 400;">podle období (dny/týdny/měsíce)</small>
+                                    </span>
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="showDeleteStoreDataModal()" style="
+                                    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); 
+                                    border: 2px solid #e74c3c; color: white; font-size: 0.9rem; padding: 1rem; 
+                                    font-weight: 600; box-shadow: 0 6px 15px rgba(231, 76, 60, 0.4);
+                                    transition: all 0.3s ease; border-radius: 12px; position: relative; overflow: hidden;
+                                " onmouseover="this.style.transform='translateY(-3px) scale(1.02)'; this.style.boxShadow='0 8px 25px rgba(231, 76, 60, 0.5)'" 
+                                   onmouseout="this.style.transform='translateY(0px) scale(1)'; this.style.boxShadow='0 6px 15px rgba(231, 76, 60, 0.4)'">
+                                    <span style="position: relative; z-index: 2;">
+                                        🏪 SMAZAT PRODEJNU<br>
+                                        <small style="font-size: 0.75rem; opacity: 0.9; font-weight: 400;">všechna data konkrétní prodejny</small>
+                                    </span>
+                                </button>
+                            </div>
+                            <div style="
+                                text-align: center; margin-top: 1rem; padding: 0.75rem; 
+                                background: rgba(255, 71, 87, 0.1); border-radius: 8px;
+                                border: 1px solid rgba(255, 71, 87, 0.2);
+                            ">
+                                <span style="color: #ff4757; font-size: 0.8rem; font-weight: 600;">
+                                    💀 POZOR: Tyto akce jsou NEVRATNÉ! Data se smažou natrvalo!
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <!-- Ostatní admin nástroje -->
+                        <div style="
+                            background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(108, 92, 231, 0.05) 100%);
+                            border: 1px solid rgba(33, 150, 243, 0.2); border-radius: 15px; padding: 2rem;
+                        ">
+                            <h5 style="
+                                color: #2196F3; margin: 0 0 1.5rem 0; font-size: 1rem; text-align: center;
+                                font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+                            ">
+                                🔧 Systémové nástroje
+                                <span style="font-size: 0.8rem; background: rgba(33, 150, 243, 0.2); padding: 0.25rem 0.5rem; border-radius: 10px;">Safe</span>
+                            </h5>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                                <button class="filter-btn admin-btn" onclick="debugLoadData()" style="
+                                    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); border: none; color: white; 
+                                    font-size: 0.85rem; padding: 0.75rem; border-radius: 8px; font-weight: 500;
+                                    transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(33, 150, 243, 0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 15px rgba(33, 150, 243, 0.4)'" 
+                                   onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 10px rgba(33, 150, 243, 0.3)'">
+                                    🔄 Obnovit data
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="resetAllFilters()" style="
+                                    background: linear-gradient(135deg, #ff9500 0%, #e68900 100%); border: none; color: white; 
+                                    font-size: 0.85rem; padding: 0.75rem; border-radius: 8px; font-weight: 500;
+                                    transition: all 0.3s ease; box-shadow: 0 4px 10px rgba(255, 149, 0, 0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 15px rgba(255, 149, 0, 0.4)'" 
+                                   onmouseout="this.style.transform='translateY(0px)'; this.style.boxShadow='0 4px 10px rgba(255, 149, 0, 0.3)'">
+                                    ↩️ Reset filtrů
+                                </button>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem;">
+                                <button class="filter-btn admin-btn" onclick="syncWithServer()" style="
+                                    background: linear-gradient(135deg, #ff9500 0%, #e68900 100%); border: none; color: white; 
+                                    font-size: 0.8rem; padding: 0.65rem; border-radius: 8px; font-weight: 500;
+                                    transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(255, 149, 0, 0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0px)'">
+                                    🔄 Sync server
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="testServerConnection()" style="
+                                    background: linear-gradient(135deg, #2ed573 0%, #20bf6b 100%); border: none; color: white; 
+                                    font-size: 0.8rem; padding: 0.65rem; border-radius: 8px; font-weight: 500;
+                                    transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(46, 213, 115, 0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0px)'">
+                                    🌐 Test server
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="cleanDuplicateSellerData()" style="
+                                    background: linear-gradient(135deg, #8e44ad 0%, #732d91 100%); border: none; color: white; 
+                                    font-size: 0.8rem; padding: 0.65rem; border-radius: 8px; font-weight: 500;
+                                    transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(142, 68, 173, 0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0px)'">
+                                    🔧 Fix duplicity
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="showSellerNameManager()" style="
+                                    background: linear-gradient(135deg, #6c5ce7 0%, #5a4fcf 100%); border: none; color: white; 
+                                    font-size: 0.8rem; padding: 0.65rem; border-radius: 8px; font-weight: 500;
+                                    transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(108, 92, 231, 0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0px)'">
+                                    👤 Správa jmen
+                                </button>
+                                <button class="filter-btn admin-btn" onclick="resetServerData()" style="
+                                    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); border: none; color: white; 
+                                    font-size: 0.8rem; padding: 0.65rem; border-radius: 8px; font-weight: 500;
+                                    transition: all 0.3s ease; box-shadow: 0 3px 8px rgba(231, 76, 60, 0.3);
+                                " onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0px)'">
+                                    🌐 Reset serveru
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div style="
+                            text-align: center; margin-top: 1.5rem; padding: 1rem; 
+                            background: rgba(255, 20, 147, 0.05); border-radius: 10px;
+                            border: 1px solid rgba(255, 20, 147, 0.1);
+                        ">
+                            <span style="color: var(--primary-color, #ff1493); font-size: 0.85rem; font-weight: 600;">
+                                ⚠️ Nástroje pro správce systému - používejte opatrně!
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    @keyframes danger-glow {
+                        0% { opacity: 0.7; }
+                        100% { opacity: 1; }
+                    }
+                    
+                    .admin-btn:hover {
+                        transform: translateY(-2px) !important;
+                    }
+                </style>
             </div>
         </div>
     </main>
